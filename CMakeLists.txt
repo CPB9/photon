@@ -5,11 +5,10 @@ cmake_minimum_required(VERSION 2.8.11)
 macro(enable_sanitizer)
     add_definitions(
         -fsanitize=address
-        -fsanitize=integer
         -fsanitize=undefined
         -ggdb
     )
-    SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=integer -fsanitize=undefined")
+    SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
 endmacro()
 
 if(ASAN)
@@ -41,17 +40,22 @@ endfunction()
 photon_generate_sources(${CMAKE_CURRENT_SOURCE_DIR}/onboard
     onboard/core.decode
     onboard/tm.decode
+    onboard/exc.decode
 )
 
 add_library(photon
     src/photon/Config.h
     src/photon/core/Assert.h
+    src/photon/core/Crc.c
+    src/photon/core/Crc.h
     src/photon/core/Endian.h
     src/photon/core/Reader.c
     src/photon/core/RingBuf.c
     src/photon/core/Try.h
     src/photon/core/Writer.c
     src/photon/tm/Tm.c
+    src/photon/tm/StatusMessage.c
+    src/photon/exc/TmPacket.c
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${ONBOARD_SOURCES}
 )
@@ -62,8 +66,7 @@ set_target_properties(photon
 )
 
 if(NOT MSVC)
-    target_compile_options(photon PUBLIC -std=c99)
-    target_compile_options(photon PRIVATE -Wall -Wextra)
+    target_compile_options(photon PRIVATE -std=c99 -Wall -Wextra)
 endif()
 
 target_include_directories(photon
@@ -73,4 +76,4 @@ target_include_directories(photon
 )
 
 #add_subdirectory(thirdparty/gtest EXCLUDE_FROM_ALL)
-#add_subdirectory(tests)
+add_subdirectory(tests)

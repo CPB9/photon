@@ -166,11 +166,6 @@ struct ExchangePacketHeader {
     sequenceCounter: varuint,
 }
 
-struct AddressPacketHeader {
-    address: Address,
-    timestamp: Time,
-}
-
 struct ReceiptPacketHeader {
     streamType: StreamType,
     errorControlType: ErrorControlType,

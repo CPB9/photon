@@ -1,41 +1,55 @@
-#include "photon/core/Reader.h"
-#include "photon/core/Writer.h"
-#include "photon/core/Error.h"
-#include "photon/tm/MessageDesc.h"
 #include "photon/tm/Tm.Component.h"
 
-#include "photon/tm/Tm.Component.inc.c"
-#include "photon/TmPrivate.inc.c"
+#include "photon/core/Error.h"
+#include "photon/core/Reader.h"
+#include "photon/core/Writer.h"
+#include "photon/tm/MessageDesc.h"
+#include "photon/tm/StatusMessage.h"
+
+#include "photon/StatusEncoder.Private.h"
+#include "photon/Tm.Private.inc.c"
 
 void PhotonTm_Init()
 {
-    _tm.currentMessage = 0;
-    _tm.allowedMessagesCount = _PHOTON_TM_MSG_COUNT;
+    _tm.currentMsg = 0;
+    _tm.allowedMsgCount = _PHOTON_TM_MSG_COUNT; //HACK
+    _tm.msgs.size = _PHOTON_TM_MSG_COUNT;
+    _tm.msgs.data = _messageDesc;
 }
 
 static void selectNextMessage()
 {
-    _tm.currentMessage++;
-    if (_tm.currentMessage >= _PHOTON_TM_MSG_COUNT) {
-        _tm.currentMessage = 0;
+    _tm.currentMsg++;
+    if (_tm.currentMsg >= _PHOTON_TM_MSG_COUNT) {
+        _tm.currentMsg = 0;
     }
 }
-/*
+
+static inline PhotonTmMessageDesc* currentDesc()
+{
+    return &_tm.msgs.data[_tm.currentMsg];
+}
+
+static PhotonError encodeStatusMsg(void* data, PhotonWriter* dest)
+{
+    (void)data;
+    return currentDesc()->func(dest);
+}
+
 PhotonError PhotonTm_CollectStatusMessages(PhotonWriter* dest)
 {
-    if (_tm.allowedMessages == 0) {
+    if (_tm.allowedMsgCount == 0) {
         return PhotonError_Ok;
     }
     unsigned totalMessages = 0;
     while (true) {
-        _tm.statusEnc.msg.messageNumber = _tm.currentMessage;
-        //FIXME: set component number
         if (PhotonWriter_WritableSize(dest) < 2) {
             return PhotonError_NotEnoughSpace;
         }
+        _tm.currentStatusMsg.compNum = currentDesc()->compNum;
+        _tm.currentStatusMsg.msgNum = currentDesc()->msgNum;
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
-        PhotonWriter_WriteU16Be(dest, PHOTON_TM_STREAM_SEPARATOR);
-        PhotonError rv = PhotonEncoder_EncodeTmStatusMessage(&_tm.statusEnc, dest);
+        PhotonError rv = PhotonTmStatusMessage_Encode(&_tm.currentStatusMsg, encodeStatusMsg, 0, dest);
         if (rv == PhotonError_Ok) {
             selectNextMessage();
             totalMessages++;
@@ -50,7 +64,7 @@ PhotonError PhotonTm_CollectStatusMessages(PhotonWriter* dest)
             return rv;
         }
     }
-}*/
+}
 
 /*
 PhotonError PhotonTm_CollectEventMessages(PhotonWriter* dest)

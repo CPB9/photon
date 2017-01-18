@@ -1,0 +1,23 @@
+module exc
+
+import core::{Writer, Error, Address, Time, Generator}
+
+struct TmPacket {
+    address: Address,
+    time: Time,
+}
+
+impl TmPacket {
+    fn encode(&mut self, gen: Generator, data: *mut void, dest: *mut Writer) -> Error
+}
+
+component {
+    parameters {
+        tmPacketCounter: u16,
+    }
+
+    impl {
+        fn init()
+        fn sendTelemetry() -> Error
+    }
+}

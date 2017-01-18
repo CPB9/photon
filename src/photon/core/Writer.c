@@ -20,7 +20,7 @@ bool PhotonWriter_IsAtEnd(const PhotonWriter* self)
 
 size_t PhotonWriter_WritableSize(const PhotonWriter* self)
 {
-    return self->end == self->current;
+    return self->end - self->current;
 }
 
 uint8_t* PhotonWriter_CurrentPtr(const PhotonWriter* self)

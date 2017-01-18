@@ -170,7 +170,7 @@ void* PhotonReader_ReadPtrBe(PhotonReader* self)
 
 #define RETURN_IF_SIZE_LESS(size)                   \
     if (PhotonReader_ReadableSize(self) < size) {   \
-        return PhotonError_NotEnoughData;                               \
+        return PhotonError_NotEnoughData;           \
     }
 
 PhotonError PhotonReader_ReadVaruint(PhotonReader* self, uint64_t* dest)
