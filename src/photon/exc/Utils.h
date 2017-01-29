@@ -13,7 +13,7 @@
 // [u16(size), data, u16(crc)]
 // size = sizeof(data) + sizeof(u16)
 
-#define PHOTON_EXC_ENCODE_PACKET_HEADER(reserved)                           \
+#define PHOTON_EXC_ENCODE_PACKET_HEADER(dest, reserved)                     \
     if (PhotonWriter_WritableSize(dest) < 4) {                              \
         return PhotonError_NotEnoughSpace;                                  \
     }                                                                       \
@@ -24,7 +24,7 @@
     uint8_t* sizePtr = PhotonWriter_CurrentPtr(&reserved);                  \
     PhotonWriter_Skip(&reserved, 2);
 
-#define PHOTON_EXC_ENCODE_PACKET_FOOTER(reserved)                           \
+#define PHOTON_EXC_ENCODE_PACKET_FOOTER(dest, reserved)                     \
     PhotonWriter_SetCurrentPtr(dest, PhotonWriter_CurrentPtr(&reserved));   \
                                                                             \
     uint8_t* crcPtr = PhotonWriter_CurrentPtr(dest);                        \

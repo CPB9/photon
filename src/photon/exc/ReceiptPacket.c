@@ -6,10 +6,10 @@
 
 PhotonError PhotonExcReceiptPacket_Encode(PhotonExcReceiptPacket* self, PhotonWriter* dest)
 {
-    PHOTON_EXC_ENCODE_PACKET_HEADER(reserved);
+    PHOTON_EXC_ENCODE_PACKET_HEADER(dest, reserved);
 
     PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Receipt, &reserved));
     PHOTON_TRY(PhotonExcReceiptPacket_Serialize(self, &reserved));
 
-    PHOTON_EXC_ENCODE_PACKET_FOOTER(reserved);
+    PHOTON_EXC_ENCODE_PACKET_FOOTER(dest, reserved);
 }

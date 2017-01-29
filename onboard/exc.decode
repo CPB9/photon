@@ -5,8 +5,9 @@ import core::{Writer, Error, Address, Time, Generator, RingBuf}
 const STREAM_SEPARATOR : u16 = 1122;
 
 enum PacketType {
-    Data = 0,
-    Receipt = 1,
+    Firmware = 0,
+    Data = 1,
+    Receipt = 2,
 }
 
 enum StreamType {
@@ -43,13 +44,14 @@ impl ReceiptPacket {
 
 component {
     parameters {
-        tmPacketCounter: u16,
+        outCounter: u16,
         outStream: RingBuf,
         outStreamData: [u8; 1024],
     }
 
     impl {
         fn init()
-        fn packTelemetry() -> Error
+        fn acceptInput(src: *const void, size: usize)
+        fn genOutput(dest: *mut void, size: usize) -> usize
     }
 }

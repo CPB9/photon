@@ -49,6 +49,7 @@ add_library(photon
     src/photon/exc/DataPacket.c
     src/photon/exc/ReceiptPacket.c
     src/photon/exc/Utils.h
+    src/photon/fwt/Fwt.c
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${ONBOARD_SOURCES}
 )
@@ -59,7 +60,7 @@ set_target_properties(photon
 )
 
 if(NOT MSVC)
-    target_compile_options(photon PRIVATE -std=c99 -Wall -Wextra)
+    target_compile_options(photon PRIVATE -std=c99 -Wall -Wextra -Werror=implicit-function-declaration)
 endif()
 
 target_include_directories(photon

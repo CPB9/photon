@@ -1,0 +1,41 @@
+module fwt
+
+import core::{Error, Reader, Writer}
+
+enum State {
+    Idle = 0,
+    Transfering = 1,
+}
+
+enum CmdType {
+    RequestHash = 0,
+    RequestChunk = 1,
+    Start = 2,
+    Stop = 3,
+}
+
+enum AnswerType {
+    Hash = 0
+    Chunk = 1,
+}
+
+struct Chunk {
+    current: *const u8,
+    end: *const u8,
+    isTransfering: bool,
+}
+
+component {
+    parameters {
+        firmware: Chunk,
+        hashRequested: bool,
+        chunk: Chunk,
+    }
+
+    impl {
+        fn init()
+        fn acceptCmd(src: *mut Reader) -> Error
+        fn genAnswer(dest: *mut Writer) -> Error
+        fn hasAnswers() -> bool
+    }
+}

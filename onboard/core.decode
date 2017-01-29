@@ -21,11 +21,13 @@ enum Error {
     InvalidTimeValue = 17,
     EventIsDenied = 18,
     InvalidTimeType = 19,
-
     InvalidComponentId = 20,
     InvalidCommandId = 21,
     InvalidMessageId = 22,
     InvalidValue = 23,
+
+    NoDataAvailable = 99,
+    NotImplemented = 100,
 }
 
 struct Reader {

@@ -36,10 +36,10 @@ static PhotonError encodeStatusMsg(void* data, PhotonWriter* dest)
     return currentDesc()->func(dest);
 }
 
-PhotonError PhotonTm_CollectStatusMessages(PhotonWriter* dest)
+PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 {
     if (_tm.allowedMsgCount == 0) {
-        return PhotonError_Ok;
+        return PhotonError_NoDataAvailable;
     }
     unsigned totalMessages = 0;
     while (true) {
@@ -64,6 +64,11 @@ PhotonError PhotonTm_CollectStatusMessages(PhotonWriter* dest)
             return rv;
         }
     }
+}
+
+bool PhotonTm_HasMessages()
+{
+    return _tm.allowedMsgCount != 0;
 }
 
 /*

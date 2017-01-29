@@ -36,7 +36,7 @@ component {
 
     impl {
         fn init()
-        fn collectStatusMessages(dest: *mut Writer) -> Error
-        fn collectEventMessages(dest: *mut Writer) -> Error
+        fn collectMessages(dest: *mut Writer) -> Error
+        fn hasMessages() -> bool
     }
 }
