@@ -19,29 +19,19 @@ set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_gen_src)
 
 add_subdirectory(thirdparty/decode EXCLUDE_FROM_ALL)
 
-add_custom_target(clean_generated_sources
-    COMMAND
-    ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
-)
-
 function(photon_generate_sources dir)
     add_custom_command(
-        OUTPUT
-        ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
-        COMMAND
-        decode_gen -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
-        DEPENDS
-        decode_gen
-        ${ARGN}
+        OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
+        COMMAND decode_gen -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
+        DEPENDS decode_gen ${ARGN}
     )
-    list(APPEND ONBOARD_SOURCES ${ARGN})
 endfunction()
 
-photon_generate_sources(${CMAKE_CURRENT_SOURCE_DIR}/onboard
-    onboard/core.decode
-    onboard/tm.decode
-    onboard/exc.decode
-)
+set(ONBOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onboard)
+file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
+photon_generate_sources(${ONBOARD_DIR} ${ONBOARD_SOURCES})
 
 add_library(photon
     src/photon/Config.h
@@ -55,7 +45,10 @@ add_library(photon
     src/photon/core/Writer.c
     src/photon/tm/Tm.c
     src/photon/tm/StatusMessage.c
-    src/photon/exc/TmPacket.c
+    src/photon/exc/Exc.c
+    src/photon/exc/DataPacket.c
+    src/photon/exc/ReceiptPacket.c
+    src/photon/exc/Utils.h
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${ONBOARD_SOURCES}
 )

@@ -116,11 +116,6 @@ variant Time {
     SecsNsecs { seconds: u32, nanoseconds: u32 },
 }
 
-enum StreamType {
-    Commands = 0,
-    Telemetry = 1,
-}
-
 enum ErrorControlType {
     Crc16 = 1,
     ReedSolomon = 2,
@@ -152,31 +147,10 @@ variant Address {
     },
 }
 
-struct ChannelPacketHeader {
-    streamType: StreamType,
-    errorControlType: ErrorControlType,
-    windowSize: varuint,
-    sequenceCounter: varuint,
-}
-
-struct ExchangePacketHeader {
-    streamType: StreamType,
-    errorControlType: ErrorControlType,
-    windowSize: varuint,
-    sequenceCounter: varuint,
-}
-
-struct ReceiptPacketHeader {
-    streamType: StreamType,
-    errorControlType: ErrorControlType,
-    lastSequenceCounter: varuint,
-}
-
 struct CmdHeader {
     componentNumber: varuint,
     commandNumber: varuint,
 }
-
 
 struct RingBuf {
     data: *mut u8,
@@ -202,21 +176,9 @@ impl RingBuf {
     fn advance(&mut self, size: usize)
 }
 
-struct StatusMessageHeader {
-    segmentNumber: varuint,
-    maxSegmentNumber: varuint,
-    componentNumber: varuint,
-    messageNumber: varuint,
-}
-
 struct EventMessageHeader {
     componentNumber: varuint,
     messageNumber: varuint,
     eventNumber: varuint,
     timestamp: Time
-}
-
-struct MessageDesc {
-    priority: u32,
-    isAllowed: bool,
 }

@@ -1,23 +1,55 @@
 module exc
 
-import core::{Writer, Error, Address, Time, Generator}
+import core::{Writer, Error, Address, Time, Generator, RingBuf}
 
-struct TmPacket {
+const STREAM_SEPARATOR : u16 = 1122;
+
+enum PacketType {
+    Data = 0,
+    Receipt = 1,
+}
+
+enum StreamType {
+    Reliable = 0,
+    Unreliable = 1,
+}
+
+enum DataType {
+    Commands = 0,
+    Telemetry = 1,
+}
+
+struct DataPacket {
+    streamType: StreamType,
+    counter: u16,
+    dataType: DataType,
     address: Address,
     time: Time,
 }
 
-impl TmPacket {
+impl DataPacket {
     fn encode(&mut self, gen: Generator, data: *mut void, dest: *mut Writer) -> Error
+}
+
+struct ReceiptPacket {
+    recievedCounter: u16,
+    recievedChecksum: u16,
+    timeRecieved: Time,
+}
+
+impl ReceiptPacket {
+    fn encode(&mut self, dest: *mut Writer) -> Error
 }
 
 component {
     parameters {
         tmPacketCounter: u16,
+        outStream: RingBuf,
+        outStreamData: [u8; 1024],
     }
 
     impl {
         fn init()
-        fn sendTelemetry() -> Error
+        fn packTelemetry() -> Error
     }
 }
