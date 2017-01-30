@@ -97,10 +97,13 @@ PhotonError PhotonFwt_AcceptCmd(PhotonReader* src)
 
 static PhotonError genHash(PhotonWriter* dest)
 {
-    (void)dest;
-    //TODO: generate hash
+    PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Hash, dest));
+    if (PhotonWriter_WritableSize(dest) < _PHOTON_PACKAGE_HASH_SIZE) {
+        return PhotonError_NotEnoughSpace;
+    }
+    PhotonWriter_Write(dest, _packageHash, _PHOTON_PACKAGE_HASH_SIZE);
     _fwt.hashRequested = false;
-    return PhotonError_NotImplemented;
+    return PhotonError_Ok;
 }
 
 static PhotonError genNext(PhotonFwtChunk* chunk, PhotonWriter* dest)
