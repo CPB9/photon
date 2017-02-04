@@ -2,6 +2,8 @@ project(photon)
 
 cmake_minimum_required(VERSION 2.8.11)
 
+enable_testing()
+
 macro(enable_sanitizer)
     add_definitions(
         -fsanitize=address
@@ -69,5 +71,32 @@ target_include_directories(photon
     ${PHOTON_GEN_SRC_DIR}
 )
 
-#add_subdirectory(thirdparty/gtest EXCLUDE_FROM_ALL)
+add_library(photon-gc
+    src/photon/gc/Crc.h
+    src/photon/gc/Crc.cpp
+    src/photon/gc/Exchange.h
+    src/photon/gc/Exchange.cpp
+    src/photon/gc/FwtState.h
+    src/photon/gc/FwtState.cpp
+)
+
+target_link_libraries(photon-gc
+    decode
+    bmcl
+)
+
+set_target_properties(photon-gc
+    PROPERTIES
+    PREFIX "lib"
+)
+
+if(NOT MSVC)
+    target_compile_options(photon-gc PUBLIC -std=c++11 -Wall -Wextra)
+endif()
+
+target_include_directories(photon-gc
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 add_subdirectory(tests)

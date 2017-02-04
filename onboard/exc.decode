@@ -2,7 +2,7 @@ module exc
 
 import core::{Writer, Error, Address, Time, Generator, RingBuf}
 
-const STREAM_SEPARATOR : u16 = 1122;
+const STREAM_SEPARATOR : u16 = 39998; // 0x9c3e
 
 enum PacketType {
     Firmware = 0,

@@ -63,7 +63,7 @@ size_t PhotonExc_GenOutput(void* dest, size_t size)
     PhotonWriter_Init(&writer, temp, sizeof(temp));
 
     if (PhotonFwt_HasAnswers()) {
-        PhotonWriter_WriteU16Le(dest, PHOTON_STREAM_SEPARATOR);
+        PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
 
         PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 

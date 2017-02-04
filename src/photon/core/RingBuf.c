@@ -128,11 +128,20 @@ size_t PhotonRingBuf_LinearWritableSize(const PhotonRingBuf* self)
     return self->size - self->writeOffset;
 }
 
-void PhotonRingBuf_Advance(PhotonRingBuf* self, size_t size)
+void PhotonRingBuf_AdvanceWritePtr(PhotonRingBuf* self, size_t size)
 {
     self->freeSpace -= size;
     self->writeOffset += size;
     if (self->writeOffset >= self->size) {
         self->writeOffset -= self->size;
+    }
+}
+
+void PhotonRingBuf_AdvanceReadPtr(PhotonRingBuf* self, size_t size)
+{
+    self->freeSpace -= size;
+    self->readOffset += size;
+    if (self->readOffset >= self->size) {
+        self->readOffset -= self->size;
     }
 }

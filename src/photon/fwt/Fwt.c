@@ -98,6 +98,7 @@ PhotonError PhotonFwt_AcceptCmd(PhotonReader* src)
 static PhotonError genHash(PhotonWriter* dest)
 {
     PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Hash, dest));
+    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_PACKAGE_SIZE));
     if (PhotonWriter_WritableSize(dest) < _PHOTON_PACKAGE_HASH_SIZE) {
         return PhotonError_NotEnoughSpace;
     }
@@ -111,7 +112,6 @@ static PhotonError genNext(PhotonFwtChunk* chunk, PhotonWriter* dest)
     PHOTON_ASSERT(chunk->current < chunk->end);
     PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Chunk, dest));
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, FW_START - chunk->current));
-    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_PACKAGE_SIZE));
 
     size_t size = chunk->end - chunk->current;
     size = PHOTON_MIN(size, MAX_SIZE);
@@ -151,4 +151,5 @@ PhotonError PhotonFwt_GenAnswer(PhotonWriter* dest)
 bool PhotonFwt_HasAnswers()
 {
     return _fwt.hashRequested | _fwt.chunk.isTransfering | _fwt.firmware.isTransfering;
+    return true;
 }

@@ -175,7 +175,9 @@ impl RingBuf {
     fn write(&mut self, src: *const void, size: usize)
     fn linearWritableSize(&self) -> usize
     fn currentWritePtr(&self) -> *mut u8
-    fn advance(&mut self, size: usize)
+
+    fn advanceWritePtr(&mut self, size: usize)
+    fn advanceReadPtr(&mut self, size: usize)
 }
 
 struct EventMessageHeader {

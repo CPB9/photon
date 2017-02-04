@@ -4,44 +4,50 @@
 #include "photon/core/Writer.h"
 #include "photon/core/RingBuf.h"
 #include "photon/core/Util.h"
+#include "photon/gc/Exchange.h"
 
 #include <bmcl/Logging.h>
+#include <bmcl/RingBuffer.h>
+#include <bmcl/Endian.h>
 
-class Exchange {
-public:
-    void acceptInput(const void* src, std::size_t size);
-    std::size_t genOutput(void* dest, std::size_t size);
+#include <chrono>
+#include <thread>
+
+using namespace photon;
+
+class UavModel : public Exchange {
+private:
+    void handleIncoming(bmcl::Bytes packet) override
+    {
+    }
+    void handleJunk(bmcl::Bytes junk) override
+    {
+    }
 };
 
-static uint8_t uplinkBuf[4096];
-static uint8_t downlinkBuf[4096];
-static PhotonRingBuf downlink;
-static PhotonRingBuf uplink;
 static uint8_t temp[4096];
+static UavModel exchange;
 
 const std::size_t chunkSize = 200;
 
 static void onboardTick()
 {
-    if (PhotonRingBuf_ReadableSize(&uplink) != 0) {
-        std::size_t size = PhotonRingBuf_LinearReadableSize(&uplink);
-        size = PHOTON_MIN(size, chunkSize);
-        PhotonExc_AcceptInput(PhotonRingBuf_CurrentReadPtr(&uplink), size);
-        PhotonRingBuf_Advance(&uplink, size);
-    }
-
     std::size_t size = PhotonExc_GenOutput(temp, sizeof(temp));
-
     if (size == 0) {
         BMCL_DEBUG() << "No data from photon";
     } else {
-        PhotonRingBuf_Write(&downlink, temp, size);
+        exchange.acceptInput(bmcl::Bytes(temp, sizeof(temp)));
     }
-
 }
 
 static void gcTick()
 {
+    std::size_t size = exchange.genOutput(temp, sizeof(temp));
+    if (size == 0) {
+        BMCL_DEBUG() << "No data from gc";
+    } else {
+        PhotonExc_AcceptInput(temp, sizeof(temp));
+    }
 }
 
 int main()
@@ -50,11 +56,9 @@ int main()
     PhotonExc_Init();
     PhotonFwt_Init();
 
-    PhotonRingBuf_Init(&uplink, uplinkBuf, sizeof(uplinkBuf));
-    PhotonRingBuf_Init(&downlink, downlinkBuf, sizeof(downlinkBuf));
-
     while (true) {
         onboardTick();
         gcTick();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
