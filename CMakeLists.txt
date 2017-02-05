@@ -78,6 +78,8 @@ add_library(photon-gc
     src/photon/gc/Exchange.cpp
     src/photon/gc/FwtState.h
     src/photon/gc/FwtState.cpp
+    src/photon/gc/MemIntervalSet.h
+    src/photon/gc/MemIntervalSet.cpp
 )
 
 target_link_libraries(photon-gc

@@ -145,8 +145,7 @@ void FwtState::acceptHashResponse(bmcl::MemReader* src)
     src->read(_hash.unwrap().data(), 64);
 
     _desc.resize(descSize);
-    _requestedChunks.clear();
-    _acceptedChunks.reset();
+    _acceptedChunks.clear();
     _startCmdState->generate();
 }
 
@@ -181,7 +180,7 @@ void FwtState::genHashCmd(bmcl::MemWriter* dest)
 void FwtState::genChunkCmd(bmcl::MemWriter* dest)
 {
     BMCL_ASSERT(dest->writeVarUint(1));
-    MemInterval os;
+    MemInterval os(0, 0);
     //TODO: calc nextChunk
 
     BMCL_ASSERT(dest->writeVarUint(os.start()));

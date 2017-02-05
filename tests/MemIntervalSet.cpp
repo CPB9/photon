@@ -1,4 +1,4 @@
-#include "photon/gc/FwtState.h"
+#include "photon/gc/MemIntervalSet.h"
 
 #include <gtest/gtest.h>
 
@@ -23,7 +23,7 @@ void PrintTo(const std::vector<MemInterval>& vec, ::std::ostream* os)
 
 void expectMerge(MemInterval* from, MemInterval* to, std::size_t start, std::size_t end)
 {
-    EXPECT_EQ(MemInterval::Merged, from->mergeIntoIfIntersects(to));
+    EXPECT_EQ(IntervalComparison::Intersects, from->mergeIntoIfIntersects(to));
     EXPECT_EQ(start, to->start());
     EXPECT_EQ(end, to->end());
 }
@@ -31,7 +31,7 @@ void expectMerge(MemInterval* from, MemInterval* to, std::size_t start, std::siz
 void expectBefore(MemInterval* from, MemInterval* to)
 {
     MemInterval result = *to;
-    EXPECT_EQ(MemInterval::Before, from->mergeIntoIfIntersects(to));
+    EXPECT_EQ(IntervalComparison::Before, from->mergeIntoIfIntersects(to));
     EXPECT_EQ(result.start(), to->start());
     EXPECT_EQ(result.end(), to->end());
 }
@@ -39,7 +39,7 @@ void expectBefore(MemInterval* from, MemInterval* to)
 void expectAfter(MemInterval* from, MemInterval* to)
 {
     MemInterval result = *to;
-    EXPECT_EQ(MemInterval::After, from->mergeIntoIfIntersects(to));
+    EXPECT_EQ(IntervalComparison::After, from->mergeIntoIfIntersects(to));
     EXPECT_EQ(result.start(), to->start());
     EXPECT_EQ(result.end(), to->end());
 }
@@ -137,7 +137,7 @@ class MemIntervalSetTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
-        _vec.reset();
+        _vec.clear();
     }
 
     void init(std::initializer_list<MemInterval> lst)
@@ -153,7 +153,7 @@ protected:
 
     void expect(std::initializer_list<MemInterval> lst)
     {
-        EXPECT_EQ(std::vector<MemInterval>(lst), _vec.chunks());
+        EXPECT_EQ(std::vector<MemInterval>(lst), _vec.intervals());
     }
 
     void add(MemInterval os)
