@@ -55,6 +55,13 @@ void PhotonRingBuf_Erase(PhotonRingBuf* self, size_t size)
     }
 }
 
+void PhotonRingBuf_Clear(PhotonRingBuf* self)
+{
+    self->freeSpace = self->size;
+    self->readOffset = 0;
+    self->writeOffset = 0;
+}
+
 void PhotonRingBuf_Read(PhotonRingBuf* self, void* dest, size_t size)
 {
     PhotonRingBuf_Peek(self, dest, size, 0);
@@ -144,4 +151,36 @@ void PhotonRingBuf_AdvanceReadPtr(PhotonRingBuf* self, size_t size)
     if (self->readOffset >= self->size) {
         self->readOffset -= self->size;
     }
+}
+
+PhotonMemChunks PhotonRingBuf_ReadableChunks(const PhotonRingBuf* self)
+{
+    PhotonMemChunks chunks;
+
+    if (self->freeSpace == 0) {
+        /* ------------------------wr------------ */
+        chunks.first.data = self->data + self->readOffset;
+        chunks.first.size = 0;
+        chunks.second = chunks.first;
+    } else if (self->writeOffset < self->readOffset) {
+        /* ---------r***************w------------ */
+        chunks.first.data = self->data + self->readOffset;
+        chunks.first.size = self->writeOffset - self->readOffset;
+        chunks.second.data = self->data + self->writeOffset;
+        chunks.second.size = 0;
+    } else if (self->readOffset > self->writeOffset) {
+        /* *********w---------------r************ */
+        chunks.first.data = self->data + self->readOffset;
+        chunks.first.size = self->size - self->readOffset;
+        chunks.second.data = self->data;
+        chunks.second.size = self->writeOffset;
+    } else {
+        /* ************************wr************ */
+        chunks.first.data = self->data + self->readOffset;
+        chunks.first.size = self->size - self->readOffset;
+        chunks.second.data = self->data;
+        chunks.second.size = self->writeOffset;
+    }
+
+    return chunks;
 }

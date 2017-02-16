@@ -4,6 +4,7 @@
 #include "photon/core/Writer.h"
 #include "photon/core/RingBuf.h"
 #include "photon/core/Util.h"
+#include "photon/core/Logging.h"
 #include "photon/gc/Exchange.h"
 
 #include <bmcl/Logging.h>
@@ -12,6 +13,8 @@
 
 #include <chrono>
 #include <thread>
+
+#define _PHOTON_FNAME "tests/Model.cpp"
 
 using namespace photon;
 
@@ -25,28 +28,28 @@ private:
     }
 };
 
-static uint8_t temp[4096];
+static uint8_t inTemp[4096];
 static UavModel exchange;
 
 const std::size_t chunkSize = 200;
 
 static void onboardTick()
 {
-    std::size_t size = PhotonExc_GenOutput(temp, sizeof(temp));
+    std::size_t size = PhotonExc_GenOutput(inTemp, sizeof(inTemp));
     if (size == 0) {
-        BMCL_DEBUG() << "No data from photon";
+        PHOTON_DEBUG("No data from photon");
     } else {
-        exchange.acceptInput(bmcl::Bytes(temp, sizeof(temp)));
+        exchange.acceptInput(bmcl::Bytes(inTemp, sizeof(inTemp)));
     }
 }
 
 static void gcTick()
 {
-    std::size_t size = exchange.genOutput(temp, sizeof(temp));
+    std::size_t size = exchange.genOutput(inTemp, sizeof(inTemp));
     if (size == 0) {
-        BMCL_DEBUG() << "No data from gc";
+        PHOTON_DEBUG("No data from gc");
     } else {
-        PhotonExc_AcceptInput(temp, sizeof(temp));
+        PhotonExc_AcceptInput(inTemp, sizeof(inTemp));
     }
 }
 

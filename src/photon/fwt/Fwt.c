@@ -3,6 +3,7 @@
 #include "photon/core/Assert.h"
 #include "photon/core/Try.h"
 #include "photon/core/Util.h"
+#include "photon/core/Logging.h"
 #include "photon/fwt/AnswerType.h"
 #include "photon/fwt/CmdType.h"
 #include "photon/Package.Private.inc.c"

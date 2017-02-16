@@ -4,6 +4,10 @@ cmake_minimum_required(VERSION 2.8.11)
 
 enable_testing()
 
+set(PHOTON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/photon/Config.h)
+
 macro(enable_sanitizer)
     add_definitions(
         -fsanitize=address
@@ -45,6 +49,9 @@ add_library(photon
     src/photon/core/RingBuf.c
     src/photon/core/Try.h
     src/photon/core/Writer.c
+    src/photon/core/Logging.h
+    src/photon/core/Logging.c
+    src/photon/int/Int.c
     src/photon/tm/Tm.c
     src/photon/tm/StatusMessage.c
     src/photon/exc/Exc.c
@@ -52,6 +59,7 @@ add_library(photon
     src/photon/exc/ReceiptPacket.c
     src/photon/exc/Utils.h
     src/photon/fwt/Fwt.c
+    src/photon/test/Test.c
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${ONBOARD_SOURCES}
 )
@@ -62,12 +70,19 @@ set_target_properties(photon
 )
 
 if(NOT MSVC)
-    target_compile_options(photon PRIVATE -std=c99 -Wall -Wextra -Werror=implicit-function-declaration)
+    target_compile_options(photon PRIVATE
+        -std=c99
+        -Wall
+        -Wextra
+        -Werror=implicit-function-declaration
+        -Werror=incompatible-pointer-types
+    )
 endif()
 
 target_include_directories(photon
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/src
     ${PHOTON_GEN_SRC_DIR}
 )
 
@@ -99,6 +114,7 @@ endif()
 target_include_directories(photon-gc
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
 add_subdirectory(tests)

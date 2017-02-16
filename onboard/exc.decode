@@ -47,6 +47,9 @@ component {
         outCounter: u16,
         outStream: RingBuf,
         outStreamData: [u8; 1024],
+        inCounter: u16,
+        inStream: RingBuf,
+        inStreamData: [u8; 1024],
     }
 
     impl {

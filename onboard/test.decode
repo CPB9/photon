@@ -1,0 +1,21 @@
+module test
+
+component {
+    parameters {
+        param1: u8,
+        param2: u16,
+        param3: u32,
+        param4: u64,
+    }
+
+    impl {
+        fn init()
+    }
+
+    commands {
+        fn setParam1(p: u8)
+        fn setParam2(p: u16)
+        fn setParam3(p: u32)
+        fn setParam4(p: u64)
+    }
+}

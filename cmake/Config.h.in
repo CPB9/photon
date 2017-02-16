@@ -7,4 +7,6 @@
 #define PHOTON_INLINE inline
 #endif
 
+#cmakedefine PHOTON_LOG_LEVEL ${PHOTON_LOG_LEVEL}
+
 #endif

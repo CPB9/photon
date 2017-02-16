@@ -65,6 +65,7 @@ bool Exchange::findSepAndSkip()
             _input.erase(it - chunks.first.begin() + 2);
             return true;
         }
+        it++;
     }
 
     it = chunks.second.begin();
@@ -83,6 +84,7 @@ bool Exchange::findSepAndSkip()
             _input.erase(chunks.first.size() + (it - chunks.second.begin()) + 2);
             return true;
         }
+        it++;
     }
 }
 

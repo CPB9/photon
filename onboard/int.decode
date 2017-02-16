@@ -1,0 +1,9 @@
+module int
+
+import core::{Reader, Writer, Error}
+
+component {
+    impl {
+        fn executeFrom(src: *mut Reader, results: *mut Writer) -> Error
+    }
+}

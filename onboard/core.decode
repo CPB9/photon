@@ -22,7 +22,7 @@ enum Error {
     EventIsDenied = 18,
     InvalidTimeType = 19,
     InvalidComponentId = 20,
-    InvalidCommandId = 21,
+    InvalidCmdId = 21,
     InvalidMessageId = 22,
     InvalidValue = 23,
 
@@ -123,35 +123,19 @@ enum ErrorControlType {
     ReedSolomon = 2,
 }
 
-variant Address {
-    Simple {
-        srcAddress: varuint,
-        destAddress: varuint,
-    },
-    Group {
-        srcAddress: varuint,
-        srcComponentNumber: varuint,
-        destComponentNumber: varuint,
-        destAddress: varuint,
-        srcGroup: varuint,
-        destGroup: varuint,
-    },
-    Network {
-        srcAddress: varuint,
-        srcComponentNumber: varuint,
-        destComponentNumber: varuint,
-        destAddress: varuint,
-    },
-    Multicast {
-        srcAddress: varuint,
-        srcComponentAddress: varuint,
-        destComponentAddress: varuint
-    },
+struct Address {
+    srcAddress: varuint,
+    destAddress: varuint,
 }
 
 struct CmdHeader {
     componentNumber: varuint,
     commandNumber: varuint,
+}
+
+struct MemChunks {
+    first: &[u8],
+    second: &[u8],
 }
 
 struct RingBuf {
@@ -171,10 +155,13 @@ impl RingBuf {
     fn readableSize(&self) -> usize
     fn linearReadableSize(&self) -> usize
     fn erase(&mut self, size: usize)
+    fn clear(&mut self)
 
     fn write(&mut self, src: *const void, size: usize)
     fn linearWritableSize(&self) -> usize
     fn currentWritePtr(&self) -> *mut u8
+
+    fn readableChunks(&self) -> MemChunks
 
     fn advanceWritePtr(&mut self, size: usize)
     fn advanceReadPtr(&mut self, size: usize)
