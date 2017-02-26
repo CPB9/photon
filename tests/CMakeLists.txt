@@ -3,11 +3,12 @@ if(NOT MSVC)
 endif()
 
 add_executable(model Model.cpp)
-target_link_libraries(model photon photon-gc bmcl)
+target_link_libraries(model photon bmcl)
 
 include_directories(
     SYSTEM
     ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/decode/thirdparty/gtest/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/decode/thirdparty/tclap/include
 )
 
 set(TESTS_DIR ${CMAKE_BINARY_DIR}/bin/tests)

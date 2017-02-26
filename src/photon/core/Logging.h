@@ -9,22 +9,22 @@
 #error _PHOTON_FNAME defined before photon/Logging.h
 #endif
 
-#ifdef PHOTON_LOG_LEVEL
-# if PHOTON_LOG_LEVEL >= 1
+#ifndef PHOTON_LOG_LEVEL
+# define PHOTON_LOG_LEVEL 0
+#endif
 
-#define PHOTON_LOG_LEVEL_NONE 0
-#define PHOTON_LOG_LEVEL_FATAL 1
-#define PHOTON_LOG_LEVEL_CRITICAL 2
-#define PHOTON_LOG_LEVEL_WARNING 3
-#define PHOTON_LOG_LEVEL_INFO 4
-#define PHOTON_LOG_LEVEL_DEBUG 5
+# define PHOTON_LOG_LEVEL_NONE 0
+# define PHOTON_LOG_LEVEL_FATAL 1
+# define PHOTON_LOG_LEVEL_CRITICAL 2
+# define PHOTON_LOG_LEVEL_WARNING 3
+# define PHOTON_LOG_LEVEL_INFO 4
+# define PHOTON_LOG_LEVEL_DEBUG 5
 
-#  ifdef __cplusplus
+#if PHOTON_LOG_LEVEL != PHOTON_LOG_LEVEL_NONE
+# ifdef __cplusplus
 extern "C" void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...);
-#  else
+# else
 void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...);
-#  endif
-
 # endif
 #endif
 
