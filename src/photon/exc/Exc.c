@@ -38,67 +38,72 @@ static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
 static void handleJunk(const uint8_t* data, size_t size)
 {
     (void)data;
-    (void)size;
+    if (size == 0) {
+        return;
+    }
+    PHOTON_DEBUG("Recieved junk %zu bytes", size);
 }
 
 static uint8_t inTemp[1024];
 static uint8_t outTemp[1024];
 
-#define HANDLE_INVALID_PACKET(msg, ...)         \
-    do {                                        \
-        PHOTON_WARNING(msg, ##__VA_ARGS__);     \
-        PhotonRingBuf_Erase(&_exc.inStream, 1); \
+#define HANDLE_INVALID_PACKET(msg, ...)                         \
+    do {                                                        \
+        PHOTON_WARNING(msg, ##__VA_ARGS__);                     \
+        PHOTON_WARNING("Continuing search with 1 byte offset"); \
+        PhotonRingBuf_Erase(&_exc.inStream, 1);                 \
     } while(0);
 
-static void handlePacket(size_t size)
+static bool handlePacket(size_t size)
 {
     PHOTON_ASSERT(size >= 4);
     uint16_t crc16 = Photon_Crc16(inTemp, size);
     if (crc16 != Photon_Le16Dec(inTemp + size - 2)) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid crc");
-        return;
+        return true;
     }
     PhotonReader payload;
     PhotonReader_Init(&payload, inTemp + 2, size - 4);
     PhotonExcPacketType type;
     if (PhotonExcPacketType_Deserialize(&type, &payload) != PhotonError_Ok) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid packet type");
-        return;
+        return true;
     }
     switch(type) {
     case PhotonExcPacketType_Firmware: {
         if (PhotonFwt_AcceptCmd(&payload) != PhotonError_Ok) {
             HANDLE_INVALID_PACKET("Recieved packet with invalid fwt payload");
-            return;
+            return true;
         }
     }
     case PhotonExcPacketType_Data: {
         PhotonExcDataPacket dataHeader;
         if(PhotonExcDataPacket_Deserialize(&dataHeader, &payload) != PhotonError_Ok) {
             HANDLE_INVALID_PACKET("Recieved data packet with invalid header");
-            return;
+            return true;
         }
         //TODO: check data header
         PhotonWriter results;
         PhotonWriter_Init(&results, outTemp, sizeof(outTemp));
         if (PhotonInt_ExecuteFrom(&payload, &results) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
             HANDLE_INVALID_PACKET("Recieved data packet with cmds");
-            return;
+            return true;
         }
         break;
     }
     case PhotonExcPacketType_Receipt:
         break;
     }
+    return true;
 }
 
 // chunks contain size + data + crc + junk
-static void findPacket(PhotonMemChunks* chunks)
+static bool findPacket(PhotonMemChunks* chunks)
 {
     size_t size = chunks->first.size + chunks->second.size;
     if (size < 2) {
         PHOTON_DEBUG("Packet size part not yet recieved");
-        return;
+        return false;
     }
     uint8_t firstSizePart;
     uint8_t secondSizePart;
@@ -113,17 +118,17 @@ static void findPacket(PhotonMemChunks* chunks)
         secondSizePart = chunks->second.data[1];
     }
 
-    size_t expectedSize = 2 + (firstSizePart & (secondSizePart << 8));
+    size_t expectedSize = 2 + (firstSizePart | (secondSizePart << 8));
 
     size_t maxPacketSize = 1024; //TODO: define
     if (expectedSize > maxPacketSize) {
         HANDLE_INVALID_PACKET("Recieved packet with size > max allowed"); //TODO: remove macro
-        return;
+        return true;
     }
 
     if (size < expectedSize) {
         PHOTON_DEBUG("Packet payload not yet recieved");
-        return;
+        return false;
     }
 
     if (expectedSize <= chunks->first.size) {
@@ -133,14 +138,14 @@ static void findPacket(PhotonMemChunks* chunks)
         memcpy(inTemp + chunks->first.size, chunks->second.data, size - expectedSize);
     }
 
-    handlePacket(expectedSize);
+    return handlePacket(expectedSize);
 }
 
-static void findSep()
+static bool findSep()
 {
     const uint16_t separator = 0x9c3e;
-    const uint8_t firstSepPart = (separator & 0xf0) >> 8;
-    const uint8_t secondSepPart = separator & 0x0f;
+    const uint8_t firstSepPart = (separator & 0xff00) >> 8;
+    const uint8_t secondSepPart = separator & 0x00ff;
     PhotonMemChunks chunks = PhotonRingBuf_ReadableChunks(&_exc.inStream);
 
     uint8_t* it = chunks.first.data;
@@ -160,8 +165,7 @@ static void findSep()
                 chunks.first.size = 0;
                 chunks.second.data += 1;
                 chunks.second.size -= 1;
-                findPacket(&chunks);
-                return;
+                return findPacket(&chunks);
             }
             break;
         }
@@ -171,8 +175,7 @@ static void findSep()
             PhotonRingBuf_Erase(&_exc.inStream, skippedSize);
             chunks.first.data += skippedSize + 2;
             chunks.first.size -= skippedSize + 2;
-            findPacket(&chunks);
-            return;
+            return findPacket(&chunks);
         }
         it++;
     }
@@ -186,7 +189,7 @@ static void findSep()
             handleJunk(chunks.first.data, chunks.first.size);
             handleJunk(chunks.second.data, chunks.second.size);
             PhotonRingBuf_Clear(&_exc.inStream);
-            return;
+            return false;
         }
         if (*next == secondSepPart) {
             size_t skippedSize = it - chunks.second.data;
@@ -196,8 +199,7 @@ static void findSep()
             chunks.first.size = 0;
             chunks.second.data += skippedSize + 2;
             chunks.second.size -= skippedSize + 2;
-            findPacket(&chunks);
-            return;
+            return findPacket(&chunks);
         }
         it++;
     }
@@ -207,43 +209,60 @@ void PhotonExc_AcceptInput(const void* src, size_t size)
 {
     PhotonRingBuf_Write(&_exc.inStream, src, size);
 
-    findSep();
+    bool canContinue;
+    do {
+        canContinue = findSep();
+    } while (canContinue);
 }
 
 static PhotonWriter writer;
 
-static PhotonError tmGen(void* data, PhotonWriter* dest)
-{
-    (void)data;
-    return PhotonTm_CollectMessages(dest);
-}
-
-static PhotonError packTelemetry(PhotonWriter* dest)
-{
-    PhotonExcDataPacket packet;
-    packet.address.srcAddress = 1;
-    packet.address.destAddress = 0;
-    packet.counter = _exc.outCounter;
-    packet.dataType = PhotonExcDataType_Telemetry;
-    packet.streamType = PhotonExcStreamType_Unreliable;
-    packet.time.type = PhotonTimeType_Secs;
-    packet.time.data.secsTime.seconds = 0;
-
-    PhotonError err = PhotonExcDataPacket_Encode(&packet, tmGen, 0, dest); //TODO: check error
-
-    PhotonRingBuf_Write(&_exc.outStream, dest->start, dest->current - dest->start);
-
-    _exc.outCounter++;
-
-    return PhotonError_Ok;
-}
-
 static size_t writeOutput(void* dest, size_t size)
 {
     PhotonRingBuf_Write(&_exc.outStream, inTemp, writer.current - writer.start);
-    size = PHOTON_MAX(size, PhotonRingBuf_ReadableSize(&_exc.outStream));
+    size = PHOTON_MIN(size, PhotonRingBuf_ReadableSize(&_exc.outStream));
     PhotonRingBuf_Read(&_exc.outStream, dest, size);
     return size;
+}
+
+static size_t genFwtPacket(void* dest, size_t size)
+{
+    PHOTON_DEBUG("Generating fwt packet");
+    PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
+
+    PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
+
+    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Firmware, &reserved));
+    PHOTON_TRY(PhotonFwt_GenAnswer(&reserved));
+
+    PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
+
+    return writeOutput(dest, size);
+}
+
+static size_t genTmPacket(void* dest, size_t size)
+{
+    PHOTON_DEBUG("Generating tm packet");
+    PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
+
+    PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
+
+    PhotonExcDataPacket dataHeader;
+    dataHeader.address.srcAddress = 1;
+    dataHeader.address.destAddress = 0;
+    dataHeader.counter = 0;
+    dataHeader.dataType = PhotonExcDataType_Telemetry;
+    dataHeader.streamType = PhotonExcStreamType_Unreliable;
+    dataHeader.time.type = PhotonTimeType_Secs;
+    dataHeader.time.data.secsTime.seconds = 0;
+
+    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
+    PHOTON_TRY(PhotonExcDataPacket_Serialize(&dataHeader, &reserved));
+    PHOTON_TRY(PhotonTm_CollectMessages(&reserved));
+
+    PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
+
+    return writeOutput(dest, size);
 }
 
 size_t PhotonExc_GenOutput(void* dest, size_t size)
@@ -251,17 +270,8 @@ size_t PhotonExc_GenOutput(void* dest, size_t size)
     PhotonWriter_Init(&writer, inTemp, sizeof(inTemp));
 
     if (PhotonFwt_HasAnswers()) {
-        PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
-
-        PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
-
-        PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Firmware, &reserved));
-        PHOTON_TRY(PhotonFwt_GenAnswer(&reserved));
-
-        PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
-
-        return writeOutput(dest, size);
+        return genFwtPacket(dest, size);
     }
 
-    return 0;
+    return genTmPacket(dest, size);
 }

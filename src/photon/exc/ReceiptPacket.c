@@ -12,4 +12,5 @@ PhotonError PhotonExcReceiptPacket_Encode(PhotonExcReceiptPacket* self, PhotonWr
     PHOTON_TRY(PhotonExcReceiptPacket_Serialize(self, &reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(dest, reserved);
+    return PhotonError_Ok;
 }

@@ -44,7 +44,10 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
     unsigned totalMessages = 0;
     while (true) {
         if (PhotonWriter_WritableSize(dest) < 2) {
-            return PhotonError_NotEnoughSpace;
+            if (totalMessages == 0) {
+                return PhotonError_NotEnoughSpace;
+            }
+            return PhotonError_Ok;
         }
         _tm.currentStatusMsg.compNum = currentDesc()->compNum;
         _tm.currentStatusMsg.msgNum = currentDesc()->msgNum;

@@ -13,4 +13,5 @@ PhotonError PhotonExcDataPacket_Encode(PhotonExcDataPacket* self, PhotonGenerato
     PHOTON_TRY(gen(data, &reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(dest, reserved);
+    return PhotonError_Ok;
 }

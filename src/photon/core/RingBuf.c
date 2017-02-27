@@ -162,7 +162,7 @@ PhotonMemChunks PhotonRingBuf_ReadableChunks(const PhotonRingBuf* self)
         chunks.first.data = self->data + self->readOffset;
         chunks.first.size = 0;
         chunks.second = chunks.first;
-    } else if (self->writeOffset < self->readOffset) {
+    } else if (self->readOffset < self->writeOffset) {
         /* ---------r***************w------------ */
         chunks.first.data = self->data + self->readOffset;
         chunks.first.size = self->writeOffset - self->readOffset;

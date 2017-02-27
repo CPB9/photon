@@ -152,5 +152,4 @@ PhotonError PhotonFwt_GenAnswer(PhotonWriter* dest)
 bool PhotonFwt_HasAnswers()
 {
     return _fwt.hashRequested | _fwt.chunk.isTransfering | _fwt.firmware.isTransfering;
-    return true;
 }
