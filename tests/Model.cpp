@@ -16,6 +16,7 @@
 # include <netinet/in.h>
 # include <sys/socket.h>
 # include <sys/types.h>
+# include <sys/ioctl.h>
 #endif
 
 #define _PHOTON_FNAME "Model.cpp"
@@ -71,16 +72,13 @@ int main(int argc, char* argv[])
     }
 
 #ifdef _WIN32
-    DWORD sockTimeout = 10;
-    const char* sockTimeoutPtr = (const char*)&sockTimeout;
+    unsigned long nonBlocking = 1;
+    if (ioctlsocket(sock, FIONBIO, &nonBlocking) == socketError) {
 #else
-    struct timeval sockTimeout;
-    sockTimeout.tv_sec = 0;
-    sockTimeout.tv_usec = 10;
-    struct timeval* sockTimeoutPtr = &sockTimeout;
+    int nonBlocking = 1;
+    if (ioctl(sock, FIONBIO, &nonBlocking) == socketError) {
 #endif
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, sockTimeoutPtr, sizeof(sockTimeout)) == socketError) {
-        PHOTON_CRITICAL("Error setting sockopt");
+        PHOTON_CRITICAL("Error making socket non blocking");
         return -1;
     }
 
