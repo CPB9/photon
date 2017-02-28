@@ -36,31 +36,37 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
     const char* levelStr;
     const char* levelPrefix;
     const char* levelPostfix;
+    const char* levelAlign;
     switch (level) {
     case PHOTON_LOG_LEVEL_FATAL:
         levelStr = "FATAL";
         levelPrefix = "\x1b[1;5;31m";
-        levelPostfix = "\x1b[0m:   ";
+        levelPostfix = "\x1b[0m:";
+        levelAlign = "   ";
         break;
     case PHOTON_LOG_LEVEL_CRITICAL:
         levelStr = "CRITICAL";
         levelPrefix = "\x1b[31m";
         levelPostfix = "\x1b[0m:";
+        levelAlign = "";
         break;
     case PHOTON_LOG_LEVEL_WARNING:
         levelStr = "WARNING";
         levelPrefix = "\x1b[1;33m";
         levelPostfix = "\x1b[0m: ";
+        levelAlign = " ";
         break;
     case PHOTON_LOG_LEVEL_INFO:
         levelStr = "INFO";
         levelPrefix = "\x1b[1;36m";
-        levelPostfix = "\x1b[0m:    ";
+        levelPostfix = "\x1b[0m:";
+        levelAlign = "    ";
         break;
     case PHOTON_LOG_LEVEL_DEBUG:
         levelStr = "DEBUG";
         levelPrefix = "\x1b[1;30m";
-        levelPostfix = "\x1b[0m:   ";
+        levelPostfix = "\x1b[0m:";
+        levelAlign = "   ";
         break;
     default:
         return;
@@ -69,7 +75,7 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
     char timeStr[20];
     timeStr[19] = '\0';
     time_t t = time(NULL);
-    strftime(timeStr, sizeof(timeStr), "%F %T", localtime(&t));
+    strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", localtime(&t));
 
     size_t alignSize = 30;
     size_t sLen = strlen(fname);
@@ -88,9 +94,9 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
 
     bool hasColor = supportsColor();
     if (hasColor) {
-        printf("\x1b[0m\x1b[1m%s\x1b[0m [%s] %s%s%s ", timeStr, modStr, levelPrefix, levelStr, levelPostfix);
+        printf("\x1b[0m\x1b[1m%s\x1b[0m [%s] %s%s%s%s ", timeStr, modStr, levelPrefix, levelStr, levelPostfix, levelAlign);
     } else {
-        printf("%s [%s] %s ", timeStr, modStr, levelStr);
+        printf("%s [%s] %s:%s ", timeStr, modStr, levelStr, levelAlign);
     }
 
     va_list args;
