@@ -25,12 +25,15 @@ set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_gen_src)
 
 add_subdirectory(thirdparty/decode EXCLUDE_FROM_ALL)
 
+get_property(DECODE_GEN_LOC TARGET decode_gen PROPERTY LOCATION)
+message(${DECODE_GEN_LOC})
+
 function(photon_generate_sources dir)
     add_custom_command(
         OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
-        COMMAND decode_gen -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
         DEPENDS decode_gen ${ARGN}
     )
 endfunction()
@@ -84,37 +87,6 @@ target_include_directories(photon
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_BINARY_DIR}/src
     ${PHOTON_GEN_SRC_DIR}
-)
-
-add_library(photon-gc
-    src/photon/gc/Crc.h
-    src/photon/gc/Crc.cpp
-    src/photon/gc/Exchange.h
-    src/photon/gc/Exchange.cpp
-    src/photon/gc/FwtState.h
-    src/photon/gc/FwtState.cpp
-    src/photon/gc/MemIntervalSet.h
-    src/photon/gc/MemIntervalSet.cpp
-)
-
-target_link_libraries(photon-gc
-    decode
-    bmcl
-)
-
-set_target_properties(photon-gc
-    PROPERTIES
-    PREFIX "lib"
-)
-
-if(NOT MSVC)
-    target_compile_options(photon-gc PUBLIC -std=c++11 -Wall -Wextra)
-endif()
-
-target_include_directories(photon-gc
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}/src
 )
 
 add_subdirectory(tests)

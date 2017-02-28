@@ -14,7 +14,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #include <malloc.h>
 #if !defined(alloca)
 #define alloca _alloca
@@ -79,7 +79,7 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
     memcpy(modStr, fname, sLen);
     modStr[sLen] = ':';
     char* numBegin = modStr + sLen + 1;
-    numBegin += sprintf(numBegin, "%o", lineNum);
+    numBegin += sprintf(numBegin, "%u", lineNum);
     while (numBegin < fillEnd) {
         *numBegin = ' ';
         numBegin++;

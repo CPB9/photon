@@ -10,15 +10,31 @@
 #include <cstring>
 #include <cinttypes>
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#ifdef _WIN32
+# include <winsock2.h>
+#else
+# include <netinet/in.h>
+# include <sys/socket.h>
+# include <sys/types.h>
+#endif
 
 #define _PHOTON_FNAME "Model.cpp"
 
+#ifdef _WIN32
+typedef SOCKET SockType;
+typedef int SockLenType;
+constexpr SockType invalidSock = INVALID_SOCKET;
+constexpr int socketError = SOCKET_ERROR;
+#else
+typedef int SockType;
+typedef socklen_t SockLenType;
+constexpr SockType invalidSock = -1;
+constexpr int socketError = -1;
+#endif
+
 constexpr std::size_t maxPacketSize = 1024;
 
-static uint8_t temp[maxPacketSize];
+static char temp[maxPacketSize];
 
 int main(int argc, char* argv[])
 {
@@ -34,21 +50,36 @@ int main(int argc, char* argv[])
     cmdLine.add(&tickArg);
     cmdLine.parse(argc, argv);
 
+#ifdef _WIN32
+    WSADATA wsa;
+
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        printf("Error initializing winsock2: %d", WSAGetLastError());
+        return -1;
+    }
+#endif
+
     uint16_t port = portArg.getValue();
     struct sockaddr_in host;
     struct sockaddr_in from;
-    socklen_t addrLen = sizeof(from);
+    SockLenType addrLen = sizeof(from);
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock == -1) {
+    SockType sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock == invalidSock) {
         PHOTON_CRITICAL("Could not create udp socket");
         return -1;
     }
 
+#ifdef _WIN32
+    DWORD sockTimeout = 10;
+    const char* sockTimeoutPtr = (const char*)&sockTimeout;
+#else
     struct timeval sockTimeout;
     sockTimeout.tv_sec = 0;
     sockTimeout.tv_usec = 10;
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &sockTimeout, sizeof(sockTimeout)) == -1) {
+    struct timeval* sockTimeoutPtr = &sockTimeout;
+#endif
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, sockTimeoutPtr, sizeof(sockTimeout)) == socketError) {
         PHOTON_CRITICAL("Error setting sockopt");
         return -1;
     }
@@ -57,7 +88,7 @@ int main(int argc, char* argv[])
     host.sin_family = AF_INET;
     host.sin_port = htons(port);
     host.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(sock, (struct sockaddr*)&host, sizeof(host)) == -1) {
+    if (bind(sock, (struct sockaddr*)&host, sizeof(host)) == socketError) {
         PHOTON_CRITICAL("Could not create bind to port" PRId16 " ", port);
         return -1;
     }
@@ -67,13 +98,17 @@ int main(int argc, char* argv[])
     while (true) {
         std::this_thread::sleep_for(tickTimeout);
 
-        ssize_t recvSize = recvfrom(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, &addrLen);
-        if (recvSize != -1) {
+        auto recvSize = recvfrom(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, &addrLen);
+        if (recvSize != socketError) {
             canSend = true;
             PHOTON_DEBUG("Recieved %zi bytes", recvSize);
             PhotonExc_AcceptInput(temp, recvSize);
         } else {
+#ifdef _WIN32
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+#else
             if (errno != EWOULDBLOCK) {
+#endif
                 PHOTON_WARNING("Error recieving");
             }
         }
@@ -86,7 +121,7 @@ int main(int argc, char* argv[])
 
         PHOTON_DEBUG("Sending %zu bytes", genSize);
 
-        if (sendto(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, addrLen) == -1) {
+        if (sendto(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, addrLen) == socketError) {
             PHOTON_WARNING("Error sending reply");
         }
     }

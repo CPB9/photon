@@ -225,7 +225,7 @@ static size_t writeOutput(void* dest, size_t size)
     return size;
 }
 
-static size_t genFwtPacket(void* dest, size_t size)
+static PhotonError genFwtPacket()
 {
     PHOTON_DEBUG("Generating fwt packet");
     PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
@@ -237,15 +237,17 @@ static size_t genFwtPacket(void* dest, size_t size)
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
-    return writeOutput(dest, size);
+    return PhotonError_Ok;
 }
 
-static size_t genTmPacket(void* dest, size_t size)
+static PhotonError genTmPacket()
 {
     PHOTON_DEBUG("Generating tm packet");
     PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
+
+    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
 
     PhotonExcDataPacket dataHeader;
     dataHeader.address.srcAddress = 1;
@@ -256,12 +258,19 @@ static size_t genTmPacket(void* dest, size_t size)
     dataHeader.time.type = PhotonTimeType_Secs;
     dataHeader.time.data.secsTime.seconds = 0;
 
-    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
     PHOTON_TRY(PhotonExcDataPacket_Serialize(&dataHeader, &reserved));
     PHOTON_TRY(PhotonTm_CollectMessages(&reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
+    return PhotonError_Ok;
+}
+
+static inline size_t genPacket(PhotonError (*gen)(), void* dest, size_t size)
+{
+    if (gen() != PhotonError_Ok) {
+        return 0;
+    }
     return writeOutput(dest, size);
 }
 
@@ -270,8 +279,8 @@ size_t PhotonExc_GenOutput(void* dest, size_t size)
     PhotonWriter_Init(&writer, inTemp, sizeof(inTemp));
 
     if (PhotonFwt_HasAnswers()) {
-        return genFwtPacket(dest, size);
+        return genPacket(genFwtPacket, dest, size);
     }
 
-    return genTmPacket(dest, size);
+    return genPacket(genTmPacket, dest, size);
 }

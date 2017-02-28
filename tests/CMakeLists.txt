@@ -5,6 +5,10 @@ endif()
 add_executable(model Model.cpp)
 target_link_libraries(model photon bmcl)
 
+if(MSVC OR MINGW)
+    target_link_libraries(model ws2_32)
+endif()
+
 include_directories(
     SYSTEM
     ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/decode/thirdparty/gtest/include
@@ -31,4 +35,4 @@ macro(add_unit_test test file)
     add_test(${test} ${TESTS_DIR}/${test})
 endmacro()
 
-add_unit_test(memintervalset_tests MemIntervalSet.cpp)
+#add_unit_test(memintervalset_tests MemIntervalSet.cpp)
