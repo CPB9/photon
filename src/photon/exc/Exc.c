@@ -47,9 +47,9 @@ static void handleJunk(const uint8_t* data, size_t size)
 static uint8_t inTemp[1024];
 static uint8_t outTemp[1024];
 
-#define HANDLE_INVALID_PACKET(msg, ...)                         \
+#define HANDLE_INVALID_PACKET(...)                              \
     do {                                                        \
-        PHOTON_WARNING(msg, ##__VA_ARGS__);                     \
+        PHOTON_WARNING(__VA_ARGS__);                            \
         PHOTON_WARNING("Continuing search with 1 byte offset"); \
         PhotonRingBuf_Erase(&_exc.inStream, 1);                 \
     } while(0);

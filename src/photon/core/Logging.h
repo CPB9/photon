@@ -29,31 +29,31 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_FATAL //fatal
-# define PHOTON_FATAL(...) Photon_Log(PHOTON_LOG_LEVEL_FATAL, _PHOTON_FNAME, __LINE__, ##__VA_ARGS__)
+# define PHOTON_FATAL(...) Photon_Log(PHOTON_LOG_LEVEL_FATAL, _PHOTON_FNAME, __LINE__, __VA_ARGS__)
 #else
 # define PHOTON_FATAL(...)
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_CRITICAL //critical
-# define PHOTON_CRITICAL(...) Photon_Log(PHOTON_LOG_LEVEL_CRITICAL, _PHOTON_FNAME, __LINE__, ##__VA_ARGS__)
+# define PHOTON_CRITICAL(...) Photon_Log(PHOTON_LOG_LEVEL_CRITICAL, _PHOTON_FNAME, __LINE__, __VA_ARGS__)
 #else
 # define PHOTON_CRITICAL(...)
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_WARNING //warning
-# define PHOTON_WARNING(...) Photon_Log(PHOTON_LOG_LEVEL_WARNING, _PHOTON_FNAME, __LINE__, ##__VA_ARGS__)
+# define PHOTON_WARNING(...) Photon_Log(PHOTON_LOG_LEVEL_WARNING, _PHOTON_FNAME, __LINE__, __VA_ARGS__)
 #else
 # define PHOTON_WARNING(...)
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_INFO //info
-# define PHOTON_INFO(...) Photon_Log(PHOTON_LOG_LEVEL_INFO, _PHOTON_FNAME, __LINE__, ##__VA_ARGS__)
+# define PHOTON_INFO(...) Photon_Log(PHOTON_LOG_LEVEL_INFO, _PHOTON_FNAME, __LINE__, __VA_ARGS__)
 #else
 # define PHOTON_INFO(...)
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_DEBUG //debug
-# define PHOTON_DEBUG(...) Photon_Log(PHOTON_LOG_LEVEL_DEBUG, _PHOTON_FNAME, __LINE__, ##__VA_ARGS__)
+# define PHOTON_DEBUG(...) Photon_Log(PHOTON_LOG_LEVEL_DEBUG, _PHOTON_FNAME, __LINE__, __VA_ARGS__)
 #else
 # define PHOTON_DEBUG(...)
 #endif
