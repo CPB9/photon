@@ -5,6 +5,13 @@ endif()
 add_executable(model Model.cpp)
 target_link_libraries(model photon bmcl)
 
+find_package(Qt5Widgets)
+
+if (Qt5Widgets_FOUND)
+    add_executable(ui_test UiTest.cpp)
+    target_link_libraries(ui_test photon bmcl decode Qt5::Widgets)
+endif()
+
 if(MSVC OR MINGW)
     target_link_libraries(model ws2_32)
 endif()
