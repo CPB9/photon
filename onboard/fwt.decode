@@ -17,6 +17,7 @@ enum CmdType {
 enum AnswerType {
     Hash = 0
     Chunk = 1,
+    Start = 2,
 }
 
 struct Chunk {
@@ -30,10 +31,13 @@ component {
         firmware: Chunk,
         hashRequested: bool,
         chunk: Chunk,
+        startId: varuint,
+        startRequested: bool,
     }
 
     impl {
         fn init()
+        fn firmware() -> &[u8]
         fn acceptCmd(src: *mut Reader) -> Error
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool

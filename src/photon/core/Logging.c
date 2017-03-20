@@ -53,7 +53,7 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
     case PHOTON_LOG_LEVEL_WARNING:
         levelStr = "WARNING";
         levelPrefix = "\x1b[1;33m";
-        levelPostfix = "\x1b[0m: ";
+        levelPostfix = "\x1b[0m:";
         levelAlign = " ";
         break;
     case PHOTON_LOG_LEVEL_INFO:
@@ -94,7 +94,7 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
 
     bool hasColor = supportsColor();
     if (hasColor) {
-        printf("\x1b[0m\x1b[1m%s\x1b[0m [%s] %s%s%s%s ", timeStr, modStr, levelPrefix, levelStr, levelPostfix, levelAlign);
+        printf("\x1b[0m\x1b[1m%s\x1b[0m [%s] %s%s%s%s ", timeStr, modStr, levelPrefix, levelStr, levelAlign, levelPostfix);
     } else {
         printf("%s [%s] %s:%s ", timeStr, modStr, levelStr, levelAlign);
     }

@@ -33,7 +33,7 @@
     PHOTON_ASSERT(l_size <= UINT16_MAX);                                    \
     Photon_Le16Enc(l_sizePtr, (uint16_t)l_size);                            \
                                                                             \
-    uint16_t l_crc = Photon_Crc16(l_sizePtr, l_size - 2);                   \
+    uint16_t l_crc = Photon_Crc16(l_sizePtr, l_size);                       \
     PhotonWriter_WriteU16Le(dest, l_crc);                                   \
 
 #endif

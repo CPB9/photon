@@ -1,11 +1,21 @@
 module test
 
+struct TestStruct2 {
+    field1: &[&[u8]],
+}
+
 component {
     parameters {
         param1: u8,
         param2: u16,
         param3: u32,
         param4: u64,
+        param5: &[TestStruct2],
+    }
+
+    statuses {
+        0: {param1, param2, param3, param4},
+        5: param5[..].field1[..][..],
     }
 
     impl {

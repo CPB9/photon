@@ -56,8 +56,11 @@ static uint8_t outTemp[1024];
 
 static bool handlePacket(size_t size)
 {
-    PHOTON_ASSERT(size >= 4);
-    uint16_t crc16 = Photon_Crc16(inTemp, size);
+    if (size < 4) {
+        HANDLE_INVALID_PACKET("Recieved packet with size < 4");
+        return true;
+    }
+    uint16_t crc16 = Photon_Crc16(inTemp, size - 2);
     if (crc16 != Photon_Le16Dec(inTemp + size - 2)) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid crc");
         return true;
@@ -75,6 +78,7 @@ static bool handlePacket(size_t size)
             HANDLE_INVALID_PACKET("Recieved packet with invalid fwt payload");
             return true;
         }
+        break;
     }
     case PhotonExcPacketType_Data: {
         PhotonExcDataPacket dataHeader;
@@ -94,6 +98,7 @@ static bool handlePacket(size_t size)
     case PhotonExcPacketType_Receipt:
         break;
     }
+    PhotonRingBuf_Erase(&_exc.inStream, size + 2);
     return true;
 }
 
@@ -227,8 +232,7 @@ static size_t writeOutput(void* dest, size_t size)
 
 static PhotonError genFwtPacket()
 {
-    PHOTON_DEBUG("Generating fwt packet");
-    PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
@@ -242,8 +246,7 @@ static PhotonError genFwtPacket()
 
 static PhotonError genTmPacket()
 {
-    PHOTON_DEBUG("Generating tm packet");
-    PhotonWriter_WriteU16Le(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 

@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
         auto recvSize = recvfrom(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, &addrLen);
         if (recvSize != socketError) {
             canSend = true;
-            PHOTON_DEBUG("Recieved %zi bytes", recvSize);
+            //PHOTON_DEBUG("Recieved %zi bytes", recvSize);
             PhotonExc_AcceptInput(temp, recvSize);
         } else {
 #ifdef _WIN32
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
             continue;
         }
 
-        PHOTON_DEBUG("Sending %zu bytes", genSize);
+        //PHOTON_DEBUG("Sending %zu bytes", genSize);
 
         if (sendto(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, addrLen) == socketError) {
             PHOTON_WARNING("Error sending reply");
