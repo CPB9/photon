@@ -30,7 +30,7 @@ message(${DECODE_GEN_LOC})
 
 function(photon_generate_sources dir)
     add_custom_command(
-        OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
+        OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c ${PHOTON_GEN_SRC_DIR}/photon/Config.h
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
@@ -43,7 +43,6 @@ file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
 photon_generate_sources(${ONBOARD_DIR} ${ONBOARD_SOURCES})
 
 add_library(photon
-    src/photon/Config.h
     src/photon/core/Assert.h
     src/photon/core/Crc.c
     src/photon/core/Crc.h
@@ -64,6 +63,7 @@ add_library(photon
     src/photon/fwt/Fwt.c
     src/photon/test/Test.c
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
+    ${PHOTON_GEN_SRC_DIR}/photon/Config.h
     ${ONBOARD_SOURCES}
 )
 
