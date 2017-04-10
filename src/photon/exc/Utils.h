@@ -1,6 +1,8 @@
 #ifndef __PHOTON_EXC_UTILS_H__
 #define __PHOTON_EXC_UTILS_H__
 
+#include "photon/Config.h"
+
 #include "photon/core/Error.h"
 #include "photon/core/Writer.h"
 #include "photon/core/Assert.h"

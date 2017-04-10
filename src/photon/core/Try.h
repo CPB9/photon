@@ -1,6 +1,8 @@
 #ifndef __PHOTON_CORE_TRY_H__
 #define __PHOTON_CORE_TRY_H__
 
+#include "photon/Config.h"
+
 #define PHOTON_TRY(expr)              \
     do {                              \
         PhotonError _err = expr;      \
