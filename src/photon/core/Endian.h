@@ -50,6 +50,14 @@
    || defined(_M_X64)
 # define PHOTON_LITTLE_ENDIAN
 # define PHOTON_BYTE_ORDER 1234
+#elif defined(__IAR_SYSTEMS_ICC__)
+# if __LITTLE_ENDIAN__ == 1
+#  define PHOTON_LITTLE_ENDIAN
+#  define PHOTON_BYTE_ORDER 1234
+# else
+#  define PHOTON_BIG_ENDIAN
+#  define PHOTON_BYTE_ORDER 4321
+# endif
 #else
 # error Unsupported system
 #endif
