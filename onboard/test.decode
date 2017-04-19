@@ -1,7 +1,14 @@
 module test
 
-struct TestStruct2 {
-    field1: u8,
+struct ParamStruct {
+    param1: u8,
+    param2: u16,
+    param3: u32,
+    param4: u64,
+    param5: i8,
+    param6: i16,
+    param7: i32,
+    param8: i64,
 }
 
 component {
@@ -10,12 +17,15 @@ component {
         param2: u16,
         param3: u32,
         param4: u64,
-        param5: &[u8],
+        param5: i8,
+        param6: i16,
+        param7: i32,
+        param8: i64,
     }
 
     statuses {
         0: {param1, param2, param3, param4},
-        5: param5[..],
+        3: {param5, param6, param7, param8},
     }
 
     impl {
@@ -27,5 +37,13 @@ component {
         fn setParam2(p: u16)
         fn setParam3(p: u32)
         fn setParam4(p: u64)
+        fn setParam5(p: i8)
+        fn setParam6(p: i16)
+        fn setParam7(p: i32)
+        fn setParam8(p: i64)
+        fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64)
+        fn setAllParamsStruct(s: ParamStruct)
+        fn incAllParams()
+        fn decAllParams()
     }
 }
