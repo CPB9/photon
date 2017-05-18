@@ -1,0 +1,3 @@
+[submodule "thirdparty/decode"]
+	path = thirdparty/decode
+	url = https://github.com/acsl-mipt/decode.git
