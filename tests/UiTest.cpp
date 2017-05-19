@@ -259,6 +259,6 @@ int main(int argc, char** argv)
         }
         _gc->acceptData(bmcl::Bytes(tmp, rv));
     });
-    timer->start(std::chrono::milliseconds(100));
+    timer->start(100);
     return app.exec();
 }
