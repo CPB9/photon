@@ -18,10 +18,10 @@
 
 void PhotonExc_Init()
 {
-    _exc.outCounter = 0;
-    PhotonRingBuf_Init(&_exc.outStream, _exc.outStreamData, sizeof(_exc.outStreamData));
-    _exc.inCounter = 0;
-    PhotonRingBuf_Init(&_exc.inStream, _exc.inStreamData, sizeof(_exc.inStreamData));
+    _photonExc.outCounter = 0;
+    PhotonRingBuf_Init(&_photonExc.outStream, _photonExc.outStreamData, sizeof(_photonExc.outStreamData));
+    _photonExc.inCounter = 0;
+    PhotonRingBuf_Init(&_photonExc.inStream, _photonExc.inStreamData, sizeof(_photonExc.inStreamData));
 }
 
 static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
@@ -51,7 +51,7 @@ static uint8_t outTemp[1024];
     do {                                                        \
         PHOTON_WARNING(__VA_ARGS__);                            \
         PHOTON_WARNING("Continuing search with 1 byte offset"); \
-        PhotonRingBuf_Erase(&_exc.inStream, 1);                 \
+        PhotonRingBuf_Erase(&_photonExc.inStream, 1);                 \
     } while(0);
 
 static bool handlePacket(size_t size)
@@ -98,7 +98,7 @@ static bool handlePacket(size_t size)
     case PhotonExcPacketType_Receipt:
         break;
     }
-    PhotonRingBuf_Erase(&_exc.inStream, size + 2);
+    PhotonRingBuf_Erase(&_photonExc.inStream, size + 2);
     return true;
 }
 
@@ -151,7 +151,7 @@ static bool findSep()
     const uint16_t separator = 0x9c3e;
     const uint8_t firstSepPart = (separator & 0xff00) >> 8;
     const uint8_t secondSepPart = separator & 0x00ff;
-    PhotonMemChunks chunks = PhotonRingBuf_ReadableChunks(&_exc.inStream);
+    PhotonMemChunks chunks = PhotonRingBuf_ReadableChunks(&_photonExc.inStream);
 
     uint8_t* it = chunks.first.data;
     uint8_t* next;
@@ -166,18 +166,18 @@ static bool findSep()
             if (chunks.second.size != 0 && chunks.second.data[0] == secondSepPart) {
                 size_t skippedSize = it - chunks.first.data;
                 handleJunk(chunks.first.data, skippedSize);
-                PhotonRingBuf_Erase(&_exc.inStream, skippedSize);
+                PhotonRingBuf_Erase(&_photonExc.inStream, skippedSize);
                 chunks.first.size = 0;
                 chunks.second.data += 1;
                 chunks.second.size -= 1;
                 return findPacket(&chunks);
             }
-            break;
+            return false;
         }
         if (*next == secondSepPart) {
             size_t skippedSize = it - chunks.first.data;
             handleJunk(chunks.first.data, skippedSize);
-            PhotonRingBuf_Erase(&_exc.inStream, skippedSize);
+            PhotonRingBuf_Erase(&_photonExc.inStream, skippedSize);
             chunks.first.data += skippedSize + 2;
             chunks.first.size -= skippedSize + 2;
             return findPacket(&chunks);
@@ -193,14 +193,14 @@ static bool findSep()
         if (next >= end) {
             handleJunk(chunks.first.data, chunks.first.size);
             handleJunk(chunks.second.data, chunks.second.size);
-            PhotonRingBuf_Clear(&_exc.inStream);
+            PhotonRingBuf_Clear(&_photonExc.inStream);
             return false;
         }
         if (*next == secondSepPart) {
             size_t skippedSize = it - chunks.second.data;
             handleJunk(chunks.first.data, chunks.first.size);
             handleJunk(chunks.second.data, skippedSize);
-            PhotonRingBuf_Erase(&_exc.inStream, chunks.first.size + skippedSize);
+            PhotonRingBuf_Erase(&_photonExc.inStream, chunks.first.size + skippedSize);
             chunks.first.size = 0;
             chunks.second.data += skippedSize + 2;
             chunks.second.size -= skippedSize + 2;
@@ -212,7 +212,7 @@ static bool findSep()
 
 void PhotonExc_AcceptInput(const void* src, size_t size)
 {
-    PhotonRingBuf_Write(&_exc.inStream, src, size);
+    PhotonRingBuf_Write(&_photonExc.inStream, src, size);
 
     bool canContinue;
     do {
@@ -224,9 +224,9 @@ static PhotonWriter writer;
 
 static size_t writeOutput(void* dest, size_t size)
 {
-    PhotonRingBuf_Write(&_exc.outStream, inTemp, writer.current - writer.start);
-    size = PHOTON_MIN(size, PhotonRingBuf_ReadableSize(&_exc.outStream));
-    PhotonRingBuf_Read(&_exc.outStream, dest, size);
+    PhotonRingBuf_Write(&_photonExc.outStream, inTemp, writer.current - writer.start);
+    size = PHOTON_MIN(size, PhotonRingBuf_ReadableSize(&_photonExc.outStream));
+    PhotonRingBuf_Read(&_photonExc.outStream, dest, size);
     return size;
 }
 

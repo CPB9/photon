@@ -24,27 +24,27 @@
 
 void PhotonFwt_Init()
 {
-    _fwt.firmware.current = FW_END;
-    _fwt.firmware.end = FW_END;
-    _fwt.firmware.isTransfering = false;
-    _fwt.hashRequested = false;
-    _fwt.chunk.isTransfering = false;
-    _fwt.chunk.current = FW_END;
-    _fwt.chunk.end = FW_END;
+    _photonFwt.firmware.current = FW_END;
+    _photonFwt.firmware.end = FW_END;
+    _photonFwt.firmware.isTransfering = false;
+    _photonFwt.hashRequested = false;
+    _photonFwt.chunk.isTransfering = false;
+    _photonFwt.chunk.current = FW_END;
+    _photonFwt.chunk.end = FW_END;
 }
 
 static PhotonError requestHash(PhotonReader* src)
 {
     EXPECT_NO_PARAMS_LEFT(src);
     PHOTON_DEBUG("HashRequested requested");
-    _fwt.hashRequested = true;
+    _photonFwt.hashRequested = true;
     return PhotonError_Ok;
 }
 
 //TODO: resend only sent parts
 static PhotonError requestChunk(PhotonReader* src)
 {
-    if (_fwt.chunk.isTransfering) {
+    if (_photonFwt.chunk.isTransfering) {
         return PhotonError_Ok;
     }
 
@@ -73,19 +73,19 @@ static PhotonError requestChunk(PhotonReader* src)
 
     // avoid sending twice
     uint8_t* start = FW_START + chunkOffset;
-    if (start >= _fwt.firmware.current) {
+    if (start >= _photonFwt.firmware.current) {
         return PhotonError_Ok;
     }
 
     // avoid intersecting part twice
     const uint8_t* end = start + chunkSize;
-    if (end > _fwt.firmware.current) {
-        end = _fwt.firmware.current;
+    if (end > _photonFwt.firmware.current) {
+        end = _photonFwt.firmware.current;
     }
 
-    _fwt.chunk.current = start;
-    _fwt.chunk.end = end;
-    _fwt.chunk.isTransfering = true;
+    _photonFwt.chunk.current = start;
+    _photonFwt.chunk.end = end;
+    _photonFwt.chunk.isTransfering = true;
     return PhotonError_Ok;
 }
 
@@ -95,17 +95,17 @@ static PhotonError start(PhotonReader* src)
     uint64_t startId;
     PHOTON_TRY(PhotonReader_ReadVaruint(src, &startId));
 
-    if (_fwt.firmware.isTransfering && startId == _fwt.startId) {
+    if (_photonFwt.firmware.isTransfering && startId == _photonFwt.startId) {
         return PhotonError_Ok;
     }
     PHOTON_DEBUG("StartRequested requested %u", (unsigned)startId);
-    _fwt.startId = startId;
-    _fwt.startRequested = true;
+    _photonFwt.startId = startId;
+    _photonFwt.startRequested = true;
 
     EXPECT_NO_PARAMS_LEFT(src);
 
-    _fwt.firmware.current = FW_START;
-    _fwt.firmware.isTransfering = true;
+    _photonFwt.firmware.current = FW_START;
+    _photonFwt.firmware.isTransfering = true;
     return PhotonError_Ok;
 }
 
@@ -113,10 +113,10 @@ static PhotonError stop(PhotonReader* src)
 {
     EXPECT_NO_PARAMS_LEFT(src);
     PHOTON_DEBUG("StopRequested requested");
-    _fwt.firmware.isTransfering = false;
-    _fwt.firmware.current = FW_END;
-    _fwt.chunk.isTransfering = false;
-    _fwt.chunk.current = FW_END;
+    _photonFwt.firmware.isTransfering = false;
+    _photonFwt.firmware.current = FW_END;
+    _photonFwt.chunk.isTransfering = false;
+    _photonFwt.chunk.current = FW_END;
     return PhotonError_Ok;
 }
 
@@ -147,15 +147,15 @@ static PhotonError genHash(PhotonWriter* dest)
         return PhotonError_NotEnoughSpace;
     }
     PhotonWriter_Write(dest, _packageHash, _PHOTON_PACKAGE_HASH_SIZE);
-    _fwt.hashRequested = false;
+    _photonFwt.hashRequested = false;
     return PhotonError_Ok;
 }
 
 static PhotonError genStart(PhotonWriter* dest)
 {
     PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Start, dest));
-    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _fwt.startId));
-    _fwt.startRequested = false;
+    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _photonFwt.startId));
+    _photonFwt.startRequested = false;
     return PhotonError_Ok;
 }
 
@@ -185,20 +185,20 @@ static PhotonError genNext(PhotonFwtChunk* chunk, PhotonWriter* dest)
 
 PhotonError PhotonFwt_GenAnswer(PhotonWriter* dest)
 {
-    if (_fwt.hashRequested) {
+    if (_photonFwt.hashRequested) {
         return genHash(dest);
     }
 
-    if (_fwt.startRequested) {
+    if (_photonFwt.startRequested) {
         return genStart(dest);
     }
 
-    if (_fwt.chunk.isTransfering) {
-        return genNext(&_fwt.chunk, dest);
+    if (_photonFwt.chunk.isTransfering) {
+        return genNext(&_photonFwt.chunk, dest);
     }
 
-    if (_fwt.firmware.isTransfering) {
-        return genNext(&_fwt.firmware, dest);
+    if (_photonFwt.firmware.isTransfering) {
+        return genNext(&_photonFwt.firmware, dest);
     }
 
     return PhotonError_NoDataAvailable;
@@ -206,7 +206,7 @@ PhotonError PhotonFwt_GenAnswer(PhotonWriter* dest)
 
 bool PhotonFwt_HasAnswers()
 {
-    return _fwt.hashRequested | _fwt.startRequested | _fwt.chunk.isTransfering | _fwt.firmware.isTransfering;
+    return _photonFwt.hashRequested | _photonFwt.startRequested | _photonFwt.chunk.isTransfering | _photonFwt.firmware.isTransfering;
 }
 
 PhotonSliceOfU8 PhotonFwt_Firmware()

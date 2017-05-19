@@ -25,6 +25,8 @@ enum Error {
     InvalidCmdId = 21,
     InvalidMessageId = 22,
     InvalidValue = 23,
+    NoSuchStatusMsg = 24,
+    MaximumOnceRequestsReached = 25,
 
     NoDataAvailable = 99,
     NotImplemented = 100,

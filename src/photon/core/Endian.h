@@ -58,6 +58,14 @@
 #  define PHOTON_BIG_ENDIAN
 #  define PHOTON_BYTE_ORDER 4321
 # endif
+#elif defined(__arm__)
+# ifdef __BIG_ENDIAN
+#  define PHOTON_BIG_ENDIAN
+#  define PHOTON_BYTE_ORDER 4321
+# else
+#  define PHOTON_LITTLE_ENDIAN
+#  define PHOTON_BYTE_ORDER 1234
+# endif
 #else
 # error Unsupported system
 #endif

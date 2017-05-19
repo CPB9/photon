@@ -1,5 +1,14 @@
 module test
 
+// struct format
+//
+// struct Name {
+//     paramName1: typeName1,
+//     paramName2: typeName2,
+//     ...
+//     paramNameN: typeNameN,
+// }
+
 struct ParamStruct {
     param1: u8,
     param2: u16,
@@ -24,8 +33,8 @@ component {
     }
 
     statuses {
-        0: {param1, param2, param3, param4},
-        3: {param5, param6, param7, param8},
+        [0, 0, true]: {param1, param2, param3, param4},
+        [3, 0, true]: {param5, param6, param7, param8},
     }
 
     impl {

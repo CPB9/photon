@@ -17,7 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-const uint16_t _crcTable[32] = {
+static const uint16_t _crcTable[32] = {
         0x0000, 0x90f8, 0x7ce7, 0xec1f, 0xf9ce, 0x6936, 0x8529, 0x15d1,
         0xae8b, 0x3e73, 0xd26c, 0x4294, 0x5745, 0xc7bd, 0x2ba2, 0xbb5a,
         0x0000, 0xa784, 0x121f, 0xb59b, 0x243e, 0x83ba, 0x3621, 0x91a5,
@@ -35,14 +35,14 @@ static inline uint16_t crcNext(uint16_t crc, uint8_t data)
 
 uint16_t Photon_Crc16(const void* src, size_t len)
 {
-        uint16_t crc = 0xffff;
-        const uint8_t* data = (const uint8_t*)src;
+    uint16_t crc = 0xffff;
+    const uint8_t* data = (const uint8_t*)src;
 
-        if (len) {
-            do {
-                crc = crcNext(crc, *data++);
-            } while (--len);
-        }
+    if (len) {
+        do {
+            crc = crcNext(crc, *data++);
+        } while (--len);
+    }
 
-        return crc;
+    return crc;
 }

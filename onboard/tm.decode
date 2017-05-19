@@ -6,7 +6,7 @@ struct MessageDesc {
     func: &Fn(*mut Writer) -> Error,
     priority: i16,
     interest: i16,
-    isAllowed: bool,
+    isEnabled: bool,
     compNum : u8,
     msgNum : u8,
 }
@@ -22,21 +22,29 @@ impl StatusMessage {
 
 component {
     parameters {
-        currentMsg: u32,
-        allowedMsgCount: u32,
         currentStatusMsg: StatusMessage,
         msgs: &[MessageDesc],
+        currentDesc: u32,
+        allowedMsgCount: u32,
+        onceRequestsNum: u16,
     }
 
     statuses {
-        0: currentMsg,
-        1: { currentMsg, allowedMsgCount },
-        3: msgs[..].isAllowed
+        [0, 0, true]: allowedMsgCount,
+        [1, 0, true]: msgs[..].compNum,
+        [2, 0, true]: msgs[..].msgNum,
+        [3, 0, true]: msgs[..].isEnabled,
+        [4, 0, true]: onceRequestsNum,
     }
 
     impl {
         fn init()
         fn collectMessages(dest: *mut Writer) -> Error
         fn hasMessages() -> bool
+    }
+
+    commands {
+        fn setStatusEnabled(compNum: u8, msgNum: u8, isEnabled: bool)
+        fn requestStatusOnce(compNum: u8, msgNum: u8)
     }
 }
