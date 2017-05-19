@@ -1,5 +1,7 @@
 project(photon)
 
+include(CMakeParseArguments)
+
 cmake_minimum_required(VERSION 2.8.11)
 
 enable_testing()
@@ -28,19 +30,27 @@ add_subdirectory(thirdparty/decode EXCLUDE_FROM_ALL)
 get_property(DECODE_GEN_LOC TARGET decode_gen PROPERTY LOCATION)
 message(${DECODE_GEN_LOC})
 
-function(photon_generate_sources dir)
+function(photon_generate_sources)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs DIRECTORIES SOURCES)
+    cmake_parse_arguments(photon_generate_sources "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    set(DIR_STRING "")
+    foreach(var ${photon_generate_sources_DIRECTORIES})
+        list(APPEND DIR_STRING "-i ${var}")
+    endforeach()
     add_custom_command(
         OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c ${PHOTON_GEN_SRC_DIR}/photon/Config.h
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
-        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} -i ${dir} -o ${PHOTON_GEN_SRC_DIR}
-        DEPENDS decode_gen ${ARGN}
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} ${DIR_STRING} -o ${PHOTON_GEN_SRC_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/cfg/test.toml -C 4
+        DEPENDS decode_gen ${photon_generate_sources_SOURCES}
     )
 endfunction()
 
 set(ONBOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onboard)
 file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
-photon_generate_sources(${ONBOARD_DIR} ${ONBOARD_SOURCES})
+photon_generate_sources(DIRECTORIES ${ONBOARD_DIR} ${PHOTON_ADDITIONAL_MODULE_DIRS} SOURCES ${ONBOARD_SOURCES})
 
 add_library(photon
     src/photon/core/Assert.h
@@ -62,6 +72,7 @@ add_library(photon
     src/photon/exc/Utils.h
     src/photon/fwt/Fwt.c
     src/photon/test/Test.c
+    #    src/photon/servo/Servo.c
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${PHOTON_GEN_SRC_DIR}/photon/Config.h
     ${ONBOARD_SOURCES}
@@ -89,4 +100,13 @@ target_include_directories(photon
     ${PHOTON_GEN_SRC_DIR}
 )
 
+add_subdirectory(thirdparty/gtest EXCLUDE_FROM_ALL)
 add_subdirectory(tests)
+
+set_target_properties(photon ui_test
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+

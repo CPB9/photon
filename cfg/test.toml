@@ -1,0 +1,6 @@
+cfg_defs = [
+    "no_test",
+]
+
+[cfg_options]
+target_pointer_width = "32"
