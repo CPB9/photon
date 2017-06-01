@@ -51,7 +51,8 @@ endfunction()
 
 set(ONBOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onboard)
 file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
-photon_generate_sources(DIRECTORIES ${ONBOARD_DIR} ${PHOTON_ADDITIONAL_MODULE_DIRS} SOURCES ${ONBOARD_SOURCES})
+photon_generate_sources(DIRECTORIES ${ONBOARD_DIR} ${PHOTON_ADDITIONAL_MODULE_DIRS} SOURCES ${ONBOARD_SOURCES} ${PHOTON_ADDITIONAL_SOURCES})
+message(${PHOTON_ADDITIONAL_SOURCES})
 
 add_library(photon
     src/photon/core/Assert.h
@@ -77,6 +78,7 @@ add_library(photon
     ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
     ${PHOTON_GEN_SRC_DIR}/photon/Config.h
     ${ONBOARD_SOURCES}
+    ${PHOTON_ADDITIONAL_SOURCES}
 )
 
 set_target_properties(photon
