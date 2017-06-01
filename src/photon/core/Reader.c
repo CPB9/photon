@@ -230,6 +230,8 @@ PhotonError PhotonReader_ReadVaruint(PhotonReader* self, uint64_t* dest)
     return PhotonError_Ok;
 }
 
+#undef RETURN_IF_SIZE_LESS
+
 PhotonError PhotonReader_ReadVarint(PhotonReader* self, int64_t* dest)
 {
     uint64_t n;

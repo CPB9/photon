@@ -111,16 +111,18 @@ int main(int argc, char* argv[])
             }
         }
 
-        std::size_t genSize = PhotonExc_GenOutput(temp, sizeof(temp));
+       const  PhotonExcMsg* msg = PhotonExc_GetMsg();
 
-        if (!canSend || genSize == 0) {
+        if (!canSend) {
             continue;
         }
 
         //PHOTON_DEBUG("Sending %zu bytes", genSize);
 
-        if (sendto(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, addrLen) == socketError) {
+        if (sendto(sock, msg->data, msg->size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
             PHOTON_WARNING("Error sending reply");
+        } else {
+            PhotonExc_PrepareNextMsg();
         }
     }
 }

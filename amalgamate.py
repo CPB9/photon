@@ -53,6 +53,7 @@ def process_all_sources(outfile, header_name='photon.h'):
                             outfile.write(line)
                     else:
                         outfile.write(line)
+                outfile.write('\n#undef _PHOTON_FNAME\n')
     outfile.write('\n')
 
 if not os.path.exists('amalgamation'):

@@ -37,7 +37,6 @@ component {
 
     impl {
         fn init()
-        fn firmware() -> &[u8]
         fn acceptCmd(src: *mut Reader) -> Error
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool

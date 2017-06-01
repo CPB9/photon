@@ -42,19 +42,36 @@ impl ReceiptPacket {
     fn encode(&mut self, dest: *mut Writer) -> Error
 }
 
+struct Msg {
+    address: u32,
+    data: *const u8,
+    size: usize,
+}
+
+struct PacketRequest {
+    gen: Generator,
+    data: *mut void,
+    address: u32,
+}
+
 component {
     parameters {
+        packetQueue: [PacketRequest; 8],
+        currentPacket: usize,
+        numPackets: usize,
+
         outCounter: u16,
-        outStream: RingBuf,
-        outStreamData: [u8; 1024],
         inCounter: u16,
         inStream: RingBuf,
         inStreamData: [u8; 1024],
+        currentMsg: Msg,
     }
 
     impl {
         fn init()
+        fn prepareNextMsg()
+        fn getMsg() -> *const Msg
         fn acceptInput(src: *const void, size: usize)
-        fn genOutput(dest: *mut void, size: usize) -> usize
+        fn queuePacket(address: u32, gen: Generator, data: *mut void) -> bool
     }
 }

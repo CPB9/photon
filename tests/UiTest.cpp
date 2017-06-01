@@ -15,6 +15,9 @@
 #include <decode/groundcontrol/Scheduler.h>
 #include <decode/groundcontrol/Exchange.h>
 
+#include <dtacan/Parser.h>
+#include <dtacan/Encoder.h>
+
 #include <bmcl/Result.h>
 #include <bmcl/Logging.h>
 #include <bmcl/MemReader.h>
@@ -78,6 +81,89 @@ private:
     QSerialPort* _port;
 };
 
+class DtaCanSink : public UiSink, public dtacan::Parser<DtaCanSink>, public dtacan::Encoder<DtaCanSink> {
+public:
+    DtaCanSink(uint32_t address, const char* path)
+        : _port(new QSerialPort(path))
+        , _address(address)
+      //  , _dataSent(false)
+    {
+        _port->setBaudRate(115200);
+        _port->open(QIODevice::ReadWrite);
+        qDebug() << _port->error();
+        openCanChannel();
+        setBaudrate(dtacan::BaudRate::Baud1M);
+        readAndParse();
+       // _dataSent = false;
+    }
+
+    ~DtaCanSink()
+    {
+        delete _port;
+    }
+
+    void sendData(bmcl::Bytes packet) override
+    {
+        openCanChannel();
+        qDebug() << "sending " << packet.size();
+        for (auto it = packet.begin(); it < packet.end(); it += 8) {
+            auto end = std::min(it + 8, packet.end());
+            transmitStdFrame(_address, it, end - it);
+            readAndParse();
+        }
+    }
+
+    quint64 readData(void* dest, std::size_t maxSize) override
+    {
+        readAndParse();
+        std::size_t size = std::min(maxSize, _recievedData.size());
+        std::memcpy(dest, _recievedData.data(), size);
+        _recievedData.removeFront(size);
+        return size;
+    }
+
+    void handleData(uint32_t address, const uint8_t* data, std::size_t size)
+    {
+        if (address != _address) {
+            BMCL_DEBUG() << "expected addr " << _address << " got " << address;
+            return;
+        }
+        _recievedData.write(data, size);
+    }
+
+    void handleJunk(const uint8_t* junk, std::size_t size)
+    {
+        BMCL_DEBUG() << "recieved junk " << size;
+    }
+
+    void handleEncodedData(const char* str, std::size_t size)
+    {
+        _port->write(str, size);
+        //_port->flush();
+    }
+
+    void handleReceipt()
+    {
+        //_dataSent = true;
+    }
+
+    void readAndParse()
+    {
+        char tmp[102400];
+        auto size = _port->read(tmp, sizeof(tmp));
+        assert(size >= 0);
+        acceptData(tmp, size);
+    }
+
+private:
+
+    QSerialPort* _port;
+    uint32_t _address;
+    bmcl::Buffer _recievedData;
+   // bool _dataSent;
+};
+
+
 class UpdSink : public UiSink {
 public:
     UpdSink()
@@ -120,6 +206,7 @@ public:
         PhotonTm_Init();
         PhotonTest_Init();
         PhotonFwt_Init();
+        _current = *PhotonExc_GetMsg();
     }
 
     void sendData(bmcl::Bytes packet) override
@@ -131,8 +218,21 @@ public:
 
     quint64 readData(void* dest, std::size_t maxSize) override
     {
-        return PhotonExc_GenOutput(dest, maxSize);
+        if (maxSize >= _current.size) {
+            std::size_t size = _current.size;
+            std::memcpy(dest, _current.data, size);
+            PhotonExc_PrepareNextMsg();
+            _current = *PhotonExc_GetMsg();
+            return size;
+        }
+        std::memcpy(dest, _current.data, maxSize);
+        _current.data += maxSize;
+        _current.size -= maxSize;
+        return maxSize;
     }
+
+private:
+    PhotonExcMsg _current;
 };
 
 class UdpSink : public Sink {
@@ -154,31 +254,37 @@ public:
     {
         _m.reset(model);
         _qmodel->setRoot(model);
-        _w->show();
+        _w->showMaximized();
     }
 };
 
 Rc<Gc> _gc;
 
-uint8_t tmp[1024];
+uint8_t tmp[10240];
 uint8_t tmp2[1024];
 
 int main(int argc, char** argv)
 {
     TCLAP::CmdLine cmdLine("UiTest");
     TCLAP::ValueArg<std::string> comArg("c", "com", "Read from COM", false, "", "com device");
+    TCLAP::ValueArg<std::string> dtaArg("d", "dta", "Read from DTACAN", false, "", "com device");
+    TCLAP::ValueArg<uint32_t> addrArg("a", "address", "CAN address", false, 0, "can address");
     TCLAP::SwitchArg inprocArg("i", "inproc", "Read from INPROC", false);
 
     std::vector<TCLAP::Arg*>  xorVec;
     xorVec.push_back(&comArg);
+    xorVec.push_back(&dtaArg);
     xorVec.push_back(&inprocArg);
     cmdLine.xorAdd(xorVec);
+    cmdLine.add(&addrArg);
     cmdLine.parse(argc, argv);
 
     QApplication app(argc, argv);
 
     if (!comArg.getValue().empty()) {
         _sink.reset(new RsSink(comArg.getValue().c_str()));
+    } else if (!dtaArg.getValue().empty()) {
+        _sink.reset(new DtaCanSink(addrArg.getValue(), dtaArg.getValue().c_str()));
     } else if (inprocArg.getValue()) {
         _sink.reset(new InProcSink);
     } else {
@@ -241,8 +347,8 @@ int main(int argc, char** argv)
     centralLayout->addLayout(rightLayout);
     _w->setLayout(centralLayout);
 
-    _w->resize(800, 600);
-    //w->show();
+    //_w->resize(1024, 768);
+    //_w->showMaximized();
 
     std::unique_ptr<QTimer> timer = bmcl::makeUnique<QTimer>();
 
@@ -256,6 +362,8 @@ int main(int argc, char** argv)
         if (rv == 0) {
             qDebug() << "no data";
             return;
+        } else {
+            qDebug() << "recieved " << rv;
         }
         _gc->acceptData(bmcl::Bytes(tmp, rv));
     });

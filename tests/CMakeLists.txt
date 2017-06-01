@@ -11,7 +11,7 @@ find_package(Qt5Network)
 
 if (Qt5Widgets_FOUND)
     add_executable(ui_test UiTest.cpp)
-    target_link_libraries(ui_test photon bmcl decode Qt5::Widgets Qt5::Network Qt5::SerialPort)
+    target_link_libraries(ui_test photon bmcl dtacan decode Qt5::Widgets Qt5::Network Qt5::SerialPort)
 endif()
 
 if(MSVC OR MINGW)

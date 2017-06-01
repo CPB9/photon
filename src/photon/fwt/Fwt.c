@@ -72,7 +72,7 @@ static PhotonError requestChunk(PhotonReader* src)
     }
 
     // avoid sending twice
-    uint8_t* start = FW_START + chunkOffset;
+    const uint8_t* start = FW_START + chunkOffset;
     if (start >= _photonFwt.firmware.current) {
         return PhotonError_Ok;
     }
@@ -207,12 +207,4 @@ PhotonError PhotonFwt_GenAnswer(PhotonWriter* dest)
 bool PhotonFwt_HasAnswers()
 {
     return _photonFwt.hashRequested | _photonFwt.startRequested | _photonFwt.chunk.isTransfering | _photonFwt.firmware.isTransfering;
-}
-
-PhotonSliceOfU8 PhotonFwt_Firmware()
-{
-    PhotonSliceOfU8 fw;
-    fw.data = FW_START;
-    fw.size = _PHOTON_PACKAGE_SIZE;
-    return fw;
 }

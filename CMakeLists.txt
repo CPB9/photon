@@ -26,6 +26,7 @@ endif()
 set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_gen_src)
 
 add_subdirectory(thirdparty/decode EXCLUDE_FROM_ALL)
+add_subdirectory(thirdparty/dtacan EXCLUDE_FROM_ALL)
 
 get_property(DECODE_GEN_LOC TARGET decode_gen PROPERTY LOCATION)
 message(${DECODE_GEN_LOC})

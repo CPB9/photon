@@ -15,13 +15,17 @@
 #include <string.h>
 
 #define _PHOTON_FNAME "exc/Exc.c"
+#define PHOTON_PACKET_QUEUE_SIZE (sizeof(_photonExc.packetQueue) / sizeof(_photonExc.packetQueue[0]))
 
 void PhotonExc_Init()
 {
     _photonExc.outCounter = 0;
-    PhotonRingBuf_Init(&_photonExc.outStream, _photonExc.outStreamData, sizeof(_photonExc.outStreamData));
+    //PhotonRingBuf_Init(&_photonExc.outStream, _photonExc.outStreamData, sizeof(_photonExc.outStreamData));
     _photonExc.inCounter = 0;
     PhotonRingBuf_Init(&_photonExc.inStream, _photonExc.inStreamData, sizeof(_photonExc.inStreamData));
+    PhotonExc_PrepareNextMsg();
+    _photonExc.currentPacket = 0;
+    _photonExc.numPackets = 0;
 }
 
 static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
@@ -51,7 +55,7 @@ static uint8_t outTemp[1024];
     do {                                                        \
         PHOTON_WARNING(__VA_ARGS__);                            \
         PHOTON_WARNING("Continuing search with 1 byte offset"); \
-        PhotonRingBuf_Erase(&_photonExc.inStream, 1);                 \
+        PhotonRingBuf_Erase(&_photonExc.inStream, 1);           \
     } while(0);
 
 static bool handlePacket(size_t size)
@@ -222,13 +226,24 @@ void PhotonExc_AcceptInput(const void* src, size_t size)
 
 static PhotonWriter writer;
 
-static size_t writeOutput(void* dest, size_t size)
+static PhotonError genQueuedPacket()
 {
-    PhotonRingBuf_Write(&_photonExc.outStream, inTemp, writer.current - writer.start);
-    size = PHOTON_MIN(size, PhotonRingBuf_ReadableSize(&_photonExc.outStream));
-    PhotonRingBuf_Read(&_photonExc.outStream, dest, size);
-    return size;
+    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+
+    PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
+
+    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
+    const PhotonExcPacketRequest* req = &_photonExc.packetQueue[_photonExc.currentPacket];
+    PHOTON_TRY(req->gen(req->data, &reserved));
+
+    PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
+
+    _photonExc.currentPacket = (_photonExc.currentPacket + 1) % PHOTON_PACKET_QUEUE_SIZE;
+    _photonExc.numPackets--;
+
+    return PhotonError_Ok;
 }
+
 
 static PhotonError genFwtPacket()
 {
@@ -269,21 +284,50 @@ static PhotonError genTmPacket()
     return PhotonError_Ok;
 }
 
-static inline size_t genPacket(PhotonError (*gen)(), void* dest, size_t size)
+static inline size_t genPacket(PhotonError (*gen)())
 {
     if (gen() != PhotonError_Ok) {
         return 0;
     }
-    return writeOutput(dest, size);
+    return writer.current - writer.start;
 }
 
-size_t PhotonExc_GenOutput(void* dest, size_t size)
+void PhotonExc_PrepareNextMsg()
 {
-    PhotonWriter_Init(&writer, inTemp, sizeof(inTemp));
+    PhotonWriter_Init(&writer, outTemp, sizeof(outTemp));
 
-    if (PhotonFwt_HasAnswers()) {
-        return genPacket(genFwtPacket, dest, size);
+    size_t msgSize;
+
+    if (_photonExc.numPackets) {
+        msgSize = genPacket(genQueuedPacket);
+    } else if (PhotonFwt_HasAnswers()) {
+        msgSize = genPacket(genFwtPacket);
+    } else {
+        msgSize = genPacket(genTmPacket);
     }
 
-    return genPacket(genTmPacket, dest, size);
+    _photonExc.currentMsg.address = 1; //TEMP
+    _photonExc.currentMsg.data = outTemp;
+    _photonExc.currentMsg.size = msgSize;
+}
+
+const PhotonExcMsg* PhotonExc_GetMsg()
+{
+    return &_photonExc.currentMsg;
+}
+
+bool PhotonExc_QueuePacket(uint32_t address, PhotonGenerator gen, void* data)
+{
+    if (_photonExc.numPackets == PHOTON_PACKET_QUEUE_SIZE) {
+        return false;
+    }
+
+    size_t offset = (_photonExc.currentPacket + _photonExc.numPackets) % PHOTON_PACKET_QUEUE_SIZE;
+    PhotonExcPacketRequest* req = &_photonExc.packetQueue[offset];
+    req->address = address;
+    req->gen = gen;
+    req->data = data;
+    _photonExc.numPackets++;
+
+    return true;
 }

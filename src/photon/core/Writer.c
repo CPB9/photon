@@ -245,6 +245,8 @@ PhotonError PhotonWriter_WriteVaruint(PhotonWriter* self, uint64_t value)
     return PhotonError_Ok;
 }
 
+#undef RETURN_IF_SIZE_LESS
+
 PhotonError PhotonWriter_WriteVarint(PhotonWriter* self, int64_t value)
 {
     uint64_t n = (uint64_t)value;
