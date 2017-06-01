@@ -5,7 +5,8 @@ import glob
 import sys
 import os
 
-prefixes = ['src', '../src', '_gen_src']
+sources = [@PHOTON_ADDITIONAL_SOURCES_LIST@]
+prefixes = ['src', '@CMAKE_CURRENT_SOURCE_DIR@/src', '_gen_src'] #HACK
 
 def process_all_headers(outfile, processed=set()):
     flist = []
@@ -15,7 +16,8 @@ def process_all_headers(outfile, processed=set()):
         process_header(fname, outfile, processed)
 
 def process_header(fname, outfile, processed=set()):
-    relname = fname.split('/', 1)[1]
+    outfile.write("#define PHOTON_AMALGAMATION\n\n")
+    relname = 'photon' + fname.split('photon')[1]
     processed.add(relname)
     f = open(fname, 'r')
     for line in f.readlines():
@@ -42,21 +44,24 @@ def process_all_sources(outfile, header_name='photon.h'):
             f = open(fname, 'r')
             outfile.write(f.read())
             outfile.write('\n')
+    flist = []
     for prefix in prefixes:
-        for fname in glob.glob(prefix + '/**/*.c', recursive=True):
-            if fname not in plist:
-                f = open(fname, 'r')
-                for line in f.readlines():
-                    if line[0:8] == '#include':
-                        header = line[9:].strip('\r\n\t \"<>')
-                        if not header[0:6] == 'photon':
-                            outfile.write(line)
-                    else:
+        flist += glob.glob(prefix + '/**/*.c', recursive=True)
+    flist += sources
+    for fname in flist:
+        if fname not in plist:
+            f = open(fname, 'r')
+            for line in f.readlines():
+                if line[0:8] == '#include':
+                    header = line[9:].strip('\r\n\t \"<>')
+                    if not header[0:6] == 'photon':
                         outfile.write(line)
-                outfile.write('\n#undef _PHOTON_FNAME\n')
+                else:
+                    outfile.write(line)
+            outfile.write('\n#undef _PHOTON_FNAME\n')
     outfile.write('\n')
 
 if not os.path.exists('amalgamation'):
     os.makedirs('amalgamation')
-process_all_headers(open('amalgamation/photon.h', 'w'))
-process_all_sources(open('amalgamation/photon.c', 'w'))
+process_all_headers(open('@PHOTON_AMALGAMATION_DEST@/photon.h', 'w'))
+process_all_sources(open('@PHOTON_AMALGAMATION_DEST@/photon.c', 'w'))

@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 enable_testing()
 
+
 set(PHOTON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/photon/Config.h)
@@ -29,7 +30,6 @@ add_subdirectory(thirdparty/decode EXCLUDE_FROM_ALL)
 add_subdirectory(thirdparty/dtacan EXCLUDE_FROM_ALL)
 
 get_property(DECODE_GEN_LOC TARGET decode_gen PROPERTY LOCATION)
-message(${DECODE_GEN_LOC})
 
 function(photon_generate_sources)
     set(options)
@@ -52,7 +52,6 @@ endfunction()
 set(ONBOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onboard)
 file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
 photon_generate_sources(DIRECTORIES ${ONBOARD_DIR} ${PHOTON_ADDITIONAL_MODULE_DIRS} SOURCES ${ONBOARD_SOURCES} ${PHOTON_ADDITIONAL_SOURCES})
-message(${PHOTON_ADDITIONAL_SOURCES})
 
 add_library(photon
     src/photon/core/Assert.h
@@ -80,6 +79,28 @@ add_library(photon
     ${ONBOARD_SOURCES}
     ${PHOTON_ADDITIONAL_SOURCES}
 )
+
+find_package(PythonInterp)
+
+if(PYTHONINTERP_FOUND)
+
+    if(NOT PHOTON_AMALGAMATION_DEST)
+        set(PHOTON_AMALGAMATION_DEST ${CMAKE_BINARY_DIR})
+    endif()
+
+    foreach(src ${PHOTON_ADDITIONAL_SOURCES})
+        set(PHOTON_ADDITIONAL_SOURCES_LIST ${PHOTON_ADDITIONAL_SOURCES_LIST} "'${src}', ")
+    endforeach()
+
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py.in ${CMAKE_CURRENT_BINARY_DIR}/amalgamate.py)
+
+    add_custom_target(amalgamate
+        COMMAND python ${CMAKE_CURRENT_BINARY_DIR}/amalgamate.py
+        DEPENDS photon
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py.in
+    )
+endif()
 
 set_target_properties(photon
     PROPERTIES
