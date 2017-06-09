@@ -313,6 +313,11 @@ int main(int argc, char** argv)
             qDebug() << "error encoding";
         }
     });
+
+    auto resizeColumnsFn = [](QTreeView* view) {
+        view->resizeColumnToContents(0);
+    };
+
     auto cmdModel = bmcl::makeUnique<QCmdModel>(cmdCont.get());
     cmdModel->setEditable(true);
     cmdWidget->setModel(cmdModel.get());
@@ -324,9 +329,9 @@ int main(int argc, char** argv)
     cmdWidget->setDragDropMode(QAbstractItemView::DragDrop);
     cmdWidget->viewport()->setAcceptDrops(true);
     cmdWidget->setAcceptDrops(true);
-    cmdWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     cmdWidget->header()->setStretchLastSection(false);
-    cmdWidget->setRowHidden(0, cmdWidget->rootIndex(), true);
+    cmdWidget->setRootIndex(cmdModel->index(0, 0));
+
     rightLayout->addWidget(cmdWidget);
     rightLayout->addLayout(buttonLayout);
 
@@ -338,9 +343,12 @@ int main(int argc, char** argv)
     mainView->setDragEnabled(true);
     mainView->setDragDropMode(QAbstractItemView::DragDrop);
     mainView->setDropIndicatorShown(true);
-    mainView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+//    mainView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     mainView->header()->setStretchLastSection(false);
     mainView->setModel(_qmodel.get());
+
+    QObject::connect(cmdWidget, &QTreeView::expanded, _w.get(), [&]() { resizeColumnsFn(cmdWidget); });
+    QObject::connect(mainView.get(), &QTreeView::expanded, _w.get(), [&]() { resizeColumnsFn(mainView.get()); });
 
     auto centralLayout = new QHBoxLayout;
     centralLayout->addWidget(mainView.get());
