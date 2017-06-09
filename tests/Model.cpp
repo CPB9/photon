@@ -119,7 +119,11 @@ int main(int argc, char* argv[])
 
         //PHOTON_DEBUG("Sending %zu bytes", genSize);
 
+#ifdef _WIN32
+        if (sendto(sock, (const char*)msg->data, msg->size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
+#else
         if (sendto(sock, msg->data, msg->size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
+#endif
             PHOTON_WARNING("Error sending reply");
         } else {
             PhotonExc_PrepareNextMsg();
