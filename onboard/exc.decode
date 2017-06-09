@@ -66,6 +66,11 @@ component {
         inStreamData: [u8; 1024],
         currentMsg: Msg,
     }
+    
+    statuses {
+        [1, 1, true]: outCounter,
+        [2, 1, true]: inCounter, 
+    }
 
     impl {
         fn init()

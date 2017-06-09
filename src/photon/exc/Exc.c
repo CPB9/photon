@@ -64,6 +64,7 @@ static bool handlePacket(size_t size)
         HANDLE_INVALID_PACKET("Recieved packet with size < 4");
         return true;
     }
+    _photonExc.inCounter++;
     uint16_t crc16 = Photon_Crc16(inTemp, size - 2);
     if (crc16 != Photon_Le16Dec(inTemp + size - 2)) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid crc");
@@ -305,6 +306,7 @@ void PhotonExc_PrepareNextMsg()
     } else {
         msgSize = genPacket(genTmPacket);
     }
+    _photonExc.outCounter++;
 
     _photonExc.currentMsg.address = 1; //TEMP
     _photonExc.currentMsg.data = outTemp;
