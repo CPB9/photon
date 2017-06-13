@@ -35,6 +35,7 @@
 #include <QDebug>
 #include <QtSerialPort/QtSerialPort>
 #include <QUdpSocket>
+#include <QMessageBox>
 
 using namespace decode;
 
@@ -295,12 +296,12 @@ int main(int argc, char** argv)
     _qmodel->setEditable(true);
     _gc.reset(new Gc(_sink.get(), _sched.get(), _handler.get()));
 
-    auto buttonLayout = new QHBoxLayout;
+    auto buttonLayout = new QVBoxLayout;
     auto sendButton = new QPushButton("send");
-    buttonLayout->addStretch();
     buttonLayout->addWidget(sendButton);
+    buttonLayout->addStretch();
 
-    auto rightLayout = new QVBoxLayout;
+    auto rightLayout = new QHBoxLayout;
     auto cmdWidget = new QTreeView;
     Rc<CmdContainerNode> cmdCont = new CmdContainerNode(bmcl::None);
     QObject::connect(sendButton, &QPushButton::clicked, _qmodel.get(), [cmdCont]() {
@@ -311,6 +312,7 @@ int main(int argc, char** argv)
             _gc->sendPacket(dest.writenData());
         } else {
             qDebug() << "error encoding";
+            QMessageBox::warning(_w.get(), "UiTest", "Error while encoding cmd. Args may be empty", QMessageBox::Ok);
         }
     });
 
