@@ -36,7 +36,7 @@ public:
     }
 
 protected:
-    void updatePackage(bmcl::Bytes) override
+    void updateProject(bmcl::Bytes) override
     {
         packageRecieved = true;
     }

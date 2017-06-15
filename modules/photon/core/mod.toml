@@ -1,0 +1,18 @@
+name = "core"
+decode = "core.decode"
+dest = "photon/core"
+id = 0
+sources = [
+  "Assert.h",
+  "Config.h",
+  "Crc.c",
+  "Crc.h",
+  "Endian.h",
+  "Logging.c",
+  "Logging.h",
+  "Reader.c",
+  "RingBuf.c",
+  "Try.h",
+  "Util.h",
+  "Writer.c"
+]

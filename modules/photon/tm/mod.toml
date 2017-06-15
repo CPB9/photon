@@ -1,0 +1,8 @@
+name = "tm"
+decode = "tm.decode"
+dest = "photon/tm"
+id = 4
+sources = [
+  "StatusMessage.c",
+  "Tm.c"
+]

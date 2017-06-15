@@ -1,0 +1,7 @@
+name = "fwt"
+decode = "fwt.decode"
+dest = "photon/fwt"
+id = 2
+sources = [
+  "Fwt.c",
+]

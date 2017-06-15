@@ -1,0 +1,7 @@
+name = "int"
+decode = "int.decode"
+dest = "photon/int"
+id = 3
+sources = [
+  "Int.c",
+]

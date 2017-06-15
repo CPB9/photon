@@ -1,0 +1,10 @@
+name = "exc"
+decode = "exc.decode"
+dest = "photon/exc"
+id = 1
+sources = [
+  "DataPacket.c",
+  "Exc.c",
+  "ReceiptPacket.c",
+  "Utils.h"
+]

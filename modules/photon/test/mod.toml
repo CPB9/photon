@@ -1,0 +1,7 @@
+name = "test"
+decode = "test.decode"
+dest = "photon/test"
+id = 6
+sources = [
+  "Test.c",
+]

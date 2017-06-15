@@ -6,10 +6,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 enable_testing()
 
-
 set(PHOTON_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/photon/Config.h)
 
 macro(enable_sanitizer)
     add_definitions(
@@ -31,76 +28,24 @@ add_subdirectory(thirdparty/dtacan EXCLUDE_FROM_ALL)
 
 get_property(DECODE_GEN_LOC TARGET decode_gen PROPERTY LOCATION)
 
-function(photon_generate_sources)
-    set(options)
-    set(oneValueArgs)
-    set(multiValueArgs DIRECTORIES SOURCES)
-    cmake_parse_arguments(photon_generate_sources "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    set(DIR_STRING "")
-    foreach(var ${photon_generate_sources_DIRECTORIES})
-        list(APPEND DIR_STRING "-i ${var}")
-    endforeach()
+function(photon_generate_sources proj)
     add_custom_command(
-        OUTPUT ${PHOTON_GEN_SRC_DIR}/photon/Photon.c ${PHOTON_GEN_SRC_DIR}/photon/Config.h
+        OUTPUT ${PHOTON_GEN_SRC_DIR}/Model1.c
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
-        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} ${DIR_STRING} -o ${PHOTON_GEN_SRC_DIR} -c ${CMAKE_CURRENT_SOURCE_DIR}/cfg/test.toml -C 4
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} ${DECODE_GEN_LOC} -p ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4
         DEPENDS decode_gen ${photon_generate_sources_SOURCES}
     )
 endfunction()
 
-set(ONBOARD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onboard)
-file(GLOB ONBOARD_SOURCES ${ONBOARD_DIR})
-photon_generate_sources(DIRECTORIES ${ONBOARD_DIR} ${PHOTON_ADDITIONAL_MODULE_DIRS} SOURCES ${ONBOARD_SOURCES} ${PHOTON_ADDITIONAL_SOURCES})
+set(IMPL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/modules)
+file(GLOB_RECURSE IMPL_SOURCES "${IMPL_DIR}/*.c" "${IMPL_DIR}/*.h")
+photon_generate_sources(${CMAKE_CURRENT_SOURCE_DIR}/project.toml)
 
 add_library(photon
-    src/photon/core/Assert.h
-    src/photon/core/Crc.c
-    src/photon/core/Crc.h
-    src/photon/core/Endian.h
-    src/photon/core/Reader.c
-    src/photon/core/RingBuf.c
-    src/photon/core/Try.h
-    src/photon/core/Writer.c
-    src/photon/core/Logging.h
-    src/photon/core/Logging.c
-    src/photon/int/Int.c
-    src/photon/tm/Tm.c
-    src/photon/tm/StatusMessage.c
-    src/photon/exc/Exc.c
-    src/photon/exc/DataPacket.c
-    src/photon/exc/ReceiptPacket.c
-    src/photon/exc/Utils.h
-    src/photon/fwt/Fwt.c
-    src/photon/test/Test.c
-    #    src/photon/servo/Servo.c
-    ${PHOTON_GEN_SRC_DIR}/photon/Photon.c
-    ${PHOTON_GEN_SRC_DIR}/photon/Config.h
-    ${ONBOARD_SOURCES}
-    ${PHOTON_ADDITIONAL_SOURCES}
+    #${IMPL_SOURCES}
+    ${PHOTON_GEN_SRC_DIR}/Model1.c
 )
-
-find_package(PythonInterp)
-
-if(PYTHONINTERP_FOUND)
-
-    if(NOT PHOTON_AMALGAMATION_DEST)
-        set(PHOTON_AMALGAMATION_DEST ${CMAKE_BINARY_DIR})
-    endif()
-
-    foreach(src ${PHOTON_ADDITIONAL_SOURCES})
-        set(PHOTON_ADDITIONAL_SOURCES_LIST ${PHOTON_ADDITIONAL_SOURCES_LIST} "'${src}', ")
-    endforeach()
-
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py.in ${CMAKE_CURRENT_BINARY_DIR}/amalgamate.py)
-
-    add_custom_target(amalgamate
-        COMMAND python ${CMAKE_CURRENT_BINARY_DIR}/amalgamate.py
-        DEPENDS photon
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/amalgamate.py.in
-    )
-endif()
 
 set_target_properties(photon
     PROPERTIES
@@ -119,8 +64,7 @@ endif()
 
 target_include_directories(photon
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_BINARY_DIR}/src
+    #${IMPL_DIR}
     ${PHOTON_GEN_SRC_DIR}
 )
 
