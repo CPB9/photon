@@ -112,6 +112,28 @@ uint64_t PhotonReader_ReadU64Le(PhotonReader* self)
     return value;
 }
 
+float PhotonReader_ReadF32Le(PhotonReader* self)
+{
+    union {
+        float f;
+        uint32_t u;
+    } u;
+    u.u = Photon_Le32Dec(self->current);
+    self->current += 4;
+    return u.f;
+}
+
+double PhotonReader_ReadF64Le(PhotonReader* self)
+{
+    union {
+        double f;
+        uint64_t u;
+    } u;
+    u.u = Photon_Le64Dec(self->current);
+    self->current += 8;
+    return u.f;
+}
+
 uint8_t PhotonReader_PeekU8(const PhotonReader* self)
 {
     PHOTON_ASSERT(PhotonReader_ReadableSize(self) >= 1);

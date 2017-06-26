@@ -59,6 +59,9 @@ impl Reader {
     fn readU32Le(&mut self) -> u32
     fn readU64Le(&mut self) -> u64
 
+    fn readF32Le(&mut self) -> f32
+    fn readF64Le(&mut self) -> f64
+
     fn readUSizeLe(&mut self) -> usize
     fn readUSizeBe(&mut self) -> usize
 
@@ -100,6 +103,9 @@ impl Writer {
     fn writeU16Le(&mut self, value: u16)
     fn writeU32Le(&mut self, value: u32)
     fn writeU64Le(&mut self, value: u64)
+
+    fn writeF32Le(&mut self, value: f32)
+    fn writeF64Le(&mut self, value: f64)
 
     fn writeUSizeLe(&mut self, value: usize)
     fn writeUSizeBe(&mut self, value: usize)

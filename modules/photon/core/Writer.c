@@ -104,6 +104,28 @@ void PhotonWriter_WriteU64Le(PhotonWriter* self, uint64_t value)
     self->current += 8;
 }
 
+void PhotonWriter_WriteF32Le(PhotonWriter* self, float value)
+{
+    union {
+        float f;
+        uint32_t v;
+    } u;
+    u.f = value;
+    Photon_Le32Enc(self->current, u.v);
+    self->current += 4;
+}
+
+void PhotonWriter_WriteF64Le(PhotonWriter* self, double value)
+{
+    union {
+        float f;
+        uint64_t v;
+    } u;
+    u.f = value;
+    Photon_Le64Enc(self->current, u.v);
+    self->current += 8;
+}
+
 void PhotonWriter_WriteUSizeLe(PhotonWriter* self, size_t value)
 {
 #if UINTPTR_MAX == 0xffffffff
