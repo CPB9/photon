@@ -1,23 +1,3 @@
-if(NOT MSVC)
-    add_definitions(-std=c++11)
-endif()
-
-add_executable(model Model.cpp)
-target_link_libraries(model photon bmcl)
-
-find_package(Qt5Widgets)
-find_package(Qt5SerialPort)
-find_package(Qt5Network)
-
-if (Qt5Widgets_FOUND)
-    add_executable(ui_test UiTest.cpp)
-    target_link_libraries(ui_test photon bmcl dtacan decode Qt5::Widgets Qt5::Network Qt5::SerialPort)
-endif()
-
-if(MSVC OR MINGW)
-    target_link_libraries(model ws2_32)
-endif()
-
 include_directories(
     SYSTEM
     ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/decode/thirdparty/gtest/include

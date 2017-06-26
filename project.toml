@@ -9,16 +9,18 @@ module_dirs = [
   "modules/photon/fwt",
   "modules/photon/int",
   "modules/photon/test",
-  "modules/photon/exc"
+  "modules/photon/exc",
 ]
 
 [[devices]]
 name = "model1"
 id = 1
-modules = ["test"]
 cmd_targets = ["model2"]
 tm_sources = ["model2"]
+modules = ["test"]
 
 [[devices]]
 name = "model2"
+modules = ["test"]
 id = 2
+

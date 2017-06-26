@@ -73,7 +73,7 @@ PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestParamStruct* s)
+PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestCmdStruct* s)
 {
     _photonTest.param1 = s->param1;
     _photonTest.param2 = s->param2;

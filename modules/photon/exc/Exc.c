@@ -333,3 +333,5 @@ bool PhotonExc_QueuePacket(uint32_t address, PhotonGenerator gen, void* data)
 
     return true;
 }
+
+#undef _PHOTON_FNAME

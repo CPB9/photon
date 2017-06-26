@@ -1,3 +1,4 @@
+#include "photon/Init.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/tm/Tm.Component.h"
 #include "photon/int/Int.Component.h"
@@ -203,10 +204,7 @@ class InProcSink : public UiSink {
 public:
     InProcSink()
     {
-        PhotonExc_Init();
-        PhotonTm_Init();
-        PhotonTest_Init();
-        PhotonFwt_Init();
+        Photon_Init();
         _current = *PhotonExc_GetMsg();
     }
 
