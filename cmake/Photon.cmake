@@ -72,6 +72,13 @@ macro(photon_add_library target)
         if(NOT MSVC)
             target_compile_options(ui-test-${target} PRIVATE -std=c++11)
         endif()
+
+        set_target_properties(ui-test-${target}
+            PROPERTIES
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        )
     endif()
 
     add_executable(model-${target} ${_PHOTON_DIR}/tests/Model.cpp)
@@ -88,7 +95,7 @@ macro(photon_add_library target)
         ${PHOTON_GEN_SRC_DIR}
     )
 
-    set_target_properties(photon-${target} ui-test-${target} model-${target}
+    set_target_properties(photon-${target} model-${target}
         PROPERTIES
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
