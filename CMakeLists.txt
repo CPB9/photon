@@ -9,10 +9,6 @@ enable_testing()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 include(Photon)
 
-find_package(Qt5Widgets)
-find_package(Qt5SerialPort)
-find_package(Qt5Network)
-
 macro(enable_sanitizer)
     add_definitions(
         -fsanitize=address

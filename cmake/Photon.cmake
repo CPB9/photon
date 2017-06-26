@@ -1,3 +1,7 @@
+find_package(Qt5Widgets)
+find_package(Qt5SerialPort)
+find_package(Qt5Network)
+
 macro(photon_init dir)
     set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
@@ -55,6 +59,7 @@ macro(photon_add_library target)
         ${PHOTON_GEN_SRC_DIR}
     )
 
+    #TODO: check for other qt modules
     if (Qt5Widgets_FOUND)
         add_executable(ui-test-${target} ${_PHOTON_DIR}/tests/UiTest.cpp)
         target_link_libraries(ui-test-${target} photon-${target} bmcl dtacan decode Qt5::Widgets Qt5::Network Qt5::SerialPort)
