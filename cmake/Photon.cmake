@@ -35,14 +35,16 @@ macro(photon_init dir)
     endif()
 
     add_library(photon-ui-test
-        tests/UiTest.cpp
-        tests/UiTest.h
+        ${_PHOTON_DIR}/tests/UiTest.cpp
+        ${_PHOTON_DIR}/tests/UiTest.h
     )
     target_link_libraries(photon-ui-test
         decode
         Qt5::Core
     )
-    add_executable(test-serialclient tests/ConnectTest.cpp)
+    add_executable(test-serialclient
+        ${_PHOTON_DIR}/tests/ConnectTest.cpp
+    )
     target_link_libraries(test-serialclient
         decode
         bmcl
