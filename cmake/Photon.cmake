@@ -88,9 +88,9 @@ macro(photon_add_device target)
     string(TOUPPER ${_FIRST_LETTER} _FIRST_LETTER)
     string(REGEX REPLACE "^.(.*)" "${_FIRST_LETTER}\\1" _SOURCE_NAME "${target}")
 
-    set(_SRC_FILE ${PHOTON_GEN_SRC_DIR}/${_SOURCE_NAME}.c)
+    set(_SRC_FILE ${PHOTON_GEN_SRC_DIR}/Photon${_SOURCE_NAME}.c)
     set(_PHOTON_DEPENDS ${_PHOTON_DEPENDS} ${_SRC_FILE})
-    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_DIR}/${_SOURCE_NAME}.h)
+    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_DIR}/Photon${_SOURCE_NAME}.h)
 
     add_library(photon-${target}
         ${_SRC_FILE}
