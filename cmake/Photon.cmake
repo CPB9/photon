@@ -4,6 +4,15 @@ find_package(Qt5Widgets)
 find_package(Qt5SerialPort)
 find_package(Qt5Network)
 
+macro(_photon_setup_target target)
+    set_target_properties(${target}
+        PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
+endmacro()
+
 macro(photon_init dir)
     set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
@@ -24,6 +33,30 @@ macro(photon_init dir)
     elseif(_TARGET_TYPE STREQUAL "EXECUTABLE")
         install(FILES $<TARGET_FILE:bmcl> DESTINATION bin)
     endif()
+
+    add_library(photon-ui-test
+        tests/UiTest.cpp
+        tests/UiTest.h
+    )
+    target_link_libraries(photon-ui-test
+        decode
+        Qt5::Core
+    )
+    add_executable(test-serialclient tests/ConnectTest.cpp)
+    target_link_libraries(test-serialclient
+        decode
+        bmcl
+        photon-ui-test
+        Qt5::Core
+        Qt5::Widgets
+        #Qt5::Network
+        Qt5::SerialPort
+    )
+    target_include_directories(test-serialclient
+        PRIVATE
+        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+    )
+    _photon_setup_target(test-serialclient)
 endmacro()
 
 function(_photon_install_target target)
@@ -45,15 +78,6 @@ macro(photon_generate_sources proj)
     )
     install(DIRECTORY ${PHOTON_GEN_SRC_DIR}/photon DESTINATION gen)
     install(FILES ${_PHOTON_DEPENDS} ${_PHOTON_DEPENDS_H} DESTINATION gen)
-endmacro()
-
-macro(_photon_setup_target target)
-    set_target_properties(${target}
-        PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    )
 endmacro()
 
 macro(photon_add_device target)
@@ -95,21 +119,24 @@ macro(photon_add_device target)
 
     #TODO: check for other qt modules
     if (Qt5Widgets_FOUND)
-        add_executable(ui-test-${target} ${_PHOTON_DIR}/tests/UiTest.cpp)
-        target_link_libraries(ui-test-${target} photon-${target} bmcl dtacan decode Qt5::Widgets Qt5::Network Qt5::SerialPort)
-        target_include_directories(ui-test-${target}
-            PUBLIC
-            ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+        add_executable(test-inproc-${target} ${_PHOTON_DIR}/tests/InprocTest.cpp)
+        target_link_libraries(test-inproc-${target} photon-${target}
+            bmcl
+            decode
+            photon-ui-test
+            Qt5::Core
+        )
+        target_include_directories(test-inproc-${target}
             PRIVATE
             ${PHOTON_GEN_SRC_DIR}
         )
         if(NOT MSVC)
-            target_compile_options(ui-test-${target} PRIVATE -std=c++11)
+            target_compile_options(test-inproc-${target} PRIVATE -std=c++11)
         endif()
 
-        _photon_setup_target(ui-test-${target})
+        _photon_setup_target(test-inproc-${target})
 
-        _photon_install_target(ui-test-${target})
+        _photon_install_target(test-inproc-${target})
         if(WIN32)
             if(MINGW)
                 install_qt_mingw_rt(bin)
@@ -128,14 +155,14 @@ macro(photon_add_device target)
         endif()
     endif()
 
-    add_executable(model-${target} ${_PHOTON_DIR}/tests/Model.cpp)
-    target_link_libraries(model-${target} photon-${target} bmcl)
+    add_executable(test-udpserver-${target} ${_PHOTON_DIR}/tests/Model.cpp)
+    target_link_libraries(test-udpserver-${target} photon-${target} bmcl)
 
     if(MSVC OR MINGW)
-        target_link_libraries(model-${target} ws2_32)
+        target_link_libraries(test-udpserver-${target} ws2_32)
     endif()
 
-    target_include_directories(model-${target}
+    target_include_directories(test-udpserver-${target}
         PUBLIC
         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
         PRIVATE
@@ -143,9 +170,9 @@ macro(photon_add_device target)
     )
 
     _photon_setup_target(photon-${target})
-    _photon_setup_target(model-${target})
+    _photon_setup_target(test-udpserver-${target})
 
-    _photon_install_target(model-${target})
+    _photon_install_target(test-udpserver-${target})
     _photon_install_target(photon-${target})
 endmacro()
 
