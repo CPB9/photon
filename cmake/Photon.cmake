@@ -59,6 +59,7 @@ macro(photon_init dir)
         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
     )
     _photon_setup_target(test-serialclient)
+    _photon_install_target(test-serialclient)
 endmacro()
 
 function(_photon_install_target target)
