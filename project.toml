@@ -21,6 +21,5 @@ modules = ["test"]
 
 [[devices]]
 name = "model2"
-modules = ["test"]
 id = 2
 

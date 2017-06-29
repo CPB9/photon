@@ -143,9 +143,11 @@ static PhotonError genHash(PhotonWriter* dest)
 {
     PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Hash, dest));
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_PACKAGE_SIZE));
-    if (PhotonWriter_WritableSize(dest) < _PHOTON_PACKAGE_HASH_SIZE) {
+    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_DEVICE_NAME_SIZE));
+    if (PhotonWriter_WritableSize(dest) < (_PHOTON_PACKAGE_HASH_SIZE + _PHOTON_DEVICE_NAME_SIZE)) {
         return PhotonError_NotEnoughSpace;
     }
+    PhotonWriter_Write(dest, _deviceName, _PHOTON_DEVICE_NAME_SIZE);
     PhotonWriter_Write(dest, _packageHash, _PHOTON_PACKAGE_HASH_SIZE);
     _photonFwt.hashRequested = false;
     return PhotonError_Ok;
