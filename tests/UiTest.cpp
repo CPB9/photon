@@ -4,6 +4,7 @@
 #include <decode/ui/QCmdModel.h>
 #include <decode/ui/QModelEventHandler.h>
 #include <decode/ui/FirmwareWidget.h>
+#include <decode/ui/FirmwareStatusWidget.h>
 #include <decode/model/Model.h>
 #include <decode/model/CmdNode.h>
 #include <decode/parser/Package.h>
@@ -13,6 +14,7 @@
 #include <decode/groundcontrol/Exchange.h>
 
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QTimer>
 
 #include <chrono>
@@ -33,12 +35,29 @@ int runUiTest(QApplication* app, DataStream* stream)
     Rc<QModelEventHandler> handler = new QModelEventHandler;
     Rc<GroundControl> gc = new GroundControl(stream, sched.get(), handler.get());
     std::unique_ptr<FirmwareWidget> w = bmcl::makeUnique<FirmwareWidget>(handler.get());
+    std::unique_ptr<FirmwareStatusWidget> fwStatusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
+
+    fwStatusWidget->resize(640, 240);
+    fwStatusWidget->move(app->desktop()->screen()->rect().center() - fwStatusWidget->rect().center());
+    fwStatusWidget->show();
+
+    QObject::connect(handler.get(), &QModelEventHandler::beginHashDownload, fwStatusWidget.get(), [&]() {
+        fwStatusWidget->beginHashDownload();
+    });
+    QObject::connect(handler.get(), &QModelEventHandler::endHashDownload, fwStatusWidget.get(), &FirmwareStatusWidget::endHashDownload);
+    QObject::connect(handler.get(), &QModelEventHandler::beginFirmwareStartCommand, fwStatusWidget.get(), &FirmwareStatusWidget::beginFirmwareStartCommand);
+    QObject::connect(handler.get(), &QModelEventHandler::endFirmwareStartCommand, fwStatusWidget.get(), &FirmwareStatusWidget::endFirmwareStartCommand);
+    QObject::connect(handler.get(), &QModelEventHandler::beginFirmwareDownload, fwStatusWidget.get(), &FirmwareStatusWidget::beginFirmwareDownload);
+    QObject::connect(handler.get(), &QModelEventHandler::firmwareError, fwStatusWidget.get(), &FirmwareStatusWidget::firmwareError);
+    QObject::connect(handler.get(), &QModelEventHandler::firmwareDownloadProgress, fwStatusWidget.get(), &FirmwareStatusWidget::firmwareDownloadProgress);
+    QObject::connect(handler.get(), &QModelEventHandler::endFirmwareDownload, fwStatusWidget.get(), &FirmwareStatusWidget::endFirmwareDownload);
 
     QObject::connect(handler.get(), &QModelEventHandler::nodeValueUpdated, w->qmodel(), &QModel::notifyValueUpdate);
     QObject::connect(handler.get(), &QModelEventHandler::nodesInserted, w->qmodel(), &QModel::notifyNodesInserted);
     QObject::connect(handler.get(), &QModelEventHandler::nodesRemoved, w->qmodel(), &QModel::notifyNodesRemoved);
-    QObject::connect(handler.get(), &QModelEventHandler::modelUpdated, w.get(), [&w](const Rc<Model>& model) {
+    QObject::connect(handler.get(), &QModelEventHandler::modelUpdated, w.get(), [&](const Rc<Model>& model) {
         w->setModel(model.get());
+        fwStatusWidget->hide();
         w->showMaximized();
     });
     QObject::connect(handler.get(), &QModelEventHandler::packetQueued, w.get(), [gc](bmcl::Bytes packet) {

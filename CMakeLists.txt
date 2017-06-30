@@ -23,7 +23,7 @@ if(ASAN)
 endif()
 
 set(IMPL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/modules)
-file(GLOB_RECURSE IMPL_SOURCES "${IMPL_DIR}/*.c" "${IMPL_DIR}/*.h" "${IMPL_DIR}/*.toml")
+file(GLOB_RECURSE IMPL_SOURCES "${IMPL_DIR}/*.c" "${IMPL_DIR}/*.h" "${IMPL_DIR}/*.toml" "${IMPL_DIR}/*.decode")
 photon_init(${CMAKE_CURRENT_SOURCE_DIR})
 photon_add_device(model1)
 photon_add_device(model2)
