@@ -9,6 +9,11 @@ module test
 //     paramNameN: typeNameN,
 // }
 
+struct ParamStruct {
+    parama: u8,
+    paramb: f64,
+}
+
 struct CmdStruct {
     param1: u8,
     param2: u16,
@@ -18,10 +23,9 @@ struct CmdStruct {
     param6: i16,
     param7: i32,
     param8: i64,
-}
-
-struct ParamStruct {
-    param: u64,
+    param9: ParamStruct,
+    param10: f32,
+    param11: f64,
 }
 
 component {
@@ -35,11 +39,14 @@ component {
         param7: i32,
         param8: i64,
         param9: ParamStruct,
+        param10: f32,
+        param11: f64,
     }
 
     statuses {
         [0, 0, true]: {param1, param2, param3, param4},
         [3, 0, true]: {param5, param6, param7, param8},
+        [4, 0, true]: {param9, param10, param11},
     }
 
     impl {
@@ -55,7 +62,10 @@ component {
         fn setParam6(p: i16)
         fn setParam7(p: i32)
         fn setParam8(p: i64)
-        fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64)
+        fn setParam9(p: ParamStruct)
+        fn setParam10(p: f32)
+        fn setParam11(p: f64)
+        fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64, p9: ParamStruct, p10: f32, p11: f64)
         fn setAllParamsStruct(s: CmdStruct)
         fn incAllParams()
         fn decAllParams()

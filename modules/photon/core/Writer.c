@@ -118,7 +118,7 @@ void PhotonWriter_WriteF32Le(PhotonWriter* self, float value)
 void PhotonWriter_WriteF64Le(PhotonWriter* self, double value)
 {
     union {
-        float f;
+        double f;
         uint64_t v;
     } u;
     u.f = value;

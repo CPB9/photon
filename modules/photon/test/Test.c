@@ -10,6 +10,10 @@ void PhotonTest_Init()
     _photonTest.param6 = 6;
     _photonTest.param7 = 7;
     _photonTest.param8 = 8;
+    _photonTest.param9.parama = 9;
+    _photonTest.param9.paramb = 9;
+    _photonTest.param10 = 10;
+    _photonTest.param11 = 11;
 }
 
 PhotonError PhotonTest_SetParam1(uint8_t p)
@@ -60,7 +64,25 @@ PhotonError PhotonTest_SetParam8(int64_t p)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8)
+PhotonError PhotonTest_SetParam9(const PhotonTestParamStruct* p)
+{
+    _photonTest.param9 = *p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_SetParam10(float p)
+{
+    _photonTest.param10 = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_SetParam11(double p)
+{
+    _photonTest.param11 = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8, const PhotonTestParamStruct* p9, float p10, double p11)
 {
     _photonTest.param1 = p1;
     _photonTest.param2 = p2;
@@ -70,6 +92,9 @@ PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64
     _photonTest.param6 = p6;
     _photonTest.param7 = p7;
     _photonTest.param8 = p8;
+    _photonTest.param9 = *p9;
+    _photonTest.param10 = p10;
+    _photonTest.param11 = p11;
     return PhotonError_Ok;
 }
 
@@ -83,6 +108,9 @@ PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestCmdStruct* s)
     _photonTest.param6 = s->param6;
     _photonTest.param7 = s->param7;
     _photonTest.param8 = s->param8;
+    _photonTest.param9 = s->param9;
+    _photonTest.param10 = s->param10;
+    _photonTest.param11 = s->param11;
     return PhotonError_Ok;
 }
 
@@ -96,6 +124,10 @@ PhotonError PhotonTest_IncAllParams()
     _photonTest.param6++;
     _photonTest.param7++;
     _photonTest.param8++;
+    _photonTest.param9.parama++;
+    _photonTest.param9.paramb++;
+    _photonTest.param10++;
+    _photonTest.param11++;
     return PhotonError_Ok;
 }
 
@@ -109,5 +141,9 @@ PhotonError PhotonTest_DecAllParams()
     _photonTest.param6--;
     _photonTest.param7--;
     _photonTest.param8--;
+    _photonTest.param9.parama--;
+    _photonTest.param9.paramb--;
+    _photonTest.param10--;
+    _photonTest.param11--;
     return PhotonError_Ok;
 }
