@@ -19,6 +19,8 @@
 
 void PhotonExc_Init()
 {
+    PhotonTm_Init();
+    PhotonFwt_Init();
     _photonExc.outCounter = 0;
     //PhotonRingBuf_Init(&_photonExc.outStream, _photonExc.outStreamData, sizeof(_photonExc.outStreamData));
     _photonExc.inCounter = 0;

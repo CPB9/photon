@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     PhotonFwt_Init();
 
     TCLAP::CmdLine cmdLine("Photon model", ' ', "0.1");
-    TCLAP::ValueArg<uint16_t> portArg("p", "port", "Port", true, 6666, "number");
+    TCLAP::ValueArg<uint16_t> portArg("p", "port", "Port", false, 6666, "number");
     TCLAP::ValueArg<unsigned> tickArg("t", "tick", "Tick period", false, 100, "milliseconds");
 
     cmdLine.add(&portArg);
@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
             }
         }
 
-       const  PhotonExcMsg* msg = PhotonExc_GetMsg();
+        const  PhotonExcMsg* msg = PhotonExc_GetMsg();
 
         if (!canSend) {
             continue;

@@ -1,45 +1,90 @@
+/// Module for testing generator
 module test
 
-// struct format
-//
-// struct Name {
-//     paramName1: typeName1,
-//     paramName2: typeName2,
-//     ...
-//     paramNameN: typeNameN,
-// }
+/// EnumParam short desc
+///
+/// EnumParam long desc
+enum EnumParam {
+    /// Type 1 enum
+    Type1 = 1,
+    /// Type 4 enum
+    Type4 = 4,
+}
 
+/// VariantParam short desc
+///
+/// VariantParam long desc
+variant VariantParam {
+    /// variant of type ConstantType
+    ConstantType,
+    /// variant of type TupleType
+    TupleType(i8, u8),
+    /// variant of type StructType
+    StructType { a: i16, b: u16 },
+}
+
+/// ParamStruct short desc
+///
+/// ParamStruct long
+/// multiline desc
 struct ParamStruct {
+    /// param a
     parama: u8,
+    /// param b
     paramb: f64,
 }
 
+/// CmdStruct short desc
 struct CmdStruct {
+    /// param 1
     param1: u8,
+    /// param 2
     param2: u16,
+    /// param 3
     param3: u32,
+    /// param 4
     param4: u64,
+    /// param 5
     param5: i8,
+    /// param 6
     param6: i16,
+    /// param 7
     param7: i32,
+    /// param 8
     param8: i64,
+    /// param 9
+    ///
+    /// struct param
     param9: ParamStruct,
+    /// param 10
     param10: f32,
+    /// param 11
     param11: f64,
 }
 
 component {
     parameters {
+        /// param 1
         param1: u8,
+        /// param 2
         param2: u16,
+        /// param 3
         param3: u32,
+        /// param 4
         param4: u64,
+        /// param 5
         param5: i8,
+        /// param 6
         param6: i16,
+        /// param 7
         param7: i32,
+        /// param 8
         param8: i64,
+        /// param 9
         param9: ParamStruct,
+        /// param 10
         param10: f32,
+        /// param 11
         param11: f64,
     }
 
@@ -50,24 +95,40 @@ component {
     }
 
     impl {
+        /// init func
         fn init()
     }
 
     commands {
+        /// param 1 command
         fn setParam1(p: u8)
+        /// param 2 command
         fn setParam2(p: u16)
+        /// param 3 command
         fn setParam3(p: u32)
+        /// param 4 command
         fn setParam4(p: u64)
+        /// param 5 command
         fn setParam5(p: i8)
+        /// param 6 command
         fn setParam6(p: i16)
+        /// param 7 command
         fn setParam7(p: i32)
+        /// param 8 command
         fn setParam8(p: i64)
+        /// param 9 command
         fn setParam9(p: ParamStruct)
+        /// param 10 command
         fn setParam10(p: f32)
+        /// param 11 command
         fn setParam11(p: f64)
+        /// all params command
         fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64, p9: ParamStruct, p10: f32, p11: f64)
+        /// all params in struct command
         fn setAllParamsStruct(s: CmdStruct)
+        /// inc params command
         fn incAllParams()
+        /// dec params command
         fn decAllParams()
     }
 }

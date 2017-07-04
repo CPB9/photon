@@ -14,6 +14,7 @@ macro(_photon_setup_target target)
 endmacro()
 
 macro(photon_init dir)
+    find_package(Threads)
     set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
     set(_PHOTON_DEPENDS)
@@ -34,16 +35,20 @@ macro(photon_init dir)
         install(FILES $<TARGET_FILE:bmcl> DESTINATION bin)
     endif()
 
+    qt5_wrap_cpp(PHOTON_UI_TEST_MOC
+        ${_PHOTON_DIR}/tests/UiTest.h
+    )
     add_library(photon-ui-test
         ${_PHOTON_DIR}/tests/UiTest.cpp
         ${_PHOTON_DIR}/tests/UiTest.h
+        ${PHOTON_UI_TEST_MOC}
     )
     target_link_libraries(photon-ui-test
         decode
         Qt5::Core
     )
     add_executable(test-serialclient
-        ${_PHOTON_DIR}/tests/ConnectTest.cpp
+        ${_PHOTON_DIR}/tests/ComTest.cpp
     )
     target_link_libraries(test-serialclient
         decode
@@ -60,6 +65,23 @@ macro(photon_init dir)
     )
     _photon_setup_target(test-serialclient)
     _photon_install_target(test-serialclient)
+    add_executable(test-udpclient
+        ${_PHOTON_DIR}/tests/UdpTest.cpp
+    )
+    target_link_libraries(test-udpclient
+        decode
+        bmcl
+        photon-ui-test
+        Qt5::Core
+        Qt5::Widgets
+        Qt5::Network
+    )
+    target_include_directories(test-udpclient
+        PRIVATE
+        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+    )
+    _photon_setup_target(test-udpclient)
+    _photon_install_target(test-udpclient)
 endmacro()
 
 function(_photon_install_target target)
@@ -166,9 +188,16 @@ macro(photon_add_device target)
     endif()
 
     target_include_directories(test-udpserver-${target}
-        PUBLIC
-        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
         PRIVATE
+        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+        ${PHOTON_GEN_SRC_DIR}
+    )
+
+    add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
+    target_link_libraries(test-perf-${target} photon-${target} decode ${CMAKE_THREAD_LIBS_INIT})
+    target_include_directories(test-perf-${target}
+        PRIVATE
+        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
         ${PHOTON_GEN_SRC_DIR}
     )
 

@@ -13,6 +13,8 @@
 #include <decode/groundcontrol/Scheduler.h>
 #include <decode/groundcontrol/Exchange.h>
 
+#include <bmcl/Logging.h>
+
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QTimer>
@@ -37,9 +39,25 @@ int runUiTest(QApplication* app, DataStream* stream)
     std::unique_ptr<FirmwareWidget> w = bmcl::makeUnique<FirmwareWidget>(handler.get());
     std::unique_ptr<FirmwareStatusWidget> fwStatusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
 
-    fwStatusWidget->resize(640, 240);
+    fwStatusWidget->resize(640, 300);
     fwStatusWidget->move(app->desktop()->screen()->rect().center() - fwStatusWidget->rect().center());
     fwStatusWidget->show();
+
+    QObject::connect(stream, &DataStream::readyRead, stream, [&]() {
+        int64_t size = stream->bytesAvailable();
+        if (size > 0) {
+            uint8_t* data = new uint8_t[size];
+            int64_t readData = stream->readData(data, size);
+            if (readData > 0) {
+                gc->acceptData(bmcl::Bytes(data, readData));
+            } else {
+                BMCL_DEBUG() << "no data to read";
+            }
+            delete [] data;
+        } else {
+            BMCL_DEBUG() << "no data available";
+        }
+    });
 
     QObject::connect(handler.get(), &QModelEventHandler::beginHashDownload, fwStatusWidget.get(), [&]() {
         fwStatusWidget->beginHashDownload();

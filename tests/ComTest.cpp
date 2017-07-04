@@ -20,6 +20,7 @@ public:
         _port->setBaudRate(baudRate);
         _port->open(QIODevice::ReadWrite);
         BMCL_DEBUG() << _port->error();
+        connect(_port, &QSerialPort::readyRead, this, &DataStream::readyRead);
     }
 
     ~RsSink()
@@ -29,13 +30,17 @@ public:
 
     void sendData(bmcl::Bytes packet) override
     {
-        BMCL_DEBUG() << "sending " << packet.size();
         _port->write((char*)packet.data(), packet.size());
     }
 
     int64_t readData(void* dest, std::size_t maxSize) override
     {
         return _port->read((char*)dest, maxSize);
+    }
+
+    int64_t bytesAvailable() const override
+    {
+        return _port->bytesAvailable();
     }
 
 private:

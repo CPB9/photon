@@ -5,8 +5,12 @@
 
 #include "photon/Init.h"
 #include "photon/exc/Exc.Component.h"
+#include "photon/tm/Tm.Component.h"
+
+#include <bmcl/Logging.h>
 
 #include <QApplication>
+#include <QTimer>
 
 using namespace decode;
 
@@ -14,8 +18,17 @@ class InProcStream : public DataStream {
 public:
     InProcStream()
     {
+        PhotonTm_Init();
         Photon_Init();
         _current = *PhotonExc_GetMsg();
+        _timer = new QTimer;
+        connect(_timer, &QTimer::timeout, this, &InProcStream::readyRead);
+        _timer->start(100);
+    }
+
+    ~InProcStream()
+    {
+        delete _timer;
     }
 
     void sendData(bmcl::Bytes packet) override
@@ -40,8 +53,14 @@ public:
         return maxSize;
     }
 
+    int64_t bytesAvailable() const override
+    {
+        return _current.size;
+    }
+
 private:
     PhotonExcMsg _current;
+    QTimer* _timer;
 };
 
 int main(int argc, char** argv)
