@@ -4,6 +4,11 @@ find_package(Qt5Widgets)
 find_package(Qt5SerialPort)
 find_package(Qt5Network)
 
+if(GPERFTOOLS)
+    find_library(GPERFTOOLS_PROFILER  NAMES profiler)
+    set(PHOTON_PROFILER_LIB ${GPERFTOOLS_PROFILER})
+endif()
+
 macro(_photon_setup_target target)
     set_target_properties(${target}
         PROPERTIES
@@ -53,6 +58,7 @@ macro(photon_init dir)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/decode EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/dtacan EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/gtest EXCLUDE_FROM_ALL)
+    add_subdirectory(${_PHOTON_DIR}/thirdparty/asio EXCLUDE_FROM_ALL)
     install(FILES $<TARGET_FILE:decode_gen> DESTINATION bin)
     get_target_property(_TARGET_TYPE bmcl TYPE)
     if(_TARGET_TYPE STREQUAL  "SHARED_LIBRARY")
@@ -84,6 +90,8 @@ macro(photon_init dir)
         decode
         bmcl
         photon-ui-test
+        asio
+        ${PHOTON_PROFILER_LIB}
         Qt5::Core
         Qt5::Widgets
         #Qt5::Network
@@ -102,6 +110,8 @@ macro(photon_init dir)
         decode
         bmcl
         photon-ui-test
+        asio
+        ${PHOTON_PROFILER_LIB}
         Qt5::Core
         Qt5::Widgets
         Qt5::Network
@@ -179,6 +189,7 @@ macro(photon_add_device target)
             bmcl
             decode
             photon-ui-test
+            ${PHOTON_PROFILER_LIB}
             Qt5::Core
         )
         target_include_directories(test-inproc-${target}

@@ -19,17 +19,22 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QTimer>
+#include <QWidget>
 
 #include <chrono>
 #include <unordered_set>
 
 using namespace decode;
 
-UiActor::UiActor(caf::actor_config& cfg, int& argc, char** argv)
+UiActor::UiActor(caf::actor_config& cfg, caf::actor stream, int& argc, char** argv)
     : caf::event_based_actor(cfg)
     , _argc(argc)
     , _argv(argv)
+    , _stream(stream)
+    , _widgetShown(false)
 {
+    _gc = spawn<decode::GroundControl>(_stream, this);
+    send(_stream, SetStreamDestAtom::value, _gc);
 }
 
 UiActor::~UiActor()
@@ -39,18 +44,33 @@ UiActor::~UiActor()
 caf::behavior UiActor::make_behavior()
 {
     return caf::behavior{
-        [this](StartEventLoopAtom) {
+        [this](StartAtom) {
             _app = bmcl::makeUnique<QApplication>(_argc, _argv);
             _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
             _widget = bmcl::makeUnique<FirmwareWidget>();
-            delayed_send(this, std::chrono::milliseconds(1), RepeatEventLoopAtom::value);
+
+            QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
+                BMCL_DEBUG() << "quitting";
+                quit();
+            });
+
+            delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
+            delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
+            delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
         },
         [this](RepeatEventLoopAtom) {
-            _app->processEvents();
-            delayed_send(this, std::chrono::milliseconds(1), RepeatEventLoopAtom::value);
+            _app->sync();
+            if (_widgetShown && !_widget->isVisible()) {
+                BMCL_DEBUG() << "quitting";
+                _app.reset();
+                quit();
+                return;
+            }
+            delayed_send<caf::message_priority::high>(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
         },
         [this](SetProjectAtom, const Rc<const Project>&, const Rc<const Device>&) {
-            _widget->show();
+            _widgetShown = true;
+            _widget->showMaximized();
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
@@ -84,13 +104,18 @@ caf::behavior UiActor::make_behavior()
         [this](FirmwareHashDownloadedEventAtom, const std::string& name, const bmcl::SharedBytes& hash) {
             _statusWidget->endHashDownload(name, hash.view());
         },
-        [this](StartAtom, std::chrono::milliseconds delay, const caf::actor& act) {
-            delayed_send(act, delay, StartAtom::value);
-        },
     };
 }
 
 const char* UiActor::name() const
 {
     return "UiTestActor";
+}
+
+void UiActor::on_exit()
+{
+    send_exit(_gc, caf::exit_reason::user_shutdown);
+    send_exit(_stream, caf::exit_reason::user_shutdown);
+    destroy(_gc);
+    destroy(_stream);
 }

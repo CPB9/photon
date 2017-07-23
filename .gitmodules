@@ -7,3 +7,6 @@
 [submodule "thirdparty/dtacan"]
 	path = thirdparty/dtacan
 	url = https://github.com/acsl-mipt/dtacan.git
+[submodule "thirdparty/asio"]
+	path = thirdparty/asio
+	url = https://github.com/CPB9/asio.git

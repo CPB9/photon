@@ -192,6 +192,7 @@ void FwtTest::run()
     _gc = _system->spawn<decode::GroundControl>(_stream, _handler);
 
     caf::anon_send(_stream, SetStreamDestAtom::value, _gc);
+    caf::anon_send(_gc, StartAtom::value);
     caf::anon_send(_stream, StartAtom::value);
     _system->await_all_actors_done();
 }

@@ -1,125 +1,126 @@
-#include "decode/groundcontrol/GroundControl.h"
-#include "decode/groundcontrol/Exchange.h"
-#include "decode/groundcontrol/Scheduler.h"
-#include "decode/model/ModelEventHandler.h"
-#include "decode/model/Model.h"
-#include "decode/model/Node.h"
-#include "decode/model/Value.h"
+#include <decode/core/Rc.h>
+#include <decode/parser/Project.h>
+#include <decode/groundcontrol/Exchange.h>
+#include <decode/groundcontrol/GroundControl.h>
+#include <decode/groundcontrol/Atoms.h>
+#include <decode/groundcontrol/AloowUnsafeMessageType.h>
+#include <decode/model/NodeViewUpdater.h>
 
 #include "photon/Init.h"
 #include "photon/exc/Exc.Component.h"
-#include "photon/tm/Tm.Component.h"
 
-#include <bmcl/Bytes.h>
 #include <bmcl/Logging.h>
+#include <bmcl/SharedBytes.h>
 
-#include <tclap/CmdLine.h>
-
-#include <thread>
+#include <caf/send.hpp>
+#include <caf/actor_system.hpp>
+#include <caf/actor_system_config.hpp>
 
 using namespace decode;
 
-struct ISched : public Scheduler {
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
+
+class PhotonStream : public caf::event_based_actor {
 public:
-    void scheduleAction(StateAction action, std::chrono::milliseconds delay) override
+    PhotonStream(caf::actor_config& cfg)
+        : caf::event_based_actor(cfg)
     {
-        (void)delay;
-        actions.emplace_back(std::move(action));
+        Photon_Init();
+        _current = *PhotonExc_GetMsg();
     }
 
-    std::vector<StateAction> actions;
+    caf::behavior make_behavior() override
+    {
+        return caf::behavior{
+            [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                PhotonExc_AcceptInput(data.data(), data.size());
+            },
+            [this](SetStreamDestAtom, const caf::actor& actor) {
+                _dest = actor;
+            },
+            [this](StartAtom) {
+                send(this, RepeatStreamAtom::value);
+            },
+            [this](RepeatStreamAtom) {
+                auto data = bmcl::SharedBytes::create(_current.data, _current.size);
+                send(_dest, RecvDataAtom::value, data);
+                PhotonExc_PrepareNextMsg();
+                _current = *PhotonExc_GetMsg();
+                send(this, RepeatStreamAtom::value);
+            },
+        };
+    }
+
+    void on_exit() override
+    {
+        destroy(_dest);
+    }
+
+    PhotonExcMsg _current;
+    caf::actor _dest;
 };
 
-class PhotonSink : public DataSink {
+class FakeHandler : public caf::event_based_actor {
 public:
-    void sendData(bmcl::Bytes packet) override
+    FakeHandler(caf::actor_config& cfg)
+        : caf::event_based_actor(cfg)
     {
-        for (uint8_t byte : packet) {
-            PhotonExc_AcceptInput(&byte, 1);
-        }
+    }
+
+    caf::behavior make_behavior() override
+    {
+        return caf::behavior{
+            [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
+            },
+            [this](FirmwareErrorEventAtom, const std::string& msg) {
+            },
+            [this](FirmwareDownloadStartedEventAtom) {
+            },
+            [this](FirmwareDownloadFinishedEventAtom) {
+            },
+            [this](FirmwareStartCmdSentEventAtom) {
+            },
+            [this](FirmwareStartCmdPassedEventAtom) {
+            },
+            [this](FirmwareProgressEventAtom, std::size_t size) {
+            },
+            [this](FirmwareSizeRecievedEventAtom, std::size_t size) {
+            },
+            [this](FirmwareHashDownloadedEventAtom, const std::string& name, const bmcl::SharedBytes& hash) {
+            },
+            [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
+            },
+            [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
+            },
+        };
+    }
+
+    const char* name() const override
+    {
+        return "FakeHandler";
     }
 };
-
-void walkNode(Node* node)
-{
-    for (std::size_t i = 0; i < node->numChildren(); i++) {
-        Rc<Node> child = node->childAt(i).data();
-        if (child) {
-            walkNode(child.get());
-        }
-        auto value = node->value();
-    }
-}
-
-class EventHandler : public ModelEventHandler {
-public:
-    void beginHashDownload() override
-    {
-        BMCL_DEBUG() << "fwt begin";
-    }
-/*
-    void endHashDownload(const std::string& deviceName, bmcl::Bytes firmwareHash);
-    void beginFirmwareStartCommand();
-    void endFirmwareStartCommand();
-    void beginFirmwareDownload(std::size_t firmwareSize);
-    void firmwareError(const std::string& errorMsg);*/
-    void firmwareDownloadProgress(std::size_t sizeDownloaded) override
-    {
-        BMCL_DEBUG() << sizeDownloaded;
-    }
-
-    void endFirmwareDownload() override
-    {
-        BMCL_DEBUG() << "fwt ok";
-    }
-//     void packetQueued(bmcl::Bytes packet);
-//     void modelUpdated(const Rc<Model>& model) override;
-
-
-
-//     void nodeValueUpdated(const Node* node, std::size_t nodeIndex);
-//     void nodesInserted(const Node* node, std::size_t nodeIndex, std::size_t firstIndex, std::size_t lastIndex);
-//     void nodesRemoved(const Node* node, std::size_t nodeIndex, std::size_t firstIndex, std::size_t lastIndex);
-};
-
-uint8_t temp[2048];
 
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmdLine("PhotonUi");
-    TCLAP::ValueArg<std::size_t> iArg("i", "num", "Iterations", false, 10000, "num iterations");
+    caf::actor_system_config cfg;
+    caf::actor_system system(cfg);
+    caf::actor stream = system.spawn<PhotonStream>();
 
-    cmdLine.add(&iArg);
-    cmdLine.parse(argc, argv);
+    caf::actor handler = system.spawn<FakeHandler>();
+    caf::actor gc = system.spawn<decode::GroundControl>(stream, handler);
 
-    PhotonTm_Init();
-    Photon_Init();
-    PhotonExcMsg current = *PhotonExc_GetMsg();
+    caf::anon_send(stream, decode::SetStreamDestAtom::value, gc);
+    caf::anon_send(gc, decode::StartAtom::value);
+    caf::anon_send(stream, decode::StartAtom::value);
 
-    Rc<ISched> sched = new ISched;
-    Rc<EventHandler> handler = new EventHandler;
-    Rc<PhotonSink> sink = new PhotonSink;
-    Rc<GroundControl> gc = new GroundControl(sink.get(), sched.get(), handler.get());
-    gc->start();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
 
-    auto start = std::chrono::steady_clock::now();
-    std::thread exchangeThread([&]() {
-        for (std::size_t i = 0; i < iArg.getValue(); i++) {
-            gc->acceptData(bmcl::Bytes(current.data, current.size));
-            PhotonExc_PrepareNextMsg();
-            current = *PhotonExc_GetMsg();
+    caf::anon_send_exit(stream, caf::exit_reason::user_shutdown);
+    caf::anon_send_exit(gc, caf::exit_reason::user_shutdown);
+    caf::anon_send_exit(handler, caf::exit_reason::user_shutdown);
 
-            std::vector<StateAction> actions = std::move(sched->actions);
-            for (const StateAction& action : actions) {
-                action();
-            }
-        }
-    });
-    exchangeThread.join();
-
-    sched->actions.clear();
-
-    auto end = std::chrono::steady_clock::now();
-    auto delta = end - start;
-    BMCL_DEBUG() << "time (us):" << std::chrono::duration_cast<std::chrono::microseconds>(delta).count();
+    system.await_all_actors_done();
+    return 0;
 }
+

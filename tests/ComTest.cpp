@@ -1,98 +1,124 @@
 #include "UiTest.h"
 
+#include <decode/core/Rc.h>
 #include <decode/groundcontrol/Exchange.h>
+#include <decode/groundcontrol/FwtState.h>
+#include <decode/groundcontrol/Atoms.h>
+#include <decode/groundcontrol/AloowUnsafeMessageType.h>
 
 #include <bmcl/Logging.h>
+#include <bmcl/SharedBytes.h>
+
+#include <asio/serial_port.hpp>
 
 #include <tclap/CmdLine.h>
 
-#include <QApplication>
-#include <QtSerialPort/QtSerialPort>
-//#include <QUdpSocket>
+#include <caf/send.hpp>
+#include <caf/others.hpp>
+#include <caf/blocking_actor.hpp>
 
 using namespace decode;
 
-class RsSink : public DataStream {
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
+
+//TODO: refact into BlockingStreamBase
+
+class SerialStream : public caf::blocking_actor {
 public:
-    RsSink(const char* path, unsigned baudRate)
-        : _port(new QSerialPort(path))
+    SerialStream(caf::actor_config& cfg, asio::serial_port&& serial)
+        : caf::blocking_actor(cfg)
+        , _serial(std::move(serial))
     {
-        _port->setBaudRate(baudRate);
-        _port->open(QIODevice::ReadWrite);
-        BMCL_DEBUG() << _port->error();
-        connect(_port, &QSerialPort::readyRead, this, &DataStream::readyRead);
     }
 
-    ~RsSink()
+    void act() override
     {
-        delete _port;
+        do {
+            if (has_next_message()) {
+                receive(
+                    [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                        asio::error_code err;
+                        std::size_t size = _serial.write_some(asio::buffer(data.data(), data.size()), err);
+                        if (err) {
+                            BMCL_CRITICAL() << "error sending packet: " << err.message();
+                        }
+                        assert(size == data.size());
+                    },
+                    [this](SetStreamDestAtom, const caf::actor& actor) {
+                        _dest = actor;
+                    },
+                    [this](StartAtom) {
+                        _hasStarted = true;
+                    },
+                    caf::others >> [](caf::message_view& x) -> caf::result<caf::message> {
+                        return caf::sec::unexpected_message;
+                    }
+                );
+            }
+
+            if (!_hasStarted) {
+                continue;
+            }
+
+            recieveFromSerial();
+        } while (true);
     }
 
-    void sendData(bmcl::Bytes packet) override
+    void recieveFromSerial()
     {
-        _port->write((char*)packet.data(), packet.size());
+        std::array<uint8_t, 2048> buf;
+        asio::error_code err;
+        std::size_t size = _serial.read_some(asio::buffer(buf), err);
+        if (err) {
+            BMCL_CRITICAL() << "error recieving packet: " << err.message();
+            return;
+        }
+        if (size == 0) {
+            return;
+        }
+
+        bmcl::SharedBytes data = bmcl::SharedBytes::create(buf.data(), size);
+        send(_dest, RecvDataAtom::value, data);
     }
 
-    int64_t readData(void* dest, std::size_t maxSize) override
+    void on_exit() override
     {
-        return _port->read((char*)dest, maxSize);
+        destroy(_dest);
     }
 
-    int64_t bytesAvailable() const override
-    {
-        return _port->bytesAvailable();
-    }
-
-private:
-    QSerialPort* _port;
+    bool _hasStarted;
+    caf::actor _dest;
+    asio::serial_port _serial;
 };
 
-// class UpdSink : public DataStream {
-// public:
-//     UpdSink()
-//         : _sock(new QUdpSocket)
-//     {
-//         //_sock->setBaudRate(QSerialPort::Baud115200);
-//         QHostAddress addr;
-//         addr.setAddress("127.0.0.1");
-//         _sock->connectToHost(addr, 6000);
-//         BMCL_DEBUG() << _sock->error();
-//     }
-//
-//     ~UpdSink()
-//     {
-//         delete _sock;
-//     }
-//
-//     void sendData(bmcl::Bytes packet) override
-//     {
-//         QHostAddress addr;
-//         addr.setAddress("127.0.0.1");
-//         _sock->writeDatagram((char*)packet.data(), packet.size(), addr, 6000);
-//     }
-//
-//     int64_t readData(void* dest, std::size_t maxSize) override
-//     {
-//         _sock->waitForReadyRead();
-//         return _sock->readDatagram((char*)dest, maxSize);
-//     }
-//
-// private:
-//     QUdpSocket* _sock;
-// };
+using namespace decode;
 
 int main(int argc, char** argv)
 {
-    TCLAP::CmdLine cmdLine("PhotonUi");
-    TCLAP::ValueArg<std::string> comArg("c", "com", "Read from COM", true, "", "com device");
-    TCLAP::ValueArg<unsigned> baudArg("b", "baud", "Com port baud rate", false, 9600, "baud rate");
+    TCLAP::CmdLine cmdLine("SerialTest");
+    TCLAP::ValueArg<std::string> serialArg("s", "serial", "Read from serial", true, "", "serial device");
+    TCLAP::ValueArg<unsigned> baudArg("b", "baud", "Serial baud rate", false, 9600, "baud rate");
 
-    cmdLine.add(&comArg);
+    cmdLine.add(&serialArg);
     cmdLine.add(&baudArg);
     cmdLine.parse(argc, argv);
 
-    QApplication app(argc, argv);
+    asio::io_service ioService;
+    asio::serial_port serial(ioService);
 
-    Rc<DataStream> _stream = new RsSink(comArg.getValue().c_str(), baudArg.getValue());
-    return runUiTest(&app, _stream.get());
+    asio::error_code err;
+    serial.open(serialArg.getValue(), err);
+    if (err) {
+        BMCL_CRITICAL() << "could not open serial port: " << err.message();
+        return err.value();
+    }
+
+    serial.set_option(asio::serial_port::baud_rate(baudArg.getValue()), err);
+    if (err) {
+        BMCL_CRITICAL() << "could not set baud rate " << baudArg.getValue() << ": " << err.message();
+        return err.value();
+    }
+
+
+    return runUiTest<SerialStream>(argc, argv, std::move(serial));
 }
