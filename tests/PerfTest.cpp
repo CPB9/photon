@@ -2,7 +2,9 @@
 #include "decode/groundcontrol/Exchange.h"
 #include "decode/groundcontrol/Scheduler.h"
 #include "decode/model/ModelEventHandler.h"
+#include "decode/model/Model.h"
 #include "decode/model/Node.h"
+#include "decode/model/Value.h"
 
 #include "photon/Init.h"
 #include "photon/exc/Exc.Component.h"
@@ -36,8 +38,18 @@ public:
             PhotonExc_AcceptInput(&byte, 1);
         }
     }
-
 };
+
+void walkNode(Node* node)
+{
+    for (std::size_t i = 0; i < node->numChildren(); i++) {
+        Rc<Node> child = node->childAt(i).data();
+        if (child) {
+            walkNode(child.get());
+        }
+        auto value = node->value();
+    }
+}
 
 class EventHandler : public ModelEventHandler {
 public:
@@ -61,7 +73,10 @@ public:
         BMCL_DEBUG() << "fwt ok";
     }
 //     void packetQueued(bmcl::Bytes packet);
-//     void modelUpdated(const Rc<Model>& model);
+//     void modelUpdated(const Rc<Model>& model) override;
+
+
+
 //     void nodeValueUpdated(const Node* node, std::size_t nodeIndex);
 //     void nodesInserted(const Node* node, std::size_t nodeIndex, std::size_t firstIndex, std::size_t lastIndex);
 //     void nodesRemoved(const Node* node, std::size_t nodeIndex, std::size_t firstIndex, std::size_t lastIndex);
@@ -69,13 +84,8 @@ public:
 
 uint8_t temp[2048];
 
-void walkNode(Node* node)
-{
-}
-
 int main(int argc, char** argv)
 {
-
     TCLAP::CmdLine cmdLine("PhotonUi");
     TCLAP::ValueArg<std::size_t> iArg("i", "num", "Iterations", false, 10000, "num iterations");
 
@@ -86,7 +96,6 @@ int main(int argc, char** argv)
     Photon_Init();
     PhotonExcMsg current = *PhotonExc_GetMsg();
 
-
     Rc<ISched> sched = new ISched;
     Rc<EventHandler> handler = new EventHandler;
     Rc<PhotonSink> sink = new PhotonSink;
@@ -94,7 +103,6 @@ int main(int argc, char** argv)
     gc->start();
 
     auto start = std::chrono::steady_clock::now();
-
     std::thread exchangeThread([&]() {
         for (std::size_t i = 0; i < iArg.getValue(); i++) {
             gc->acceptData(bmcl::Bytes(current.data, current.size));
@@ -108,6 +116,8 @@ int main(int argc, char** argv)
         }
     });
     exchangeThread.join();
+
+    sched->actions.clear();
 
     auto end = std::chrono::steady_clock::now();
     auto delta = end - start;

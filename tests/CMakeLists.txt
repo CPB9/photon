@@ -36,4 +36,4 @@ if (WIN32)
 endif()
 
 #add_unit_test(memintervalset_tests MemIntervalSet.cpp)
-add_unit_test(fwt_test Fwt.cpp)
+add_unit_test(fwt_test FwtTest.cpp)

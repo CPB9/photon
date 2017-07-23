@@ -139,7 +139,7 @@ static bool findPacket(PhotonMemChunks* chunks)
     }
 
     if (size < expectedSize) {
-        PHOTON_DEBUG("Packet payload not yet recieved");
+        //PHOTON_DEBUG("Packet payload not yet recieved");
         return false;
     }
 

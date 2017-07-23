@@ -29,6 +29,6 @@ photon_add_device(model1)
 photon_add_device(model2)
 photon_generate_sources(${_PHOTON_DIR}/project.toml ${IMPL_SOURCES})
 
-#add_subdirectory(thirdparty/gtest EXCLUDE_FROM_ALL)
-#add_subdirectory(tests)
+add_library(_photon-impl EXCLUDE_FROM_ALL ${IMPL_SOURCES})
+target_include_directories(_photon-impl PUBLIC ${IMPL_DIR})
 

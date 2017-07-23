@@ -11,6 +11,35 @@ macro(_photon_setup_target target)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     )
+    if (PHOTON_LOG_LEVEL)
+        target_compile_options(${target} PUBLIC -DPHOTON_LOG_LEVEL=${PHOTON_LOG_LEVEL})
+    endif()
+endmacro()
+
+set(_PHOTON_TESTS_DIR ${CMAKE_BINARY_DIR}/bin/tests)
+file(MAKE_DIRECTORY ${_PHOTON_TESTS_DIR})
+
+macro(_photon_add_unit_test target test file)
+    add_executable(${test}-${target} ${_PHOTON_DIR}/tests/${file})
+    target_link_libraries(${test}-${target}
+        ${ARGN}
+        gtest
+        gtest_main
+        photon-${target}
+        decode
+    )
+
+    target_include_directories(${test}-${target}
+        PRIVATE
+        ${_PHOTON_DIR}/thirdparty/gtest/include
+    )
+
+    set_target_properties(${test}-${target}
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${_PHOTON_TESTS_DIR}
+        FOLDER "tests"
+    )
+    add_test(${test}-${target} ${_PHOTON_TESTS_DIR}/${test}-${target})
 endmacro()
 
 macro(photon_init dir)
@@ -23,6 +52,7 @@ macro(photon_init dir)
 
     add_subdirectory(${_PHOTON_DIR}/thirdparty/decode EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/dtacan EXCLUDE_FROM_ALL)
+    add_subdirectory(${_PHOTON_DIR}/thirdparty/gtest EXCLUDE_FROM_ALL)
     install(FILES $<TARGET_FILE:decode_gen> DESTINATION bin)
     get_target_property(_TARGET_TYPE bmcl TYPE)
     if(_TARGET_TYPE STREQUAL  "SHARED_LIBRARY")
@@ -206,5 +236,6 @@ macro(photon_add_device target)
 
     _photon_install_target(test-udpserver-${target})
     _photon_install_target(photon-${target})
+    _photon_add_unit_test(${target} fwt-test FwtTest.cpp)
 endmacro()
 

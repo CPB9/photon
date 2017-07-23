@@ -17,6 +17,7 @@
 
 #define EXPECT_NO_PARAMS_LEFT(src)              \
     if (PhotonReader_ReadableSize(src) != 0) {  \
+        PHOTON_CRITICAL("Cmd size too big");    \
         return PhotonError_InvalidValue;        \
     }
 
@@ -36,8 +37,8 @@ void PhotonFwt_Init()
 static PhotonError requestHash(PhotonReader* src)
 {
     EXPECT_NO_PARAMS_LEFT(src);
-    PHOTON_DEBUG("HashRequested requested");
     _photonFwt.hashRequested = true;
+    PHOTON_DEBUG("HashRequested requested");
     return PhotonError_Ok;
 }
 
@@ -48,37 +49,41 @@ static PhotonError requestChunk(PhotonReader* src)
         return PhotonError_Ok;
     }
 
-    uint64_t chunkOffset;
-    uint64_t chunkSize;
-    PHOTON_TRY(PhotonReader_ReadVaruint(src, &chunkOffset));
-    PHOTON_TRY(PhotonReader_ReadVaruint(src, &chunkSize));
+    uint64_t chunkBegin;
+    uint64_t chunkEnd;
+    PHOTON_TRY(PhotonReader_ReadVaruint(src, &chunkBegin));
+    PHOTON_TRY(PhotonReader_ReadVaruint(src, &chunkEnd));
     EXPECT_NO_PARAMS_LEFT(src);
-    PHOTON_DEBUG("ChunkRequested requested %u, %u", (unsigned)chunkOffset, (unsigned)chunkSize);
 
-    if (chunkSize == 0) {
+    if (chunkBegin >= _PHOTON_PACKAGE_SIZE) {
+        PHOTON_CRITICAL("Ignoring chunk with begin > fwsize");
+        return PhotonError_InvalidValue;
+    }
+
+    if (chunkEnd > _PHOTON_PACKAGE_SIZE) {
+        PHOTON_CRITICAL("Ignoring chunk with end > fwsize");
+        return PhotonError_InvalidValue;
+    }
+
+    if (chunkBegin > chunkEnd) {
+        PHOTON_CRITICAL("Ignoring chunk with begin > end");
+        return PhotonError_InvalidValue;
+    }
+
+    if (chunkBegin == chunkEnd) {
+        PHOTON_DEBUG("Ignoring zero size chunk");
         return PhotonError_Ok;
     }
 
-    if (chunkOffset >= _PHOTON_PACKAGE_SIZE) {
-        return PhotonError_InvalidValue;
-    }
-
-    if (chunkSize > _PHOTON_PACKAGE_SIZE) {
-        return PhotonError_InvalidValue;
-    }
-
-    if (chunkOffset > _PHOTON_PACKAGE_SIZE - chunkSize) {
-        return PhotonError_InvalidValue;
-    }
-
     // avoid sending twice
-    const uint8_t* start = FW_START + chunkOffset;
+    const uint8_t* start = FW_START + chunkBegin;
     if (start >= _photonFwt.firmware.current) {
+        PHOTON_WARNING("Ignoring duplicating chunk");
         return PhotonError_Ok;
     }
 
     // avoid intersecting part twice
-    const uint8_t* end = start + chunkSize;
+    const uint8_t* end = FW_START + chunkEnd;
     if (end > _photonFwt.firmware.current) {
         end = _photonFwt.firmware.current;
     }
@@ -86,6 +91,8 @@ static PhotonError requestChunk(PhotonReader* src)
     _photonFwt.chunk.current = start;
     _photonFwt.chunk.end = end;
     _photonFwt.chunk.isTransfering = true;
+
+    PHOTON_DEBUG("ChunkRequested %u, %u", (unsigned)chunkBegin, (unsigned)chunkEnd);
     return PhotonError_Ok;
 }
 
@@ -96,9 +103,9 @@ static PhotonError start(PhotonReader* src)
     PHOTON_TRY(PhotonReader_ReadVaruint(src, &startId));
 
     if (_photonFwt.firmware.isTransfering && startId == _photonFwt.startId) {
+        PHOTON_WARNING("Ignoring duplicate start cmd");
         return PhotonError_Ok;
     }
-    PHOTON_DEBUG("StartRequested requested %u", (unsigned)startId);
     _photonFwt.startId = startId;
     _photonFwt.startRequested = true;
 
@@ -106,6 +113,7 @@ static PhotonError start(PhotonReader* src)
 
     _photonFwt.firmware.current = FW_START;
     _photonFwt.firmware.isTransfering = true;
+    PHOTON_DEBUG("StartRequested requested %u", (unsigned)startId);
     return PhotonError_Ok;
 }
 
@@ -136,6 +144,7 @@ PhotonError PhotonFwt_AcceptCmd(PhotonReader* src)
         return stop(src);
     }
 
+    PHOTON_CRITICAL("Invalid cmd type");
     return PhotonError_InvalidValue;
 }
 
@@ -145,11 +154,13 @@ static PhotonError genHash(PhotonWriter* dest)
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_PACKAGE_SIZE));
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _PHOTON_DEVICE_NAME_SIZE));
     if (PhotonWriter_WritableSize(dest) < (_PHOTON_PACKAGE_HASH_SIZE + _PHOTON_DEVICE_NAME_SIZE)) {
+        PHOTON_CRITICAL("Not enough space to generate fwt cmd");
         return PhotonError_NotEnoughSpace;
     }
     PhotonWriter_Write(dest, _deviceName, _PHOTON_DEVICE_NAME_SIZE);
     PhotonWriter_Write(dest, _packageHash, _PHOTON_PACKAGE_HASH_SIZE);
     _photonFwt.hashRequested = false;
+    PHOTON_DEBUG("Generated hash response");
     return PhotonError_Ok;
 }
 
@@ -158,6 +169,7 @@ static PhotonError genStart(PhotonWriter* dest)
     PHOTON_TRY(PhotonFwtAnswerType_Serialize(PhotonFwtAnswerType_Start, dest));
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _photonFwt.startId));
     _photonFwt.startRequested = false;
+    PHOTON_DEBUG("Generated start response %u", (unsigned)_photonFwt.startId);
     return PhotonError_Ok;
 }
 
@@ -172,9 +184,14 @@ static PhotonError genNext(PhotonFwtChunk* chunk, PhotonWriter* dest)
     size = PHOTON_MIN(size, PhotonWriter_WritableSize(dest));
 
     if (size == 0) {
+        PHOTON_CRITICAL("Not enough space to generate next");
         return PhotonError_NotEnoughSpace;
     }
 
+#if PHOTON_LOG_LEVEL == PHOTON_LOG_LEVEL_DEBUG
+    unsigned current = chunk->current - FW_START;
+    unsigned end = current + size;
+#endif
     PhotonWriter_Write(dest, chunk->current, size);
     chunk->current += size;
 
@@ -182,6 +199,7 @@ static PhotonError genNext(PhotonFwtChunk* chunk, PhotonWriter* dest)
         chunk->isTransfering = false;
     }
 
+    PHOTON_DEBUG("Generated chunk response %u, %u", current, end);
     return PhotonError_Ok;
 }
 

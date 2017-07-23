@@ -2,6 +2,7 @@
 #include "photon/exc/Exc.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/core/Logging.h"
+#include "photon/Init.h"
 
 #include <tclap/CmdLine.h>
 
@@ -39,9 +40,7 @@ static char temp[maxPacketSize];
 
 int main(int argc, char* argv[])
 {
-    PhotonTm_Init();
-    PhotonExc_Init();
-    PhotonFwt_Init();
+    Photon_Init();
 
     TCLAP::CmdLine cmdLine("Photon model", ' ', "0.1");
     TCLAP::ValueArg<uint16_t> portArg("p", "port", "Port", false, 6666, "number");

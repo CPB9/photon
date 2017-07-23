@@ -2,72 +2,68 @@
 
 #include <decode/core/Rc.h>
 #include <decode/groundcontrol/Exchange.h>
+#include <decode/groundcontrol/FwtState.h>
+#include <decode/groundcontrol/Atoms.h>
+#include <decode/groundcontrol/AloowUnsafeMessageType.h>
 
 #include "photon/Init.h"
 #include "photon/exc/Exc.Component.h"
-#include "photon/tm/Tm.Component.h"
 
 #include <bmcl/Logging.h>
+#include <bmcl/SharedBytes.h>
 
-#include <QApplication>
-#include <QTimer>
+#include <caf/send.hpp>
 
 using namespace decode;
 
-class InProcStream : public DataStream {
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
+
+class PhotonStream : public caf::event_based_actor {
 public:
-    InProcStream()
+    PhotonStream(caf::actor_config& cfg)
+        : caf::event_based_actor(cfg)
     {
-        PhotonTm_Init();
         Photon_Init();
         _current = *PhotonExc_GetMsg();
-        _timer = new QTimer;
-        connect(_timer, &QTimer::timeout, this, &InProcStream::readyRead);
-        _timer->start(100);
     }
 
-    ~InProcStream()
+    caf::behavior make_behavior() override
     {
-        delete _timer;
+        return caf::behavior{
+            [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                for (uint8_t byte : data.view()) {
+                    PhotonExc_AcceptInput(&byte, 1);
+                }
+            },
+            [this](SetStreamDestAtom, const caf::actor& actor) {
+                _dest = actor;
+            },
+            [this](StartAtom) {
+                send(this, RepeatStreamAtom::value);
+            },
+            [this](RepeatStreamAtom) {
+                auto data = bmcl::SharedBytes::create(_current.data, _current.size);
+                send(_dest, RecvDataAtom::value, data);
+                PhotonExc_PrepareNextMsg();
+                _current = *PhotonExc_GetMsg();
+                delayed_send(this, std::chrono::milliseconds(50), RepeatStreamAtom::value);
+            },
+        };
     }
 
-    void sendData(bmcl::Bytes packet) override
+    void on_exit() override
     {
-        for (uint8_t byte : packet) {
-            PhotonExc_AcceptInput(&byte, 1);
-        }
+        destroy(_dest);
     }
 
-    int64_t readData(void* dest, std::size_t maxSize) override
-    {
-        if (maxSize >= _current.size) {
-            std::size_t size = _current.size;
-            std::memcpy(dest, _current.data, size);
-            PhotonExc_PrepareNextMsg();
-            _current = *PhotonExc_GetMsg();
-            return size;
-        }
-        std::memcpy(dest, _current.data, maxSize);
-        _current.data += maxSize;
-        _current.size -= maxSize;
-        return maxSize;
-    }
-
-    int64_t bytesAvailable() const override
-    {
-        return _current.size;
-    }
-
-private:
     PhotonExcMsg _current;
-    QTimer* _timer;
+    caf::actor _dest;
 };
+
+using namespace decode;
 
 int main(int argc, char** argv)
 {
-    QApplication app(argc, argv);
-
-    Rc<DataStream> _stream = new InProcStream;
-    return runUiTest(&app, _stream.get());
+    return runUiTest<PhotonStream>(argc, argv);
 }
 
