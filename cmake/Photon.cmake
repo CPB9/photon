@@ -4,6 +4,12 @@ find_package(Qt5Widgets)
 find_package(Qt5SerialPort)
 find_package(Qt5Network)
 
+set(_PHOTON_MOD_DIRS)
+
+macro(photon_add_mod_dir dir)
+    list(APPEND _PHOTON_MOD_DIRS ${dir})
+endmacro()
+
 if(GPERFTOOLS)
     find_library(GPERFTOOLS_PROFILER  NAMES profiler)
     set(PHOTON_PROFILER_LIB ${GPERFTOOLS_PROFILER})
@@ -32,6 +38,7 @@ macro(_photon_add_unit_test target test file)
         gtest_main
         photon-${target}
         decode
+        decode-gc
     )
 
     target_include_directories(${test}-${target}
@@ -48,6 +55,15 @@ macro(_photon_add_unit_test target test file)
 endmacro()
 
 macro(photon_init dir)
+    if(PHOTON_ASAN OR ASAN)
+        add_definitions(
+            -fsanitize=address
+            -fsanitize=undefined
+            -ggdb
+        )
+        SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+    endif()
+
     find_package(Threads)
     set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
@@ -81,6 +97,7 @@ macro(photon_init dir)
     )
     target_link_libraries(photon-ui-test
         decode
+        decode-gc
         Qt5::Core
     )
     add_executable(test-serialclient
@@ -88,6 +105,7 @@ macro(photon_init dir)
     )
     target_link_libraries(test-serialclient
         decode
+        decode-gc
         bmcl
         photon-ui-test
         asio
@@ -108,6 +126,7 @@ macro(photon_init dir)
     )
     target_link_libraries(test-udpclient
         decode
+        decode-gc
         bmcl
         photon-ui-test
         asio
@@ -134,15 +153,24 @@ endfunction()
 
 macro(photon_generate_sources proj)
     set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
+
+    foreach(dir ${_PHOTON_MOD_DIRS})
+        file(GLOB_RECURSE _DIR_SOURCES "${dir}/*.c" "${dir}/*.h" "${dir}/*.toml" "${dir}/*.decode")
+        list(APPEND _PHOTON_MOD_SOURCES ${_DIR_SOURCES})
+    endforeach()
+
     add_custom_command(
         OUTPUT ${_PHOTON_DEPENDS}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:decode_gen> -p  ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4
-        DEPENDS decode_gen ${proj} ${ARGN}
+        DEPENDS decode_gen ${proj} ${_PHOTON_MOD_SOURCES}
     )
     install(DIRECTORY ${PHOTON_GEN_SRC_DIR}/photon DESTINATION gen)
     install(FILES ${_PHOTON_DEPENDS} ${_PHOTON_DEPENDS_H} DESTINATION gen)
+
+    add_library(_photon-impl EXCLUDE_FROM_ALL ${_PHOTON_MOD_SOURCES})
+    target_include_directories(_photon-impl PUBLIC ${_PHOTON_MOD_DIRS} ${PHOTON_GEN_SRC_DIR})
 endmacro()
 
 macro(photon_add_device target)
@@ -188,6 +216,7 @@ macro(photon_add_device target)
         target_link_libraries(test-inproc-${target} photon-${target}
             bmcl
             decode
+            decode-gc
             photon-ui-test
             ${PHOTON_PROFILER_LIB}
             Qt5::Core
@@ -235,7 +264,7 @@ macro(photon_add_device target)
     )
 
     add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
-    target_link_libraries(test-perf-${target} photon-${target} decode ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
     target_include_directories(test-perf-${target}
         PRIVATE
         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
