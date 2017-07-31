@@ -5,13 +5,16 @@
 #include <decode/ui/QModelEventHandler.h>
 #include <decode/ui/FirmwareWidget.h>
 #include <decode/ui/FirmwareStatusWidget.h>
+#include <decode/groundcontrol/AloowUnsafeMessageType.h>
 #include <decode/model/Model.h>
 #include <decode/model/CmdNode.h>
 #include <decode/parser/Package.h>
 #include <decode/model/NodeView.h>
+#include <decode/model/ValueInfoCache.h>
 #include <decode/model/NodeViewUpdater.h>
 #include <decode/parser/Project.h>
 #include <decode/core/Diagnostics.h>
+#include "decode/model/CmdModel.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -23,6 +26,8 @@
 
 #include <chrono>
 #include <unordered_set>
+
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 using namespace decode;
 
@@ -54,6 +59,10 @@ caf::behavior UiActor::make_behavior()
                 quit();
             });
 
+            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](bmcl::Bytes packet) {
+                send(_gc, SendCmdPacketAtom::value, bmcl::SharedBytes::create(packet));
+            });
+
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
             delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
@@ -68,9 +77,11 @@ caf::behavior UiActor::make_behavior()
             }
             delayed_send<caf::message_priority::high>(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
         },
-        [this](SetProjectAtom, const Rc<const Project>&, const Rc<const Device>&) {
+        [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
             _widgetShown = true;
             _widget->showMaximized();
+            Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
+            _widget->setRootCmdNode(cmdNode.get());
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
