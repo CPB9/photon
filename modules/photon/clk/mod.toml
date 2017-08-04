@@ -1,0 +1,8 @@
+name = "clk"
+decode = "clk.decode"
+dest = "photon/clk"
+id = 7
+sources = [
+  "Clk.c",
+  "RelativeTime.c",
+]

@@ -2,11 +2,9 @@
 
 #include <decode/ui/QNodeModel.h>
 #include <decode/ui/QCmdModel.h>
-#include <decode/ui/QModelEventHandler.h>
 #include <decode/ui/FirmwareWidget.h>
 #include <decode/ui/FirmwareStatusWidget.h>
-#include <decode/groundcontrol/AloowUnsafeMessageType.h>
-#include <decode/model/Model.h>
+#include <decode/groundcontrol/AllowUnsafeMessageType.h>
 #include <decode/model/CmdNode.h>
 #include <decode/parser/Package.h>
 #include <decode/model/NodeView.h>
@@ -14,7 +12,7 @@
 #include <decode/model/NodeViewUpdater.h>
 #include <decode/parser/Project.h>
 #include <decode/core/Diagnostics.h>
-#include "decode/model/CmdModel.h"
+#include <decode/model/CmdModel.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>

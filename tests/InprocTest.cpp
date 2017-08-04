@@ -4,9 +4,9 @@
 #include <decode/groundcontrol/Exchange.h>
 #include <decode/groundcontrol/FwtState.h>
 #include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AloowUnsafeMessageType.h>
+#include <decode/groundcontrol/AllowUnsafeMessageType.h>
 
-#include "photon/Init.h"
+#include "photon/core/Core.Component.h"
 #include "photon/exc/Exc.Component.h"
 
 #include <bmcl/Logging.h>
@@ -34,6 +34,7 @@ public:
                 for (uint8_t byte : data.view()) {
                     PhotonExc_AcceptInput(&byte, 1);
                 }
+                Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
                 _dest = actor;
@@ -42,6 +43,7 @@ public:
                 send(this, RepeatStreamAtom::value);
             },
             [this](RepeatStreamAtom) {
+                Photon_Tick();
                 auto data = bmcl::SharedBytes::create(_current.data, _current.size);
                 send(_dest, RecvDataAtom::value, data);
                 PhotonExc_PrepareNextMsg();

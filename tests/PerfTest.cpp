@@ -3,10 +3,10 @@
 #include <decode/groundcontrol/Exchange.h>
 #include <decode/groundcontrol/GroundControl.h>
 #include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AloowUnsafeMessageType.h>
+#include <decode/groundcontrol/AllowUnsafeMessageType.h>
 #include <decode/model/NodeViewUpdater.h>
 
-#include "photon/Init.h"
+#include "photon/core/Core.Component.h"
 #include "photon/exc/Exc.Component.h"
 
 #include <bmcl/Logging.h>
@@ -34,6 +34,7 @@ public:
         return caf::behavior{
             [this](SendDataAtom, const bmcl::SharedBytes& data) {
                 PhotonExc_AcceptInput(data.data(), data.size());
+                Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
                 _dest = actor;
@@ -42,6 +43,7 @@ public:
                 send(this, RepeatStreamAtom::value);
             },
             [this](RepeatStreamAtom) {
+                Photon_Tick();
                 auto data = bmcl::SharedBytes::create(_current.data, _current.size);
                 send(_dest, RecvDataAtom::value, data);
                 PhotonExc_PrepareNextMsg();

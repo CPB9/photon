@@ -1,7 +1,7 @@
 [project]
 name = "default"
 master = "model1"
-common_modules = ["core", "tm", "int", "fwt", "exc"]
+common_modules = ["core", "tm", "int", "fwt", "exc", "clk"]
 mcc_id = 0
 module_dirs = [
   "modules/photon/core",
@@ -10,6 +10,7 @@ module_dirs = [
   "modules/photon/int",
   "modules/photon/test",
   "modules/photon/exc",
+  "modules/photon/clk",
 ]
 
 [[devices]]

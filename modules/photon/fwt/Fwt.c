@@ -34,6 +34,10 @@ void PhotonFwt_Init()
     _photonFwt.chunk.end = FW_END;
 }
 
+void PhotonFwt_Tick()
+{
+}
+
 static PhotonError requestHash(PhotonReader* src)
 {
     EXPECT_NO_PARAMS_LEFT(src);

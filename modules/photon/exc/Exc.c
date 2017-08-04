@@ -30,6 +30,10 @@ void PhotonExc_Init()
     _photonExc.numPackets = 0;
 }
 
+void PhotonExc_Tick()
+{
+}
+
 static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
 {
     while (begin < end) {

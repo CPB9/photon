@@ -1,0 +1,50 @@
+module clk
+
+import core::{Reader, Writer, Error}
+
+type RelativeTime = u64;
+
+impl RelativeTime {
+    fn encode(self, dest: *mut Writer) -> Error
+}
+
+struct AbsoluteTime {
+    seconds: u64,
+    milliseconds: u16,
+}
+
+struct TimeOffset {
+    seconds: i64,
+    milliseconds: i16,
+}
+
+component {
+    parameters {
+        /// Absolute time (unix time).
+        time: AbsoluteTime,
+        /// Absolute time of the current time epoch.
+        baseTime: AbsoluteTime,
+        /// Relative time multiplier in milliseconds.
+        clockResolution: u16,
+        /// Current time since base time.
+        ///
+        /// Relative time is calculated in `ticks` since base time.
+        /// Tick size equals clock resolution in milliseconds.
+        /// Absolute time is calculates as `base time` + `clock resolution` * `relative time`.
+        relativeTime: RelativeTime,
+    }
+
+    statuses {
+        [0, 0, true]: {time, baseTime, clockResolution, relativeTime},
+    }
+
+    impl {
+        fn init()
+        fn tick()
+        fn currentTickTime() -> RelativeTime
+    }
+
+    commands {
+        fn resetBaseTime()
+    }
+}

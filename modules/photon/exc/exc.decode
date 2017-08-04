@@ -75,6 +75,7 @@ component {
 
     impl {
         fn init()
+        fn tick()
         fn prepareNextMsg()
         fn getMsg() -> *const Msg
         fn acceptInput(src: *const void, size: usize)

@@ -97,6 +97,7 @@ component {
     impl {
         /// init func
         fn init()
+        fn tick()
     }
 
     commands {

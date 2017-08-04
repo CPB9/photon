@@ -39,6 +39,7 @@ component {
 
     impl {
         fn init()
+        fn tick()
         fn collectMessages(dest: *mut Writer) -> Error
         fn hasMessages() -> bool
     }

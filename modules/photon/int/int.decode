@@ -4,6 +4,8 @@ import core::{Reader, Writer, Error}
 
 component {
     impl {
+        fn init()
+        fn tick()
         fn executeFrom(src: *mut Reader, results: *mut Writer) -> Error
     }
 }

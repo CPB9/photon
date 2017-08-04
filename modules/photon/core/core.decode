@@ -181,3 +181,10 @@ struct EventMessageHeader {
     eventNumber: varuint,
     timestamp: Time
 }
+
+component {
+    impl {
+        fn init()
+        fn tick()
+    }
+}

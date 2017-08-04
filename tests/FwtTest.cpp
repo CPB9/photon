@@ -1,9 +1,10 @@
 #include "decode/groundcontrol/GroundControl.h"
 #include "decode/groundcontrol/FwtState.h"
 #include "decode/groundcontrol/Atoms.h"
-#include "decode/groundcontrol/AloowUnsafeMessageType.h"
+#include "decode/groundcontrol/AllowUnsafeMessageType.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Component.h"
+#include "photon/core/Core.Component.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -18,8 +19,6 @@
 using namespace decode;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
-
-using BlaAtom = caf::atom_constant<caf::atom("bla")>;
 
 class FwtTest;
 
@@ -140,8 +139,7 @@ public:
         : caf::event_based_actor(cfg)
         , _streamCfg(streamCfg)
     {
-        PhotonExc_Init();
-        PhotonFwt_Init();
+        Photon_Init();
         _current = *PhotonExc_GetMsg();
     }
 
@@ -155,6 +153,7 @@ public:
                         PhotonExc_AcceptInput(it, size);
                     }
                 }
+                Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
                 _dest = actor;
@@ -163,6 +162,7 @@ public:
                 send(this, RepeatStreamAtom::value);
             },
             [this](RepeatStreamAtom) {
+                Photon_Tick();
                 if (_streamCfg->shouldDeliverPacket()) {
                     auto data = bmcl::SharedBytes::create(_current.data, _current.size);
                     send(_dest, RecvDataAtom::value, data);

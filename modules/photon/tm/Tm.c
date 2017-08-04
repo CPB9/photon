@@ -31,6 +31,10 @@ void PhotonTm_Init()
     _photonTm.msgs.data = _messageDesc;
 }
 
+void PhotonTm_Tick()
+{
+}
+
 static void selectNextMessage()
 {
     _photonTm.currentDesc++;

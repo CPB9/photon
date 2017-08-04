@@ -2,7 +2,7 @@
 #include "photon/exc/Exc.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/core/Logging.h"
-#include "photon/Init.h"
+#include "photon/core/Core.Component.h"
 
 #include <tclap/CmdLine.h>
 
@@ -109,6 +109,8 @@ int main(int argc, char* argv[])
                 PHOTON_WARNING("Error recieving");
             }
         }
+
+        Photon_Tick();
 
         const  PhotonExcMsg* msg = PhotonExc_GetMsg();
 

@@ -16,6 +16,10 @@ void PhotonTest_Init()
     _photonTest.param11 = 11;
 }
 
+void PhotonTest_Tick()
+{
+}
+
 PhotonError PhotonTest_SetParam1(uint8_t p)
 {
     _photonTest.param1 = p;

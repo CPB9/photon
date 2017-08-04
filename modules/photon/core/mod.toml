@@ -14,5 +14,6 @@ sources = [
   "RingBuf.c",
   "Try.h",
   "Util.h",
-  "Writer.c"
+  "Writer.c",
+  "Main.c"
 ]

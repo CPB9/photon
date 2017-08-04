@@ -4,7 +4,7 @@
 #include <decode/groundcontrol/Exchange.h>
 #include <decode/groundcontrol/FwtState.h>
 #include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AloowUnsafeMessageType.h>
+#include <decode/groundcontrol/AllowUnsafeMessageType.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
