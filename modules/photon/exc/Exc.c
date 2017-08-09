@@ -6,6 +6,7 @@
 #include "photon/tm/Tm.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Constants.h"
+#include "photon/clk/Clk.Component.h"
 #include "photon/exc/DataPacket.h"
 #include "photon/exc/Utils.h"
 #include "photon/exc/PacketType.h"
@@ -275,19 +276,17 @@ static PhotonError genTmPacket()
     PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
 
     PhotonExcDataPacket dataHeader;
-    dataHeader.address.srcAddress = 1;
-    dataHeader.address.destAddress = 0;
-    dataHeader.counter = 0;
-    dataHeader.dataType = PhotonExcDataType_Telemetry;
     dataHeader.streamType = PhotonExcStreamType_Unreliable;
-    dataHeader.time.type = PhotonTimeType_Secs;
-    dataHeader.time.data.secsTime.seconds = 0;
+    dataHeader.dataType = PhotonExcDataType_Telemetry;
+    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.time = PhotonClk_GetTime();
 
     PHOTON_TRY(PhotonExcDataPacket_Serialize(&dataHeader, &reserved));
     PHOTON_TRY(PhotonTm_CollectMessages(&reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
+    _photonExc.outCounter++;
     return PhotonError_Ok;
 }
 

@@ -7,12 +7,11 @@
 
 #include <sys/time.h>
 
-static void  getTime(PhotonClkAbsoluteTime* dest)
+static void  getTime(PhotonClkTick* dest)
 {
     struct timeval t;
     gettimeofday(&t, NULL);
-    dest->seconds = t.tv_sec;
-    dest->milliseconds = t.tv_usec / 1000;
+    *dest = t.tv_sec * 1000 + t.tv_usec / 1000;
 }
 
 #elif defined(_WIN32)
@@ -27,7 +26,7 @@ static void  getTime(PhotonClkAbsoluteTime* dest)
 # define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif
 
-static void getTime(PhotonClkAbsoluteTime* dest)
+static void getTime(PhotonClkTimePoint* dest)
 {
     FILETIME ft;
     uint64_t tmpres = 0;
@@ -42,8 +41,9 @@ static void getTime(PhotonClkAbsoluteTime* dest)
     tmpres -= DELTA_EPOCH_IN_MICROSECS;
     /*convert into milliseconds*/
     tmpres /= 10;
-    dest->seconds = tmpres / 1000000UL;
-    dest->milliseconds = (tmpres % 1000000UL) / 1000;
+    uint64_t seconds = tmpres / 1000000UL;
+    uint64_t milliseconds = (tmpres % 1000000UL) / 1000;
+    *dest = seconds * 1000 + milliseconds;
 }
 
 #endif
@@ -51,32 +51,17 @@ static void getTime(PhotonClkAbsoluteTime* dest)
 void PhotonClk_Init()
 {
     getTime(&_photonClk.time);
-    _photonClk.baseTime = _photonClk.time;
-    _photonClk.clockResolution = 1;
-    _photonClk.relativeTime = 0;
+    _photonClk.timeKind.type = PhotonClkTimeKindType_Absolute;
+    _photonClk.timeKind.data.absoluteTimeKind.epoch = 0;
 }
 
 void PhotonClk_Tick()
 {
-    PhotonClkAbsoluteTime t;
-    getTime(&t);
-    _photonClk.time = t;
-    t.seconds -= _photonClk.baseTime.seconds;
-    if (t.milliseconds < _photonClk.baseTime.milliseconds) {
-        t.seconds -= 1;
-        t.milliseconds += 1000;
-    }
-    t.milliseconds -= _photonClk.baseTime.milliseconds;
-    _photonClk.relativeTime = t.seconds * 1000 + t.milliseconds;
+    getTime(&_photonClk.time);
 }
 
-PhotonClkRelativeTime PhotonClk_CurrentTickTime()
+PhotonClkTick PhotonClk_GetTime()
 {
-    return _photonClk.relativeTime;
+    return _photonClk.time;
 }
 
-PhotonError PhotonClk_ResetBaseTime()
-{
-    getTime(&_photonClk.baseTime);
-    return PhotonError_NotImplemented;
-}

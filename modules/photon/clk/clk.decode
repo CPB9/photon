@@ -2,49 +2,36 @@ module clk
 
 import core::{Reader, Writer, Error}
 
-type RelativeTime = u64;
+/// Time point in milliseconds since epoch.
+type TimePoint = varuint;
 
-impl RelativeTime {
-    fn encode(self, dest: *mut Writer) -> Error
-}
+/// Duration in milliseconds.
+type Duration = varuint;
 
-struct AbsoluteTime {
-    seconds: u64,
-    milliseconds: u16,
-}
+type Tick = varuint;
 
-struct TimeOffset {
-    seconds: i64,
-    milliseconds: i16,
+variant TimeKind {
+    Ticks,
+    Absolute { epoch: TimePoint },
+    SizedTicks { epoch: TimePoint, tickResolution: Duration },
 }
 
 component {
     parameters {
-        /// Absolute time (unix time).
-        time: AbsoluteTime,
-        /// Absolute time of the current time epoch.
-        baseTime: AbsoluteTime,
-        /// Relative time multiplier in milliseconds.
-        clockResolution: u16,
-        /// Current time since base time.
-        ///
-        /// Relative time is calculated in `ticks` since base time.
-        /// Tick size equals clock resolution in milliseconds.
-        /// Absolute time is calculates as `base time` + `clock resolution` * `relative time`.
-        relativeTime: RelativeTime,
+        timeKind: TimeKind,
+        time: Tick,
     }
 
     statuses {
-        [0, 0, true]: {time, baseTime, clockResolution, relativeTime},
+        [0, 0, true]: {time, timeKind},
     }
 
     impl {
         fn init()
         fn tick()
-        fn currentTickTime() -> RelativeTime
+        fn getTime() -> Tick
     }
 
     commands {
-        fn resetBaseTime()
     }
 }
