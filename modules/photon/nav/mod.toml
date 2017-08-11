@@ -1,0 +1,7 @@
+name = "nav"
+decode = "nav.decode"
+dest = "photon/nav"
+id = 8
+sources = [
+  "Nav.c"
+]

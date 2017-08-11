@@ -13,6 +13,7 @@
 #include <decode/parser/Project.h>
 #include <decode/core/Diagnostics.h>
 #include <decode/model/CmdModel.h>
+#include <decode/groundcontrol/TmParamUpdate.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -47,24 +48,6 @@ UiActor::~UiActor()
 caf::behavior UiActor::make_behavior()
 {
     return caf::behavior{
-        [this](StartAtom) {
-            _app = bmcl::makeUnique<QApplication>(_argc, _argv);
-            _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
-            _widget = bmcl::makeUnique<FirmwareWidget>();
-
-            QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
-                BMCL_DEBUG() << "quitting";
-                quit();
-            });
-
-            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](bmcl::Bytes packet) {
-                send(_gc, SendCmdPacketAtom::value, bmcl::SharedBytes::create(packet));
-            });
-
-            delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
-            delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
-            delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
-        },
         [this](RepeatEventLoopAtom) {
             _app->sync();
             if (_widgetShown && !_widget->isVisible()) {
@@ -75,7 +58,27 @@ caf::behavior UiActor::make_behavior()
             }
             delayed_send<caf::message_priority::high>(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
         },
-        [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
+        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
+            _widget->applyTmUpdates(updater.get());
+        },
+        [this](UpdateTmParams, const TmParamUpdate& update) {
+            (void)update;
+            switch (update.kind()) {
+            case TmParamKind::None:
+                return;
+            case TmParamKind::LatLon: {
+                const LatLon& latLon = update.as<LatLon>();
+                (void)latLon;
+                return;
+            }
+            case TmParamKind::Orientation: {
+                const Orientation& orientation = update.as<Orientation>();
+                (void)orientation;
+                return;
+            }
+            }
+        },
+        [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
             _widgetShown = true;
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
@@ -83,9 +86,6 @@ caf::behavior UiActor::make_behavior()
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
-        },
-        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
-            _widget->applyTmUpdates(updater.get());
         },
         [this](FirmwareErrorEventAtom, const std::string& msg) {
             _statusWidget->firmwareError(msg);
@@ -112,6 +112,24 @@ caf::behavior UiActor::make_behavior()
         },
         [this](FirmwareHashDownloadedEventAtom, const std::string& name, const bmcl::SharedBytes& hash) {
             _statusWidget->endHashDownload(name, hash.view());
+        },
+        [this](StartAtom) {
+            _app = bmcl::makeUnique<QApplication>(_argc, _argv);
+            _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
+            _widget = bmcl::makeUnique<FirmwareWidget>();
+
+            QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
+                BMCL_DEBUG() << "quitting";
+                quit();
+            });
+
+            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](bmcl::Bytes packet) {
+                send(_gc, SendCmdPacketAtom::value, bmcl::SharedBytes::create(packet));
+            });
+
+            delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
+            delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
+            delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
         },
     };
 }

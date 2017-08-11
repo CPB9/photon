@@ -16,6 +16,9 @@
 #if defined(PHOTON_HAS_MODULE_TEST)
 # include "photon/test/Test.Component.h"
 #endif
+#if defined(PHOTON_HAS_MODULE_NAV)
+# include "photon/nav/Nav.Component.h"
+#endif
 
 void Photon_Init()
 {
@@ -33,6 +36,9 @@ void Photon_Init()
 #endif
 #if defined(PHOTON_HAS_MODULE_EXC)
     PhotonExc_Init();
+#endif
+#if defined(PHOTON_HAS_MODULE_NAV)
+    PhotonNav_Init();
 #endif
 #if defined(PHOTON_HAS_MODULE_TEST)
     PhotonTest_Init();
@@ -55,6 +61,9 @@ void Photon_Tick()
 #endif
 #if defined(PHOTON_HAS_MODULE_EXC)
     PhotonExc_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_NAV)
+    PhotonNav_Tick();
 #endif
 #if defined(PHOTON_HAS_MODULE_TEST)
     PhotonTest_Tick();

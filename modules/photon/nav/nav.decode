@@ -1,0 +1,28 @@
+module nav
+
+struct LatLon {
+    latitude: f64,
+    longitude: f64,
+}
+
+struct Orientation {
+    heading: f64,
+    pitch: f64,
+    roll: f64,
+}
+
+component {
+    parameters {
+        latLon: LatLon,
+        orientation: Orientation,
+    }
+
+    statuses {
+        [0, 0, true]: {latLon, orientation},
+    }
+
+    impl {
+        fn init()
+        fn tick()
+    }
+}
