@@ -2,12 +2,16 @@
 #include "decode/groundcontrol/FwtState.h"
 #include "decode/groundcontrol/Atoms.h"
 #include "decode/groundcontrol/AllowUnsafeMessageType.h"
+#include "decode/model/NodeView.h"
+#include "decode/core/Diagnostics.h"
+#include "decode/parser/Project.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Component.h"
 #include "photon/core/Core.Component.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
+#include <bmcl/Result.h>
 
 #include <caf/all.hpp>
 
@@ -19,6 +23,8 @@
 using namespace decode;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 
 class FwtTest;
 
@@ -27,6 +33,7 @@ struct TestConfig {
     bool exitOnProjectUpdate = false;
     bool projectUpdated = false;
     bool stopOnError = true;
+    bool exitOnFirmwareDownload = false;
     std::size_t errorCount = 0;
 };
 
@@ -101,6 +108,9 @@ public:
                     _testCfg->parent->stop();
                 }
             },
+            [this](LogAtom, const std::string& msg) {
+                BMCL_DEBUG() << msg;
+            },
             [this](FirmwareErrorEventAtom, const std::string& msg) {
                 BMCL_CRITICAL() << "error: " << msg;
                 _testCfg->errorCount++;
@@ -108,15 +118,20 @@ public:
                     _testCfg->parent->stop();
                 }
             },
+            [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
+            },
             [this](FirmwareDownloadStartedEventAtom) {
             },
             [this](FirmwareDownloadFinishedEventAtom) {
+                if (_testCfg->exitOnFirmwareDownload) {
+                    _testCfg->parent->stop();
+                }
             },
             [this](FirmwareStartCmdSentEventAtom) {
             },
             [this](FirmwareStartCmdPassedEventAtom) {
             },
-            [this](FirmwareProgressEventAtom, std::size_t size) {
+            [this](FirmwareProgressEventAtom, std::size_t size, std::size_t totalSize) {
             },
             [this](FirmwareSizeRecievedEventAtom, std::size_t size) {
             },
@@ -187,10 +202,6 @@ public:
 
 void FwtTest::run()
 {
-    _stream = _system->spawn<PhotonStream>(&_streamCfg);
-    _handler = _system->spawn<FakeEventHandler>(&_testCfg);
-    _gc = _system->spawn<decode::GroundControl>(_stream, _handler);
-
     caf::anon_send(_stream, SetStreamDestAtom::value, _gc);
     caf::anon_send(_gc, StartAtom::value);
     caf::anon_send(_stream, StartAtom::value);
@@ -210,6 +221,9 @@ void FwtTest::SetUp()
     _streamCfg = StreamConfig();
     _testCfg.parent = this;
     _system.reset(new caf::actor_system(_cfg));
+    _stream = _system->spawn<PhotonStream>(&_streamCfg);
+    _handler = _system->spawn<FakeEventHandler>(&_testCfg);
+    _gc = _system->spawn<decode::GroundControl>(_stream, _handler);
 }
 
 void FwtTest::TearDown()
@@ -249,6 +263,17 @@ TEST_F(FwtTest, looseFiftyPercentPackets)
     _streamCfg.setDeliveryProbability(0.5);
     _streamCfg.setRecieveProbability(0.5);
     _testCfg.exitOnProjectUpdate = true;
+    run();
+    EXPECT_TRUE(_testCfg.projectUpdated);
+}
+
+TEST_F(FwtTest, setFirmware)
+{
+    Diagnostics::Pointer diag = new Diagnostics;
+    auto p = Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
+    ASSERT_TRUE(p.isOk());
+    caf::anon_send(_gc, SetProjectAtom::value, Project::ConstPointer(p.unwrap()), Device::ConstPointer(p.unwrap()->master()));
+    _testCfg.exitOnFirmwareDownload = true;
     run();
     EXPECT_TRUE(_testCfg.projectUpdated);
 }

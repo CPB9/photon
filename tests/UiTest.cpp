@@ -104,7 +104,7 @@ caf::behavior UiActor::make_behavior()
         [this](FirmwareStartCmdPassedEventAtom) {
             _statusWidget->endFirmwareStartCommand();
         },
-        [this](FirmwareProgressEventAtom, std::size_t size) {
+        [this](FirmwareProgressEventAtom, std::size_t size, std::size_t totalSize) {
             _statusWidget->firmwareDownloadProgress(size);
         },
         [this](FirmwareSizeRecievedEventAtom, std::size_t size) {

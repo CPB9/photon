@@ -234,4 +234,14 @@ bool PhotonFwt_HasAnswers()
     return _photonFwt.hashRequested | _photonFwt.startRequested | _photonFwt.chunk.isTransfering | _photonFwt.firmware.isTransfering;
 }
 
+const uint8_t* PhotonFwt_GetFirmwareData()
+{
+    return FW_START;
+}
+
+size_t PhotonFwt_GetFirmwareSize()
+{
+    return _PHOTON_PACKAGE_SIZE;
+}
+
 #undef _PHOTON_FNAME
