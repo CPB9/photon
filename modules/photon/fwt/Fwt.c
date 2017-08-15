@@ -32,6 +32,7 @@ void PhotonFwt_Init()
     _photonFwt.chunk.isTransfering = false;
     _photonFwt.chunk.current = FW_END;
     _photonFwt.chunk.end = FW_END;
+    _photonFwt.startId = 0;
 }
 
 void PhotonFwt_Tick()
@@ -106,7 +107,7 @@ static PhotonError start(PhotonReader* src)
     uint64_t startId;
     PHOTON_TRY(PhotonReader_ReadVaruint(src, &startId));
 
-    if (_photonFwt.firmware.isTransfering && startId == _photonFwt.startId) {
+    if (_photonFwt.firmware.isTransfering || startId == _photonFwt.startId) {
         PHOTON_WARNING("Ignoring duplicate start cmd");
         return PhotonError_Ok;
     }
