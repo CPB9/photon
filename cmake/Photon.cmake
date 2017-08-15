@@ -51,6 +51,9 @@ macro(_photon_add_unit_test target test file)
         RUNTIME_OUTPUT_DIRECTORY ${_PHOTON_TESTS_DIR}
         FOLDER "tests"
     )
+    if (NOT MSVC)
+        target_compile_options(${test}-${target} PRIVATE -std=c++11)
+    endif()
     add_test(${test}-${target} ${_PHOTON_TESTS_DIR}/${test}-${target})
 endmacro()
 
@@ -121,6 +124,9 @@ macro(photon_init dir)
     )
     _photon_setup_target(test-serialclient)
     _photon_install_target(test-serialclient)
+    if (NOT MSVC)
+        target_compile_options(test-serialclient PUBLIC -std=c++11)
+    endif()
     add_executable(test-udpclient
         ${_PHOTON_DIR}/tests/UdpTest.cpp
     )
@@ -141,6 +147,9 @@ macro(photon_init dir)
     )
     _photon_setup_target(test-udpclient)
     _photon_install_target(test-udpclient)
+    if (NOT MSVC)
+        target_compile_options(test-udpclient PUBLIC -std=c++11)
+    endif()
 endmacro()
 
 function(_photon_install_target target)
@@ -252,6 +261,9 @@ macro(photon_add_device target)
 
     add_executable(test-udpserver-${target} ${_PHOTON_DIR}/tests/Model.cpp)
     target_link_libraries(test-udpserver-${target} photon-${target} bmcl)
+    if(NOT MSVC)
+        target_compile_options(test-udpserver-${target} PRIVATE -std=c++11)
+    endif()
 
     if(MSVC OR MINGW)
         target_link_libraries(test-udpserver-${target} ws2_32)

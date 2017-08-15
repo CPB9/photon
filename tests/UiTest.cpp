@@ -78,6 +78,9 @@ caf::behavior UiActor::make_behavior()
             }
             }
         },
+        [this](LogAtom, const std::string& msg) {
+            BMCL_DEBUG() << msg;
+        },
         [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
             _widgetShown = true;
             _widget->showMaximized();
