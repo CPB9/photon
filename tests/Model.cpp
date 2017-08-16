@@ -59,6 +59,8 @@ int main(int argc, char* argv[])
     }
 #endif
 
+begin:
+
     uint16_t port = portArg.getValue();
     struct sockaddr_in host;
     struct sockaddr_in from;
@@ -102,11 +104,16 @@ int main(int argc, char* argv[])
             PhotonExc_AcceptInput(temp, recvSize);
         } else {
 #ifdef _WIN32
-            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+            int err = WSAGetLastError();
+            if (err == WSAECONNRESET) {
+                closesocket(sock);
+                goto begin;
+            }
+            if (err != WSAEWOULDBLOCK) {
 #else
             if (errno != EWOULDBLOCK) {
 #endif
-                PHOTON_WARNING("Error recieving");
+                PHOTON_WARNING("Error recieving: %d", err);
             }
         }
 
