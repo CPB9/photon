@@ -25,5 +25,14 @@ void PhotonNav_Tick()
     _photonNav.orientation.heading += 0.1;
     _photonNav.orientation.pitch += 0.1;
     _photonNav.orientation.roll += 0.1;
+
+    if(_photonNav.latLon.latitude > 90.0)
+    {
+        _photonNav.latLon.latitude = -90.0;
+    }
+    if(_photonNav.latLon.longitude > 180.0)
+    {
+        _photonNav.latLon.longitude = -180.0;
+    }
 #endif
 }
