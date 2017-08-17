@@ -126,8 +126,8 @@ caf::behavior UiActor::make_behavior()
                 quit();
             });
 
-            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](bmcl::Bytes packet) {
-                send(_gc, SendCmdPacketAtom::value, bmcl::SharedBytes::create(packet));
+            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](const bmcl::SharedBytes& packet) {
+                send(_gc, SendCmdPacketAtom::value, packet);
             });
 
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
