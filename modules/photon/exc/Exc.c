@@ -7,7 +7,7 @@
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Constants.h"
 #include "photon/clk/Clk.Component.h"
-#include "photon/exc/DataPacket.h"
+#include "photon/exc/DataHeader.h"
 #include "photon/exc/Utils.h"
 #include "photon/exc/PacketType.h"
 #include "photon/int/Int.Component.h"
@@ -79,12 +79,12 @@ static bool handlePacket(size_t size)
     }
     PhotonReader payload;
     PhotonReader_Init(&payload, inTemp + 2, size - 4);
-    PhotonExcPacketType type;
-    if (PhotonExcPacketType_Deserialize(&type, &payload) != PhotonError_Ok) {
-        HANDLE_INVALID_PACKET("Recieved packet with invalid packet type");
+    PhotonExcDataHeader dataHeader;
+    if(PhotonExcDataHeader_Deserialize(&dataHeader, &payload) != PhotonError_Ok) {
+        HANDLE_INVALID_PACKET("Recieved packet with invalid header");
         return true;
     }
-    switch(type) {
+    switch(dataHeader.packetType) {
     case PhotonExcPacketType_Firmware: {
         if (PhotonFwt_AcceptCmd(&payload) != PhotonError_Ok) {
             HANDLE_INVALID_PACKET("Recieved packet with invalid fwt payload");
@@ -92,22 +92,19 @@ static bool handlePacket(size_t size)
         }
         break;
     }
-    case PhotonExcPacketType_Data: {
-        PhotonExcDataPacket dataHeader;
-        if(PhotonExcDataPacket_Deserialize(&dataHeader, &payload) != PhotonError_Ok) {
-            HANDLE_INVALID_PACKET("Recieved data packet with invalid header");
-            return true;
-        }
+    case PhotonExcPacketType_Commands: {
         //TODO: check data header
         PhotonWriter results;
         PhotonWriter_Init(&results, outTemp, sizeof(outTemp));
         if (PhotonInt_ExecuteFrom(&payload, &results) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
-            HANDLE_INVALID_PACKET("Recieved data packet with cmds");
+            HANDLE_INVALID_PACKET("Recieved data packet with invalid cmds");
             return true;
         }
         break;
     }
-    case PhotonExcPacketType_Receipt:
+    case PhotonExcPacketType_Telemetry:
+        HANDLE_INVALID_PACKET("Tm packets not supported");
+        return true;
         break;
     }
     PhotonRingBuf_Erase(&_photonExc.inStream, size + 2);
@@ -240,7 +237,13 @@ static PhotonError genQueuedPacket()
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
-    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
+    PhotonExcDataHeader dataHeader;
+    dataHeader.streamType = PhotonExcStreamType_Unreliable;
+    dataHeader.packetType = PhotonExcPacketType_Telemetry;
+    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.time = PhotonClk_GetTime();
+
+    PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
     const PhotonExcPacketRequest* req = &_photonExc.packetQueue[_photonExc.currentPacket];
     PHOTON_TRY(req->gen(req->data, &reserved));
 
@@ -252,18 +255,24 @@ static PhotonError genQueuedPacket()
     return PhotonError_Ok;
 }
 
-
 static PhotonError genFwtPacket()
 {
     PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
-    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Firmware, &reserved));
+    PhotonExcDataHeader dataHeader;
+    dataHeader.streamType = PhotonExcStreamType_Unreliable;
+    dataHeader.packetType = PhotonExcPacketType_Firmware;
+    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.time = PhotonClk_GetTime();
+
+    PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
     PHOTON_TRY(PhotonFwt_GenAnswer(&reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
+    _photonExc.outCounter++;
     return PhotonError_Ok;
 }
 
@@ -273,15 +282,13 @@ static PhotonError genTmPacket()
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
-    PHOTON_TRY(PhotonExcPacketType_Serialize(PhotonExcPacketType_Data, &reserved));
-
-    PhotonExcDataPacket dataHeader;
+    PhotonExcDataHeader dataHeader;
     dataHeader.streamType = PhotonExcStreamType_Unreliable;
-    dataHeader.dataType = PhotonExcDataType_Telemetry;
+    dataHeader.packetType = PhotonExcPacketType_Telemetry;
     dataHeader.counter = _photonExc.outCounter;
     dataHeader.time = PhotonClk_GetTime();
 
-    PHOTON_TRY(PhotonExcDataPacket_Serialize(&dataHeader, &reserved));
+    PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
     PHOTON_TRY(PhotonTm_CollectMessages(&reserved));
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);

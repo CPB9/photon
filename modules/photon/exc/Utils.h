@@ -33,6 +33,7 @@
     PHOTON_ASSERT(l_crcPtr > (l_sizePtr + 2));                              \
     ptrdiff_t l_size = l_crcPtr - l_sizePtr;                                \
     PHOTON_ASSERT(l_size <= UINT16_MAX);                                    \
+    PHOTON_DEBUG("encoding packet with size %d", (int)l_size);              \
     Photon_Le16Enc(l_sizePtr, (uint16_t)l_size);                            \
                                                                             \
     uint16_t l_crc = Photon_Crc16(l_sizePtr, l_size);                       \

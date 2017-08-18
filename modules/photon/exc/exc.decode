@@ -8,29 +8,14 @@ const STREAM_SEPARATOR : u16 = 39998;
 
 enum PacketType {
     Firmware = 0,
-    Data = 1,
-    Receipt = 2,
+    Telemetry = 1,
+    Commands = 2,
 }
 
 enum StreamType {
-    Reliable = 0,
-    Unreliable = 1,
-}
-
-enum DataType {
-    Commands = 0,
-    Telemetry = 1,
-}
-
-struct DataPacket {
-    streamType: StreamType,
-    dataType: DataType,
-    counter: u16,
-    time: Tick,
-}
-
-impl DataPacket {
-    fn encode(&mut self, gen: Generator, data: *mut void, dest: *mut Writer) -> Error
+    Unreliable = 0,
+    Reliable = 1,
+    Receipt = 2,
 }
 
 struct ReceiptPacket {
@@ -41,6 +26,13 @@ struct ReceiptPacket {
 
 impl ReceiptPacket {
     fn encode(&mut self, dest: *mut Writer) -> Error
+}
+
+struct DataHeader {
+    streamType: StreamType,
+    packetType: PacketType,
+    counter: u16,
+    time: Tick,
 }
 
 struct Msg {

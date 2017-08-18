@@ -14,6 +14,7 @@
 #include <decode/core/Diagnostics.h>
 #include <decode/model/CmdModel.h>
 #include <decode/groundcontrol/TmParamUpdate.h>
+#include <decode/groundcontrol/Packet.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -27,6 +28,7 @@
 #include <unordered_set>
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::PacketRequest);
 
 using namespace decode;
 
@@ -93,6 +95,9 @@ caf::behavior UiActor::make_behavior()
         [this](FirmwareErrorEventAtom, const std::string& msg) {
             _statusWidget->firmwareError(msg);
         },
+        [this](ExchangeErrorEventAtom, const std::string& msg) {
+            BMCL_CRITICAL() << "exc: " + msg;
+        },
         [this](FirmwareDownloadStartedEventAtom) {
             _statusWidget->resize(640, 300);
             _statusWidget->move(_app->desktop()->screen()->rect().center() - _statusWidget->rect().center());
@@ -126,13 +131,14 @@ caf::behavior UiActor::make_behavior()
                 quit();
             });
 
-            QObject::connect(_widget.get(), &FirmwareWidget::packetQueued, _widget.get(), [this](const bmcl::SharedBytes& packet) {
-                send(_gc, SendCmdPacketAtom::value, packet);
+            QObject::connect(_widget.get(), &FirmwareWidget::unreliablePacketQueued, _widget.get(), [this](const PacketRequest& packet) {
+                send(_gc, SendUnreliablePacketAtom::value, packet);
             });
 
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
             delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
+            //send(_gc, EnableLoggindAtom::value, true);
         },
     };
 }

@@ -11,6 +11,34 @@ struct Orientation {
     roll: f64,
 }
 
+struct Position {
+    latLon: LatLon,
+    altitude: f64,
+}
+
+enum FormationKind {
+    Reynolds = 0,
+    Formation = 1,
+    Snake = 2,
+    Loop = 3,
+}
+
+struct Vec3 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+variant Action {
+    Sleep(varuint),
+    Formation {kind: FormationKind, pos: Vec3, id: varuint},
+}
+
+struct Waypoint {
+    position: Position,
+    action: Action,
+}
+
 component {
     parameters {
         latLon: LatLon,
@@ -19,6 +47,9 @@ component {
 
     statuses {
         [0, 0, true]: {latLon, orientation},
+    }
+
+    commands {
     }
 
     impl {
