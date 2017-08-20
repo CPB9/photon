@@ -3,13 +3,17 @@
 #include "photon/core/RingBuf.h"
 #include "photon/core/Try.h"
 #include "photon/core/Util.h"
+#include "photon/core/StatelessGenerator.h"
 #include "photon/tm/Tm.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Constants.h"
 #include "photon/clk/Clk.Component.h"
 #include "photon/exc/DataHeader.h"
+#include "photon/exc/StreamDirection.h"
 #include "photon/exc/Utils.h"
 #include "photon/exc/PacketType.h"
+#include "photon/exc/ReceiptType.h"
+#include "photon/exc/StreamHandler.h"
 #include "photon/int/Int.Component.h"
 #include "photon/core/Logging.h"
 
@@ -18,17 +22,27 @@
 #define _PHOTON_FNAME "exc/Exc.c"
 #define PHOTON_PACKET_QUEUE_SIZE (sizeof(_photonExc.packetQueue) / sizeof(_photonExc.packetQueue[0]))
 
+static void initStream(PhotonExcStreamState* self)
+{
+    self->currentReliableDownlinkCounter = UINT16_MAX / 2;
+    self->currentUnreliableDownlinkCounter = UINT16_MAX / 2;
+    self->expectedReliableUplinkCounter = UINT16_MAX / 2;
+    self->expectedUnreliableUplinkCounter = UINT16_MAX / 2;
+}
+
 void PhotonExc_Init()
 {
     PhotonTm_Init();
     PhotonFwt_Init();
-    _photonExc.outCounter = 0;
+    initStream(&_photonExc.fwtStream);
+    initStream(&_photonExc.cmdTelemStream);
+    initStream(&_photonExc.userStream);
     //PhotonRingBuf_Init(&_photonExc.outStream, _photonExc.outStreamData, sizeof(_photonExc.outStreamData));
-    _photonExc.inCounter = 0;
     PhotonRingBuf_Init(&_photonExc.inStream, _photonExc.inStreamData, sizeof(_photonExc.inStreamData));
     PhotonExc_PrepareNextMsg();
     _photonExc.currentPacket = 0;
     _photonExc.numPackets = 0;
+    _photonExc.hasReceiptQueued = false;
 }
 
 void PhotonExc_Tick()
@@ -57,6 +71,7 @@ static void handleJunk(const uint8_t* data, size_t size)
 
 static uint8_t inTemp[1024];
 static uint8_t outTemp[1024];
+static uint8_t resultsTemp[512];
 
 #define HANDLE_INVALID_PACKET(...)                              \
     do {                                                        \
@@ -65,13 +80,69 @@ static uint8_t outTemp[1024];
         PhotonRingBuf_Erase(&_photonExc.inStream, 1);           \
     } while(0);
 
+static bool handlePayload(PhotonExcStreamHandler handler, PhotonReader* payload, PhotonWriter* dest)
+{
+    if (handler(payload, dest) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
+        HANDLE_INVALID_PACKET("Recieved packet with invalid payload");
+        return false;
+    }
+    return true;
+}
+
+static PhotonError genPayloadErrorReceiptPayload(void* data, PhotonWriter* dest)
+{
+    PHOTON_TRY(PhotonExcReceiptType_Serialize(PhotonExcReceiptType_PayloadError, dest));
+    return PhotonError_Ok;
+}
+
+static PhotonError genOkReceiptPayload(void* data, PhotonWriter* dest)
+{
+    PHOTON_TRY(PhotonExcReceiptType_Serialize(PhotonExcReceiptType_Ok, dest));
+    return PhotonError_Ok;
+}
+
+static PhotonError genCounterCorrectionReceiptPayload(void* data, PhotonWriter* dest)
+{
+    PHOTON_TRY(PhotonExcReceiptType_Serialize(PhotonExcReceiptType_CounterCorrection, dest));
+    PhotonExcStreamState* state = (PhotonExcStreamState*)data;
+    if (PhotonWriter_WritableSize(dest) < 2) {
+        return PhotonError_NotEnoughSpace;
+    }
+    PhotonWriter_WriteU16Le(dest, state->expectedReliableUplinkCounter);
+    return PhotonError_Ok;
+}
+
+static PhotonError genReceipt(const PhotonExcDataHeader* incomingHeader, void* data, PhotonGenerator gen)
+{
+    //TODO: handle errors
+    PhotonWriter writer;
+    PhotonWriter_Init(&writer, outTemp, sizeof(outTemp));
+    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+
+    PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
+
+    PhotonExcDataHeader dataHeader;
+    dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
+    dataHeader.packetType = PhotonExcPacketType_Receipt;
+    dataHeader.streamType = incomingHeader->streamType;
+    dataHeader.counter = incomingHeader->counter;
+    dataHeader.time = incomingHeader->time;
+
+    PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
+    PHOTON_TRY(gen(data, &reserved));
+
+    PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
+    _photonExc.hasReceiptQueued = true;
+    _photonExc.receiptSize = writer.current - writer.start;
+    return PhotonError_Ok;
+}
+
 static bool handlePacket(size_t size)
 {
     if (size < 4) {
         HANDLE_INVALID_PACKET("Recieved packet with size < 4");
         return true;
     }
-    _photonExc.inCounter++;
     uint16_t crc16 = Photon_Crc16(inTemp, size - 2);
     if (crc16 != Photon_Le16Dec(inTemp + size - 2)) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid crc");
@@ -79,32 +150,57 @@ static bool handlePacket(size_t size)
     }
     PhotonReader payload;
     PhotonReader_Init(&payload, inTemp + 2, size - 4);
-    PhotonExcDataHeader dataHeader;
-    if(PhotonExcDataHeader_Deserialize(&dataHeader, &payload) != PhotonError_Ok) {
+    PhotonExcDataHeader header;
+    if(PhotonExcDataHeader_Deserialize(&header, &payload) != PhotonError_Ok) {
         HANDLE_INVALID_PACKET("Recieved packet with invalid header");
         return true;
     }
-    switch(dataHeader.packetType) {
-    case PhotonExcPacketType_Firmware: {
-        if (PhotonFwt_AcceptCmd(&payload) != PhotonError_Ok) {
-            HANDLE_INVALID_PACKET("Recieved packet with invalid fwt payload");
-            return true;
-        }
-        break;
-    }
-    case PhotonExcPacketType_Commands: {
-        //TODO: check data header
-        PhotonWriter results;
-        PhotonWriter_Init(&results, outTemp, sizeof(outTemp));
-        if (PhotonInt_ExecuteFrom(&payload, &results) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
-            HANDLE_INVALID_PACKET("Recieved data packet with invalid cmds");
-            return true;
-        }
-        break;
-    }
-    case PhotonExcPacketType_Telemetry:
-        HANDLE_INVALID_PACKET("Tm packets not supported");
+    if (header.streamDirection != PhotonExcStreamDirection_Uplink) {
+        HANDLE_INVALID_PACKET("Recieved packet with invalid stream direction");
         return true;
+    }
+    PhotonExcStreamState* state;
+    PhotonExcStreamHandler handler;
+
+    switch(header.streamType) {
+    case PhotonExcStreamType_Firmware: {
+        state = &_photonExc.fwtStream;
+        handler = PhotonFwt_AcceptCmd;
+        break;
+    }
+    case PhotonExcStreamType_CmdTelem: {
+        state = &_photonExc.cmdTelemStream;
+        handler = PhotonInt_ExecuteFrom;
+        break;
+    }
+    case PhotonExcStreamType_User:
+        HANDLE_INVALID_PACKET("user packets not supported");
+        return true;
+    }
+    PhotonWriter results;
+    PhotonWriter_Init(&results, resultsTemp, sizeof(resultsTemp));
+    switch (header.packetType) {
+    case PhotonExcPacketType_Unreliable:
+        //TODO: compare counters, check number of lost packets
+        handlePayload(handler, &payload, &results);
+        state->expectedUnreliableUplinkCounter = header.counter;
+        break;
+    case PhotonExcPacketType_Reliable:
+        if (header.counter != state->expectedReliableUplinkCounter) {
+            genReceipt(&header, state, genCounterCorrectionReceiptPayload);
+            HANDLE_INVALID_PACKET("invalid expected reliable counter");
+            return true;
+        }
+        if (!handlePayload(handler, &payload, &results)) {
+            genReceipt(&header, 0, genPayloadErrorReceiptPayload);
+            HANDLE_INVALID_PACKET("invalid payload");
+            return true;
+        }
+        genReceipt(&header, 0, genOkReceiptPayload);
+        state->expectedReliableUplinkCounter++;
+        break;
+    case PhotonExcPacketType_Receipt:
+        HANDLE_INVALID_PACKET("uplink receipts not supported");
         break;
     }
     PhotonRingBuf_Erase(&_photonExc.inStream, size + 2);
@@ -225,6 +321,9 @@ void PhotonExc_AcceptInput(const void* src, size_t size)
 
     bool canContinue;
     do {
+        if (_photonExc.hasReceiptQueued) { //HACK
+            return;
+        }
         canContinue = findSep();
     } while (canContinue);
 }
@@ -238,9 +337,10 @@ static PhotonError genQueuedPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
-    dataHeader.streamType = PhotonExcStreamType_Unreliable;
-    dataHeader.packetType = PhotonExcPacketType_Telemetry;
-    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
+    dataHeader.packetType = PhotonExcPacketType_Unreliable;
+    dataHeader.streamType = PhotonExcStreamType_CmdTelem;
+    dataHeader.counter = _photonExc.cmdTelemStream.currentUnreliableDownlinkCounter;
     dataHeader.time = PhotonClk_GetTime();
 
     PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
@@ -251,6 +351,7 @@ static PhotonError genQueuedPacket()
 
     _photonExc.currentPacket = (_photonExc.currentPacket + 1) % PHOTON_PACKET_QUEUE_SIZE;
     _photonExc.numPackets--;
+    _photonExc.cmdTelemStream.currentUnreliableDownlinkCounter++;
 
     return PhotonError_Ok;
 }
@@ -262,9 +363,10 @@ static PhotonError genFwtPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
-    dataHeader.streamType = PhotonExcStreamType_Unreliable;
-    dataHeader.packetType = PhotonExcPacketType_Firmware;
-    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
+    dataHeader.packetType = PhotonExcPacketType_Unreliable;
+    dataHeader.streamType = PhotonExcStreamType_Firmware;
+    dataHeader.counter = _photonExc.fwtStream.currentUnreliableDownlinkCounter;
     dataHeader.time = PhotonClk_GetTime();
 
     PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
@@ -272,7 +374,7 @@ static PhotonError genFwtPacket()
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
-    _photonExc.outCounter++;
+    _photonExc.fwtStream.currentUnreliableDownlinkCounter++;
     return PhotonError_Ok;
 }
 
@@ -283,9 +385,10 @@ static PhotonError genTmPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
-    dataHeader.streamType = PhotonExcStreamType_Unreliable;
-    dataHeader.packetType = PhotonExcPacketType_Telemetry;
-    dataHeader.counter = _photonExc.outCounter;
+    dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
+    dataHeader.packetType = PhotonExcPacketType_Unreliable;
+    dataHeader.streamType = PhotonExcStreamType_CmdTelem;
+    dataHeader.counter = _photonExc.cmdTelemStream.currentUnreliableDownlinkCounter++;
     dataHeader.time = PhotonClk_GetTime();
 
     PHOTON_TRY(PhotonExcDataHeader_Serialize(&dataHeader, &reserved));
@@ -293,7 +396,7 @@ static PhotonError genTmPacket()
 
     PHOTON_EXC_ENCODE_PACKET_FOOTER(&writer, reserved);
 
-    _photonExc.outCounter++;
+    _photonExc.cmdTelemStream.currentUnreliableDownlinkCounter++;
     return PhotonError_Ok;
 }
 
@@ -311,6 +414,11 @@ void PhotonExc_PrepareNextMsg()
 
     size_t msgSize;
 
+    if (_photonExc.hasReceiptQueued) {
+        //HACK
+        msgSize = _photonExc.receiptSize;
+        _photonExc.hasReceiptQueued = false;
+    }
     if (_photonExc.numPackets) {
         msgSize = genPacket(genQueuedPacket);
     } else if (PhotonFwt_HasAnswers()) {
@@ -318,9 +426,8 @@ void PhotonExc_PrepareNextMsg()
     } else {
         msgSize = genPacket(genTmPacket);
     }
-    _photonExc.outCounter++;
 
-    _photonExc.currentMsg.address = 1; //TEMP
+    _photonExc.currentMsg.address = 1; //HACK
     _photonExc.currentMsg.data = outTemp;
     _photonExc.currentMsg.size = msgSize;
 }

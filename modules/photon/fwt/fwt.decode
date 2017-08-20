@@ -38,7 +38,7 @@ component {
     impl {
         fn init()
         fn tick()
-        fn acceptCmd(src: *mut Reader) -> Error
+        fn acceptCmd(src: *mut Reader, dest: *mut Writer) -> Error
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool
         fn getFirmwareData() -> *const u8

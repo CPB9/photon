@@ -111,7 +111,8 @@ begin:
             }
             if (err != WSAEWOULDBLOCK) {
 #else
-            if (errno != EWOULDBLOCK) {
+            int err = errno;
+            if (err != EWOULDBLOCK) {
 #endif
                 PHOTON_WARNING("Error recieving: %d", err);
             }

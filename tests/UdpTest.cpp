@@ -29,6 +29,7 @@ public:
         , _socket(std::move(socket))
         , _endpoint(std::move(endpoint))
     {
+        _socket.non_blocking(true);
     }
 
     void act() override
@@ -73,6 +74,10 @@ public:
         udp::endpoint endpoint;
         std::size_t size = _socket.receive_from(asio::buffer(buf), endpoint, 0, err);
         if (err) {
+            if (err == asio::error::would_block) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                return;
+            }
             BMCL_CRITICAL() << "error recieving packet: " << err.message();
             return;
         }

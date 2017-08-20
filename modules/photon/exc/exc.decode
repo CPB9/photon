@@ -1,21 +1,33 @@
 module exc
 
-import core::{Writer, Error, Address, Time, Generator, RingBuf}
+import core::{Reader, Writer, Error, Address, Time, Generator, RingBuf}
 import clk::{Tick}
 
 /// 0x9c3e
 const STREAM_SEPARATOR : u16 = 39998;
 
-enum PacketType {
-    Firmware = 0,
-    Telemetry = 1,
-    Commands = 2,
+enum StreamDirection {
+    Uplink = 0,
+    Downlink = 1,
 }
 
 enum StreamType {
+    Firmware = 0,
+    CmdTelem = 1,
+    User = 2,
+}
+
+enum PacketType {
     Unreliable = 0,
     Reliable = 1,
     Receipt = 2,
+}
+
+enum ReceiptType {
+    Ok = 0,
+    PacketError = 1,
+    PayloadError = 2,
+    CounterCorrection = 3,
 }
 
 struct ReceiptPacket {
@@ -29,8 +41,9 @@ impl ReceiptPacket {
 }
 
 struct DataHeader {
-    streamType: StreamType,
+    streamDirection: StreamDirection,
     packetType: PacketType,
+    streamType: StreamType,
     counter: u16,
     time: Tick,
 }
@@ -47,22 +60,34 @@ struct PacketRequest {
     address: u32,
 }
 
+type StreamHandler = &Fn(*mut Reader, *mut Writer) -> Error;
+
+struct StreamState {
+    currentReliableDownlinkCounter: u16,
+    currentUnreliableDownlinkCounter: u16,
+    expectedReliableUplinkCounter: u16,
+    expectedUnreliableUplinkCounter: u16,
+}
+
 component {
     parameters {
         packetQueue: [PacketRequest; 8],
         currentPacket: usize,
         numPackets: usize,
 
-        outCounter: u16,
-        inCounter: u16,
+        fwtStream: StreamState,
+        cmdTelemStream: StreamState,
+        userStream: StreamState,
         inStream: RingBuf,
         inStreamData: [u8; 1024],
         currentMsg: Msg,
+        hasReceiptQueued: bool,
+        receiptSize: usize,
     }
 
     statuses {
-        [1, 1, true]: outCounter,
-        [2, 1, true]: inCounter,
+        [1, 1, true]: fwtStream,
+        [2, 1, true]: cmdTelemStream,
     }
 
     impl {

@@ -85,7 +85,8 @@ caf::behavior UiActor::make_behavior()
         },
         [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
             _widgetShown = true;
-            _widget->showMaximized();
+            _widget->resize(800, 600);
+            _widget->show();
             Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
             _widget->setRootCmdNode(cmdNode.get());
         },
@@ -133,6 +134,12 @@ caf::behavior UiActor::make_behavior()
 
             QObject::connect(_widget.get(), &FirmwareWidget::unreliablePacketQueued, _widget.get(), [this](const PacketRequest& packet) {
                 send(_gc, SendUnreliablePacketAtom::value, packet);
+            });
+
+            QObject::connect(_widget.get(), &FirmwareWidget::reliablePacketQueued, _widget.get(), [this](const PacketRequest& packet) {
+                request(_gc, caf::infinite, SendReliablePacketAtom::value, packet).then([this](const PacketResponse& response) {
+                    _widget->acceptPacketResponse(response);
+                });
             });
 
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);

@@ -118,6 +118,7 @@ impl Writer {
 }
 
 type Generator = &Fn(*mut void, *mut Writer) -> Error;
+type StatelessGenerator = &Fn(*mut Writer) -> Error;
 
 variant Time {
     Secs { seconds: u32 },
