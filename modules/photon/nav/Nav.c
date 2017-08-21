@@ -14,6 +14,10 @@ void PhotonNav_Init()
     _photonNav.orientation.heading = 0;
     _photonNav.orientation.pitch = 0;
     _photonNav.orientation.roll = 0;
+    _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_None;
+    _photonNav.velocity.x = 0;
+    _photonNav.velocity.y = 0;
+    _photonNav.velocity.z = 0;
 #endif
 }
 

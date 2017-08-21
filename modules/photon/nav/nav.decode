@@ -39,14 +39,41 @@ struct Waypoint {
     action: Action,
 }
 
+enum GpsFixType {
+    NoGps = 0,
+    NoFix = 1,
+    Fix2D = 2,
+    Fix3D = 3,
+    DGps = 4,
+    Single = 5,
+    PsrDiff = 6,
+    L1Float = 7,
+    L1Int = 8,
+    Static = 9,
+}
+
+struct GpsState {
+    fixType : GpsFixType,
+    satellitesVisible : u8
+}
+
+variant RelativeAltitude {
+    None,
+    Some(f64),
+}
+
 component {
     parameters {
         latLon: LatLon,
         orientation: Orientation,
+        relativeAltitude: RelativeAltitude,
+        velocity: Vec3,
+        gpsState: GpsState
     }
 
     statuses {
-        [0, 0, true]: {latLon, orientation},
+        [0, 0, true]: {latLon, orientation, relativeAltitude, velocity},
+        [1, 0, true]: {gpsState}
     }
 
     commands {
