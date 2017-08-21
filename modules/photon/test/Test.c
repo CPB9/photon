@@ -26,6 +26,17 @@ PhotonError PhotonTest_SetParam1(uint8_t p)
     return PhotonError_Ok;
 }
 
+PhotonError PhotonTest_SetParam1AndReturn(uint8_t p, PhotonTestReturnStruct* rv)
+{
+    _photonTest.param1 = p;
+    rv->param1 = p;
+    rv->param2 = -66;
+    rv->param3.type = PhotonTestVariantParamType_StructType;
+    rv->param3.data.structTypeVariantParam.a = -66;
+    rv->param3.data.structTypeVariantParam.b = p;
+    return PhotonError_Ok;
+}
+
 PhotonError PhotonTest_SetParam2(uint16_t p)
 {
     _photonTest.param2 = p;

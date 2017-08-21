@@ -86,7 +86,7 @@ caf::behavior UiActor::make_behavior()
         [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
             _widgetShown = true;
             _widget->resize(800, 600);
-            _widget->show();
+            _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
             _widget->setRootCmdNode(cmdNode.get());
         },

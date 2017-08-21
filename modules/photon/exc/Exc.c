@@ -97,7 +97,13 @@ static PhotonError genPayloadErrorReceiptPayload(void* data, PhotonWriter* dest)
 
 static PhotonError genOkReceiptPayload(void* data, PhotonWriter* dest)
 {
+    PhotonWriter* results = (PhotonWriter*)data;
     PHOTON_TRY(PhotonExcReceiptType_Serialize(PhotonExcReceiptType_Ok, dest));
+    size_t resultSize = results->current - results->start;
+    if (PhotonWriter_WritableSize(dest) < resultSize) {
+        return PhotonError_NotEnoughSpace;
+    }
+    PhotonWriter_Write(dest, results->start, resultSize);
     return PhotonError_Ok;
 }
 
@@ -196,7 +202,7 @@ static bool handlePacket(size_t size)
             HANDLE_INVALID_PACKET("invalid payload");
             return true;
         }
-        genReceipt(&header, 0, genOkReceiptPayload);
+        genReceipt(&header, &results, genOkReceiptPayload);
         state->expectedReliableUplinkCounter++;
         break;
     case PhotonExcPacketType_Receipt:

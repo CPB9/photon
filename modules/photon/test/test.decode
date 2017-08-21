@@ -62,6 +62,12 @@ struct CmdStruct {
     param11: f64,
 }
 
+struct ReturnStruct {
+    param1: u8,
+    param2: i64,
+    param3: VariantParam,
+}
+
 component {
     parameters {
         /// param 1
@@ -103,6 +109,8 @@ component {
     commands {
         /// param 1 command
         fn setParam1(p: u8)
+        /// param 1 command
+        fn setParam1AndReturn(p: u8) -> ReturnStruct
         /// param 2 command
         fn setParam2(p: u16)
         /// param 3 command
