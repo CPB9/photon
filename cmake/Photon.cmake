@@ -211,7 +211,9 @@ macro(photon_add_device target)
         )
     endif()
 
-    target_compile_options(photon-${target} PUBLIC -DPHOTON_STUB)
+    if (PHOTON_ENABLE_STUB)
+        target_compile_options(photon-${target} PUBLIC -DPHOTON_STUB)
+    endif()
 
     target_include_directories(photon-${target}
         PUBLIC
