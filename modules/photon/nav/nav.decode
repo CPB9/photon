@@ -66,13 +66,14 @@ component {
     parameters {
         latLon: LatLon,
         orientation: Orientation,
+        altitude: f64,
         relativeAltitude: RelativeAltitude,
         velocity: Vec3,
         gpsState: GpsState
     }
 
     statuses {
-        [0, 0, true]: {latLon, orientation, relativeAltitude, velocity},
+        [0, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
         [1, 0, true]: {gpsState}
     }
 
