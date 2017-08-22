@@ -16,22 +16,23 @@ struct Position {
     altitude: f64,
 }
 
-enum FormationKind {
-    Reynolds = 0,
-    Formation = 1,
-    Snake = 2,
-    Loop = 3,
-}
-
 struct Vec3 {
     x: f64,
     y: f64,
     z: f64,
 }
 
+struct FormationEntry {
+    pos: Vec3,
+    id: varuint
+}
+
 variant Action {
     Sleep(varuint),
-    Formation {kind: FormationKind, pos: Vec3, id: varuint},
+    Formation { positions: &[FormationEntry] },
+    Reynolds,
+    Snake,
+    Loop
 }
 
 struct Waypoint {
