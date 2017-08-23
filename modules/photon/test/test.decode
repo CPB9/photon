@@ -139,5 +139,14 @@ component {
         fn incAllParams()
         /// dec params command
         fn decAllParams()
+
+        fn testU8(p: u8) -> u8
+        fn testI8(p: i8) -> i8
+        fn testStruct(p: ParamStruct) -> ParamStruct
+        fn testVariant(p: VariantParam) -> VariantParam
+        fn testEnum(p: EnumParam) -> EnumParam
+        fn testArray(p: [u16; 4]) -> [u16; 4]
+        ///fn testDynArray(p: &[u32; 2]) -> &[u32; 2]
+        fn testDynArray() -> &[u32; 2]
     }
 }

@@ -142,9 +142,14 @@ struct CmdHeader {
     commandNumber: varuint,
 }
 
+struct SliceOfU8 {
+    data: *mut u8,
+    size: usize,
+}
+
 struct MemChunks {
-    first: &[u8],
-    second: &[u8],
+    first: SliceOfU8,
+    second: SliceOfU8,
 }
 
 struct RingBuf {

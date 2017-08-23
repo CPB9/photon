@@ -162,3 +162,51 @@ PhotonError PhotonTest_DecAllParams()
     _photonTest.param11--;
     return PhotonError_Ok;
 }
+
+PhotonError PhotonTest_TestU8(uint8_t p, uint8_t* rv)
+{
+    *rv = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestI8(int8_t p, int8_t* rv)
+{
+    *rv = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestStruct(const PhotonTestParamStruct* p, PhotonTestParamStruct* rv)
+{
+    *rv = *p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestVariant(const PhotonTestVariantParam* p, PhotonTestVariantParam* rv)
+{
+    *rv = *p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestEnum(PhotonTestEnumParam p, PhotonTestEnumParam* rv)
+{
+    *rv = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestArray(uint16_t p[4], uint16_t rv[4])
+{
+    rv[0] = p[0];
+    rv[1] = p[1];
+    rv[2] = p[2];
+    rv[3] = p[3];
+    return PhotonError_Ok;
+}
+
+//PhotonError PhotonTest_TestDynArray(const PhotonDynArrayOfU32MaxSize2* p, PhotonDynArrayOfU32MaxSize2* rv)
+PhotonError PhotonTest_TestDynArray(PhotonDynArrayOfU32MaxSize2* rv)
+{
+    rv->data[0] = 8;
+    rv->data[1] = 8;
+    rv->size = 2;
+    return PhotonError_Ok;
+}

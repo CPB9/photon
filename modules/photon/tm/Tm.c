@@ -27,8 +27,6 @@ void PhotonTm_Init()
     }
     _photonTm.allowedMsgCount = allowedMsgCount;
     _photonTm.onceRequestsNum = 0;
-    _photonTm.msgs.size = _PHOTON_TM_MSG_COUNT;
-    _photonTm.msgs.data = _messageDesc;
 }
 
 void PhotonTm_Tick()
@@ -45,7 +43,7 @@ static void selectNextMessage()
 
 static inline PhotonTmMessageDesc* currentDesc()
 {
-    return &_photonTm.msgs.data[_photonTm.currentDesc];
+    return &_messageDesc[_photonTm.currentDesc];
 }
 
 static PhotonError encodeStatusMsg(void* data, PhotonWriter* dest)

@@ -23,7 +23,6 @@ impl StatusMessage {
 component {
     parameters {
         currentStatusMsg: StatusMessage,
-        msgs: &[MessageDesc],
         currentDesc: u32,
         allowedMsgCount: u32,
         onceRequestsNum: u16,
@@ -31,9 +30,6 @@ component {
 
     statuses {
         [0, 0, true]: allowedMsgCount,
-        [1, 0, true]: msgs[..].compNum,
-        [2, 0, true]: msgs[..].msgNum,
-        [3, 0, true]: msgs[..].isEnabled,
         [4, 0, true]: onceRequestsNum,
     }
 

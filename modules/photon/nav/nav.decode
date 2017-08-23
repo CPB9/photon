@@ -29,10 +29,10 @@ struct FormationEntry {
 
 variant Action {
     Sleep(varuint),
-    Formation { positions: &[FormationEntry] },
+    Formation { positions: &[FormationEntry; 20] },
     Reynolds,
     Snake,
-    Loop
+    Loop,
 }
 
 struct Waypoint {
