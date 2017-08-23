@@ -1,8 +1,19 @@
 #include "photon/nav/Nav.Component.h"
 
+#ifndef PHOTON_STUB
+
+bool isUploading;
+static size_t routeSize;
+#define ROUTE_SIZE 100
+static PhotonNavWaypoint tmpRoute[ROUTE_SIZE];
+
+#endif
+
 void PhotonNav_Init()
 {
 #ifdef PHOTON_STUB
+    isUploading = false;
+    routeSize = 0;
     _photonNav.latLon.latitude = 44.499096;
     _photonNav.latLon.longitude = 33.966287;
     _photonNav.orientation.heading = 30;
@@ -40,3 +51,40 @@ void PhotonNav_Tick()
     }
 #endif
 }
+
+#ifdef PHOTON_STUB
+
+PhotonError PhotonNav_BeginRoute(size_t routeIndex)
+{
+    if (routeIndex != 0) {
+        return PhotonError_InvalidValue;
+    }
+    isUploading = true;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonNav_SetRoutePoint(size_t routeIndex, size_t pointIndex, const PhotonNavWaypoint* waypoint)
+{
+    if (routeIndex != 0) {
+        return PhotonError_InvalidValue;
+    }
+    if (pointIndex >= ROUTE_SIZE) {
+        return PhotonError_InvalidValue;
+    }
+    tmpRoute[pointIndex] = *waypoint;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonNav_EndRoute(size_t routeIndex)
+{
+    if (!isUploading) {
+        return PhotonError_InvalidValue;
+    }
+    if (routeIndex != 0) {
+        return PhotonError_InvalidValue;
+    }
+    isUploading = false;
+    return PhotonError_Ok;
+}
+
+#endif

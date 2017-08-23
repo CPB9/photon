@@ -202,11 +202,12 @@ PhotonError PhotonTest_TestArray(uint16_t p[4], uint16_t rv[4])
     return PhotonError_Ok;
 }
 
-//PhotonError PhotonTest_TestDynArray(const PhotonDynArrayOfU32MaxSize2* p, PhotonDynArrayOfU32MaxSize2* rv)
-PhotonError PhotonTest_TestDynArray(PhotonDynArrayOfU32MaxSize2* rv)
+//PhotonError PhotonTest_TestDynArray(const PhotonDynArrayOfU32MaxSize4* p, PhotonDynArrayOfU32MaxSize4* rv)
+PhotonError PhotonTest_TestDynArray(PhotonDynArrayOfU32MaxSize4* rv)
 {
-    rv->data[0] = 8;
-    rv->data[1] = 8;
-    rv->size = 2;
+    rv->data[0] = 111;
+    rv->data[1] = 222;
+    rv->data[2] = 333;
+    rv->size = 3;
     return PhotonError_Ok;
 }

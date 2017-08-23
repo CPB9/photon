@@ -28,7 +28,7 @@ struct FormationEntry {
 }
 
 variant Action {
-    Sleep(varuint),
+    Sleep { timeout: varuint },
     Formation { positions: &[FormationEntry; 20] },
     Reynolds,
     Snake,
@@ -79,6 +79,9 @@ component {
     }
 
     commands {
+        fn beginRoute(routeIndex: usize)
+        fn setRoutePoint(routeIndex: usize, pointIndex: usize, waypoint: Waypoint)
+        fn endRoute(routeIndex: usize)
     }
 
     impl {

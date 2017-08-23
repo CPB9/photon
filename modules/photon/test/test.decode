@@ -146,7 +146,7 @@ component {
         fn testVariant(p: VariantParam) -> VariantParam
         fn testEnum(p: EnumParam) -> EnumParam
         fn testArray(p: [u16; 4]) -> [u16; 4]
-        ///fn testDynArray(p: &[u32; 2]) -> &[u32; 2]
-        fn testDynArray() -> &[u32; 2]
+        ///fn testDynArray(p: &[u32; 4]) -> &[u32; 4]
+        fn testDynArray() -> &[u32; 4]
     }
 }
