@@ -28,6 +28,7 @@ struct FormationEntry {
 }
 
 variant Action {
+    None,
     Sleep { timeout: varuint },
     Formation { positions: &[FormationEntry; 20] },
     Reynolds,

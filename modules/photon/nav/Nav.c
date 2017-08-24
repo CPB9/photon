@@ -1,6 +1,6 @@
 #include "photon/nav/Nav.Component.h"
 
-#ifndef PHOTON_STUB
+#ifdef PHOTON_STUB
 
 bool isUploading;
 static size_t routeSize;
