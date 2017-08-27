@@ -64,6 +64,33 @@ variant RelativeAltitude {
     Some(f64),
 }
 
+type RouteId = varuint;
+
+variant OptionalIndex {
+    None,
+    Some { index: varuint },
+}
+
+variant OptionalRouteId {
+    None,
+    Some { id : RouteId },
+}
+
+struct RouteInfo {
+    id: RouteId,
+    size: varuint,
+    maxSize: varuint,
+    activePoint: OptionalIndex,
+    isClosed: bool,
+    isInverted: bool,
+    isEditing: bool,
+}
+
+struct AllRoutesInfo {
+    info: &[RouteInfo; 10],
+    activeRoute: OptionalRouteId,
+}
+
 component {
     parameters {
         latLon: LatLon,
@@ -80,9 +107,15 @@ component {
     }
 
     commands {
-        fn beginRoute(routeIndex: usize)
-        fn setRoutePoint(routeIndex: usize, pointIndex: usize, waypoint: Waypoint)
-        fn endRoute(routeIndex: usize)
+        fn beginRoute(routeId: RouteId)
+        fn clearRoute(routeId: RouteId)
+        fn setRoutePoint(routeId: RouteId, pointIndex: varuint, waypoint: Waypoint)
+        fn endRoute(routeId: RouteId)
+        fn setActiveRoute(routeId: OptionalRouteId)
+        fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
+        fn setRouteInverted(routeId: RouteId, isInverted: bool)
+        fn setRouteClosed(routeId: RouteId, isClosed: bool)
+        fn getRoutesInfo() -> AllRoutesInfo
     }
 
     impl {

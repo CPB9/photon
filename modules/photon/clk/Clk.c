@@ -65,3 +65,4 @@ PhotonClkTick PhotonClk_GetTime()
     return _photonClk.time;
 }
 
+#undef _PHOTON_FNAME

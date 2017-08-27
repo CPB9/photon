@@ -91,6 +91,7 @@ static bool handlePayload(PhotonExcStreamHandler handler, PhotonReader* payload,
 
 static PhotonError genPayloadErrorReceiptPayload(void* data, PhotonWriter* dest)
 {
+    (void)data;
     PHOTON_TRY(PhotonExcReceiptType_Serialize(PhotonExcReceiptType_PayloadError, dest));
     return PhotonError_Ok;
 }

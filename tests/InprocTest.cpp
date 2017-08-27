@@ -48,7 +48,7 @@ public:
                 send(_dest, RecvDataAtom::value, data);
                 PhotonExc_PrepareNextMsg();
                 _current = *PhotonExc_GetMsg();
-                delayed_send(this, std::chrono::milliseconds(50), RepeatStreamAtom::value);
+                delayed_send(this, std::chrono::milliseconds(10), RepeatStreamAtom::value);
             },
         };
     }
