@@ -102,8 +102,8 @@ component {
     }
 
     statuses {
-        [0, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
-        [1, 0, true]: {gpsState}
+        [all, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
+        [gps, 0, true]: {gpsState}
     }
 
     commands {

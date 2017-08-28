@@ -86,8 +86,8 @@ component {
     }
 
     statuses {
-        [1, 1, true]: fwtStream,
-        [2, 1, true]: cmdTelemStream,
+        [fwt, 1, true]: fwtStream,
+        [cmd, 1, true]: cmdTelemStream,
     }
 
     impl {
