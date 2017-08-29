@@ -56,6 +56,11 @@ void PhotonReader_SliceToEnd(PhotonReader* self, PhotonReader* dest)
     dest->current = dest->current;
 }
 
+char PhotonReader_ReadChar(PhotonReader* self)
+{
+    return PhotonReader_ReadU8(self);
+}
+
 uint8_t PhotonReader_ReadU8(PhotonReader* self)
 {
     PHOTON_ASSERT(PhotonReader_ReadableSize(self) >= 1);

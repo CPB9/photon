@@ -68,6 +68,8 @@ impl Reader {
     fn readPtrLe(&mut self) -> *mut void
     fn readPtrBe(&mut self) -> *mut void
 
+    fn readChar(&mut self) -> char
+
     fn readVaruint(&mut self, dest: *mut varuint) -> Error
     fn readVarint(&mut self, dest: *mut varint) -> Error
 
@@ -112,6 +114,8 @@ impl Writer {
 
     fn writePtrLe(&mut self, value: *const void)
     fn writePtrBe(&mut self, value: *const void)
+
+    fn writeChar(&mut self, value: char)
 
     fn writeVaruint(&mut self, value: varuint) -> Error
     fn writeVarint(&mut self, value: varint) -> Error

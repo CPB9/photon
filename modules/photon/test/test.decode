@@ -60,6 +60,8 @@ struct CmdStruct {
     param10: f32,
     /// param 11
     param11: f64,
+    /// param 12
+    param12: char,
 }
 
 struct ReturnStruct {
@@ -92,12 +94,14 @@ component {
         param10: f32,
         /// param 11
         param11: f64,
+        /// param 12
+        param12: char,
     }
 
     statuses {
         [p1_4, 0, true]: {param1, param2, param3, param4},
         [p5_8, 0, true]: {param5, param6, param7, param8},
-        [p9_11, 0, true]: {param9, param10, param11},
+        [p9_12, 0, true]: {param9, param10, param11, param12},
     }
 
     impl {
@@ -131,8 +135,10 @@ component {
         fn setParam10(p: f32)
         /// param 11 command
         fn setParam11(p: f64)
+        /// param 11 command
+        fn setParam12(p: char)
         /// all params command
-        fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64, p9: ParamStruct, p10: f32, p11: f64)
+        fn setAllParams(p1: u8, p2: u16, p3: u32, p4: u64, p5: i8, p6: i16, p7: i32, p8: i64, p9: ParamStruct, p10: f32, p11: f64, p12: char)
         /// all params in struct command
         fn setAllParamsStruct(s: CmdStruct)
         /// inc params command
@@ -148,5 +154,6 @@ component {
         fn testArray(p: [u16; 4]) -> [u16; 4]
         ///fn testDynArray(p: &[u32; 4]) -> &[u32; 4]
         fn testDynArray() -> &[u32; 4]
+        fn testString(p: &[char; 4]) -> &[char; 4]
     }
 }

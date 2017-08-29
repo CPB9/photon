@@ -55,6 +55,11 @@ void PhotonWriter_SliceFromBack(PhotonWriter* self, size_t size, PhotonWriter* d
     self->current = (uint8_t*) dest->end;
 }
 
+void PhotonWriter_WriteChar(PhotonWriter* self, char value)
+{
+    PhotonWriter_WriteU8(self, value);
+}
+
 void PhotonWriter_WriteU8(PhotonWriter* self, uint8_t value)
 {
     PHOTON_ASSERT(PhotonWriter_WritableSize(self) >= 1);

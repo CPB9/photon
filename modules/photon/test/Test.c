@@ -14,6 +14,7 @@ void PhotonTest_Init()
     _photonTest.param9.paramb = 9;
     _photonTest.param10 = 10;
     _photonTest.param11 = 11;
+    _photonTest.param12 = 'a';
 }
 
 void PhotonTest_Tick()
@@ -97,7 +98,13 @@ PhotonError PhotonTest_SetParam11(double p)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8, const PhotonTestParamStruct* p9, float p10, double p11)
+PhotonError PhotonTest_SetParam12(char p)
+{
+    _photonTest.param12 = p;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8, const PhotonTestParamStruct* p9, float p10, double p11, char p12)
 {
     _photonTest.param1 = p1;
     _photonTest.param2 = p2;
@@ -110,6 +117,7 @@ PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64
     _photonTest.param9 = *p9;
     _photonTest.param10 = p10;
     _photonTest.param11 = p11;
+    _photonTest.param12 = p12;
     return PhotonError_Ok;
 }
 
@@ -126,6 +134,7 @@ PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestCmdStruct* s)
     _photonTest.param9 = s->param9;
     _photonTest.param10 = s->param10;
     _photonTest.param11 = s->param11;
+    _photonTest.param12 = s->param12;
     return PhotonError_Ok;
 }
 
@@ -143,6 +152,7 @@ PhotonError PhotonTest_IncAllParams()
     _photonTest.param9.paramb++;
     _photonTest.param10++;
     _photonTest.param11++;
+    _photonTest.param12++;
     return PhotonError_Ok;
 }
 
@@ -160,6 +170,7 @@ PhotonError PhotonTest_DecAllParams()
     _photonTest.param9.paramb--;
     _photonTest.param10--;
     _photonTest.param11--;
+    _photonTest.param12--;
     return PhotonError_Ok;
 }
 
@@ -209,5 +220,15 @@ PhotonError PhotonTest_TestDynArray(PhotonDynArrayOfU32MaxSize4* rv)
     rv->data[1] = 222;
     rv->data[2] = 333;
     rv->size = 3;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestString(const PhotonDynArrayOfCharMaxSize4* p, PhotonDynArrayOfCharMaxSize4* rv)
+{
+    rv->data[0] = p->data[0];
+    rv->data[1] = p->data[1];
+    rv->data[2] = p->data[2];
+    rv->data[3] = p->data[3];
+    rv->size = p->size;
     return PhotonError_Ok;
 }
