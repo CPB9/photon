@@ -107,7 +107,7 @@ component {
     }
 
     commands {
-        fn beginRoute(routeId: RouteId)
+        fn beginRoute(routeId: RouteId, size: varuint)
         fn clearRoute(routeId: RouteId)
         fn setRoutePoint(routeId: RouteId, pointIndex: varuint, waypoint: Waypoint)
         fn endRoute(routeId: RouteId)

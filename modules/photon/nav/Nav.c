@@ -100,9 +100,12 @@ PhotonError PhotonNav_SetRouteActivePoint(uint64_t routeId, const PhotonNavOptio
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_BeginRoute(uint64_t routeId)
+PhotonError PhotonNav_BeginRoute(uint64_t routeId, uint64_t size)
 {
     if (routeId != 0) {
+        return PhotonError_InvalidValue;
+    }
+    if (size > info.maxSize) {
         return PhotonError_InvalidValue;
     }
     info.isEditing = true;
@@ -126,7 +129,7 @@ PhotonError PhotonNav_SetRoutePoint(uint64_t routeId, uint64_t pointIndex, const
     if (routeId != 0) {
         return PhotonError_InvalidValue;
     }
-    if (pointIndex >= ROUTE_SIZE) {
+    if (pointIndex >= info.maxSize) {
         return PhotonError_InvalidValue;
     }
     tmpRoute[pointIndex] = *waypoint;
