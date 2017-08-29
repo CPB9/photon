@@ -95,9 +95,9 @@ component {
     }
 
     statuses {
-        [0, 0, true]: {param1, param2, param3, param4},
-        [3, 0, true]: {param5, param6, param7, param8},
-        [4, 0, true]: {param9, param10, param11},
+        [p1_4, 0, true]: {param1, param2, param3, param4},
+        [p5_8, 0, true]: {param5, param6, param7, param8},
+        [p9_11, 0, true]: {param9, param10, param11},
     }
 
     impl {

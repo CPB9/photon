@@ -29,8 +29,7 @@ component {
     }
 
     statuses {
-        [0, 0, true]: allowedMsgCount,
-        [4, 0, true]: onceRequestsNum,
+        [all, 0, true]: {allowedMsgCount, onceRequestsNum},
     }
 
     impl {
