@@ -19,6 +19,10 @@ void PhotonNav_Init()
     info.isEditing = false;
     info.id = 0;
     info.size = 1;
+    tmpRoute[0].action.type = PhotonNavActionType_None;
+    tmpRoute[0].position.latLon.latitude = 1;
+    tmpRoute[0].position.latLon.longitude = 2;
+    tmpRoute[0].position.altitude = 3;
     info.isClosed = false;
     info.isInverted = false;
     info.maxSize = ROUTE_SIZE;
