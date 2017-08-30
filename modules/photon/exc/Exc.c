@@ -76,7 +76,7 @@ static uint8_t resultsTemp[512];
 #define HANDLE_INVALID_PACKET(...)                              \
     do {                                                        \
         PHOTON_WARNING(__VA_ARGS__);                            \
-        PHOTON_WARNING("Continuing search with 1 byte offset"); \
+        PHOTON_DEBUG("Continuing search with 1 byte offset"); \
         PhotonRingBuf_Erase(&_photonExc.inStream, 1);           \
     } while(0);
 
@@ -181,7 +181,7 @@ static bool handlePacket(size_t size)
         break;
     }
     case PhotonExcStreamType_User:
-        HANDLE_INVALID_PACKET("user packets not supported");
+        HANDLE_INVALID_PACKET("User packets not supported");
         return true;
     }
     PhotonWriter results;
@@ -195,19 +195,19 @@ static bool handlePacket(size_t size)
     case PhotonExcPacketType_Reliable:
         if (header.counter != state->expectedReliableUplinkCounter) {
             genReceipt(&header, state, genCounterCorrectionReceiptPayload);
-            HANDLE_INVALID_PACKET("invalid expected reliable counter");
+            HANDLE_INVALID_PACKET("Invalid expected reliable counter");
             return true;
         }
         if (!handlePayload(handler, &payload, &results)) {
             genReceipt(&header, 0, genPayloadErrorReceiptPayload);
-            HANDLE_INVALID_PACKET("invalid payload");
+            HANDLE_INVALID_PACKET("Invalid payload");
             return true;
         }
         genReceipt(&header, &results, genOkReceiptPayload);
         state->expectedReliableUplinkCounter++;
         break;
     case PhotonExcPacketType_Receipt:
-        HANDLE_INVALID_PACKET("uplink receipts not supported");
+        HANDLE_INVALID_PACKET("Uplink receipts not supported");
         break;
     }
     PhotonRingBuf_Erase(&_photonExc.inStream, size + 2);

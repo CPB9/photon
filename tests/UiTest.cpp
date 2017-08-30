@@ -78,6 +78,10 @@ caf::behavior UiActor::make_behavior()
                 (void)orientation;
                 return;
             }
+            case TmParamKind::RoutesInfo: {
+                BMCL_DEBUG() << "accepted routes info";
+                return;
+            }
             }
         },
         [this](LogAtom, const std::string& msg) {

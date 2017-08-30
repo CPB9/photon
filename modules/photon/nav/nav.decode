@@ -115,6 +115,8 @@ component {
         fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
         fn setRouteInverted(routeId: RouteId, isInverted: bool)
         fn setRouteClosed(routeId: RouteId, isClosed: bool)
+        fn getRouteInfo(routeId: RouteId) -> RouteInfo
+        fn getRoutePoint(routeId: RouteId, pointIndex: varuint) -> Waypoint
         fn getRoutesInfo() -> AllRoutesInfo
     }
 

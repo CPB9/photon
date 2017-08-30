@@ -1,7 +1,10 @@
 #include "photon/int/Int.Component.h"
 
 #include "photon/core/Try.h"
+#include "photon/core/Logging.h"
 #include "photon/CmdDecoder.Private.h"
+
+#define _PHOTON_FNAME "int/Int.c"
 
 void PhotonInt_Init()
 {
@@ -13,8 +16,12 @@ void PhotonInt_Tick()
 
 PhotonError PhotonInt_ExecuteFrom(PhotonReader* src, PhotonWriter* results)
 {
+    if (PhotonReader_ReadableSize(src) == 0) {
+        return PhotonError_Ok;
+    }
     while (PhotonReader_ReadableSize(src) != 0) {
         if (PhotonReader_ReadableSize(src) < 2) {
+            PHOTON_CRITICAL("Unable to decode cmd header");
             return PhotonError_NotEnoughData;
         }
 
@@ -26,3 +33,5 @@ PhotonError PhotonInt_ExecuteFrom(PhotonReader* src, PhotonWriter* results)
 
     return PhotonError_Ok;
 }
+
+#undef _PHOTON_FNAME

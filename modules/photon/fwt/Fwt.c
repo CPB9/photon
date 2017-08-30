@@ -83,7 +83,7 @@ static PhotonError requestChunk(PhotonReader* src)
     // avoid sending twice
     const uint8_t* start = FW_START + chunkBegin;
     if (start >= _photonFwt.firmware.current) {
-        PHOTON_WARNING("Ignoring duplicating chunk");
+        PHOTON_DEBUG("Ignoring duplicating chunk");
         return PhotonError_Ok;
     }
 
