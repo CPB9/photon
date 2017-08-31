@@ -29,8 +29,10 @@ variant VariantParam {
 /// multiline desc
 struct ParamStruct {
     /// param a
+    #[ranges(default=9, min=0, max=20)]
     parama: u8,
     /// param b
+    #[ranges(default=9, min=0, max=20)]
     paramb: f64,
 }
 
@@ -73,28 +75,39 @@ struct ReturnStruct {
 component {
     parameters {
         /// param 1
+        #[ranges(default=1, min=0, max=20)]
         param1: u8,
         /// param 2
+        #[ranges(default=2, min=0, max=20)]
         param2: u16,
         /// param 3
+        #[ranges(default=3, min=0, max=20)]
         param3: u32,
         /// param 4
+        #[ranges(default=4, min=0, max=20)]
         param4: u64,
         /// param 5
+        #[ranges(default=5, min=0, max=20)]
         param5: i8,
         /// param 6
+        #[ranges(default=6, min=0, max=20)]
         param6: i16,
         /// param 7
+        #[ranges(default=7, min=0, max=20)]
         param7: i32,
         /// param 8
+        #[ranges(default=8, min=0, max=20)]
         param8: i64,
         /// param 9
         param9: ParamStruct,
         /// param 10
+        #[ranges(default=10, min=0, max=20)]
         param10: f32,
         /// param 11
+        #[ranges(default=11, min=0, max=20)]
         param11: f64,
         /// param 12
+        #[ranges(default=12, min=0, max=20)]
         param12: char,
     }
 
@@ -152,7 +165,6 @@ component {
         fn testVariant(p: VariantParam) -> VariantParam
         fn testEnum(p: EnumParam) -> EnumParam
         fn testArray(p: [u16; 4]) -> [u16; 4]
-        ///fn testDynArray(p: &[u32; 4]) -> &[u32; 4]
         fn testDynArray() -> &[u32; 4]
         fn testString(p: &[char; 4]) -> &[char; 4]
     }
