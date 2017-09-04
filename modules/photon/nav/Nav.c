@@ -51,6 +51,11 @@ void PhotonNav_Init()
 void PhotonNav_Tick()
 {
 #ifdef PHOTON_STUB
+    if (_photonNav.relativeAltitude.type == PhotonNavRelativeAltitudeType_None) {
+        _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_Some;
+    } else {
+        _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_None;
+    }
     _photonNav.latLon.latitude += 0.01;
     _photonNav.latLon.longitude += 0.01;
     _photonNav.orientation.heading += 0.1;

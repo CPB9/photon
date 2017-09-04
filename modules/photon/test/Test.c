@@ -15,10 +15,18 @@ void PhotonTest_Init()
     _photonTest.param10 = 10;
     _photonTest.param11 = 11;
     _photonTest.param12 = 'a';
+    _photonTest.dynArrayParam.size = 10;
+    for (size_t i = 0; i < 10; i++) {
+        _photonTest.dynArrayParam.data[i] = i;
+    }
 }
 
 void PhotonTest_Tick()
 {
+    _photonTest.dynArrayParam.size++;
+    if (_photonTest.dynArrayParam.size > 10) {
+        _photonTest.dynArrayParam.size = 0;
+    }
 }
 
 PhotonError PhotonTest_SetParam1(uint8_t p)
