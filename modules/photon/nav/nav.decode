@@ -36,8 +36,14 @@ variant Action {
     Loop,
 }
 
+variant OptionalF64 {
+    None,
+    Some { value: f64 },
+}
+
 struct Waypoint {
     position: Position,
+    speed: OptionalF64,
     action: Action,
 }
 

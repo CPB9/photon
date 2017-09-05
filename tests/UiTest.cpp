@@ -68,8 +68,8 @@ caf::behavior UiActor::make_behavior()
             switch (update.kind()) {
             case TmParamKind::None:
                 return;
-            case TmParamKind::LatLon: {
-                const LatLon& latLon = update.as<LatLon>();
+            case TmParamKind::Position: {
+                const Position& latLon = update.as<Position>();
                 (void)latLon;
                 return;
             }
