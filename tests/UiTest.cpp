@@ -1,6 +1,7 @@
 #include "UiTest.h"
 
 #include <decode/ui/QNodeModel.h>
+#include <decode/ui/QNodeViewModel.h>
 #include <decode/ui/QCmdModel.h>
 #include <decode/ui/FirmwareWidget.h>
 #include <decode/ui/FirmwareStatusWidget.h>
@@ -129,7 +130,9 @@ caf::behavior UiActor::make_behavior()
         [this](StartAtom) {
             _app = bmcl::makeUnique<QApplication>(_argc, _argv);
             _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
-            _widget = bmcl::makeUnique<FirmwareWidget>();
+            bmcl::Rc<decode::Node> emptyNode = new decode::Node(bmcl::None);
+            std::unique_ptr<decode::QNodeViewModel> paramViewModel = bmcl::makeUnique<QNodeViewModel>(new decode::NodeView(emptyNode.get()));
+            _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel));
 
             QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
                 BMCL_DEBUG() << "quitting";
