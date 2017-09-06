@@ -27,6 +27,8 @@ enum Error {
     InvalidValue = 23,
     NoSuchStatusMsg = 24,
     MaximumOnceRequestsReached = 25,
+    WouldBlock = 26,
+    BlockingCmdOutsidePvu = 27,
 
     NoDataAvailable = 99,
     NotImplemented = 100,

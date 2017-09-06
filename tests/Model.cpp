@@ -36,7 +36,7 @@ constexpr int socketError = -1;
 
 constexpr std::size_t maxPacketSize = 1024;
 
-static char temp[maxPacketSize];
+static char _temp[maxPacketSize];
 
 int main(int argc, char* argv[])
 {
@@ -97,11 +97,11 @@ begin:
     while (true) {
         std::this_thread::sleep_for(tickTimeout);
 
-        auto recvSize = recvfrom(sock, temp, sizeof(temp), 0, (struct sockaddr*)&from, &addrLen);
+        auto recvSize = recvfrom(sock, _temp, sizeof(_temp), 0, (struct sockaddr*)&from, &addrLen);
         if (recvSize != socketError) {
             canSend = true;
             //PHOTON_DEBUG("Recieved %zi bytes", recvSize);
-            PhotonExc_AcceptInput(temp, recvSize);
+            PhotonExc_AcceptInput(_temp, recvSize);
         } else {
 #ifdef _WIN32
             int err = WSAGetLastError();

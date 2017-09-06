@@ -1,0 +1,33 @@
+module pvu
+
+import core::{Error, Reader}
+import clk::{Tick}
+
+struct Script {
+    data: Reader,
+    isSleeping: bool,
+    isFinished: bool,
+    sleepUntil: Tick,
+}
+
+const SCRIPT_NUM: usize = 10;
+const TOTAL_SCRIPTS_SIZE: usize = 2048;
+
+component {
+    parameters {
+        numScripts: usize,
+        totalScriptsSize: usize,
+        current: *mut Script,
+    }
+
+    impl {
+        fn init()
+        fn tick()
+        fn addScript(src: *mut Reader) -> Error
+    }
+
+    commands {
+        fn sleepFor(delta: Tick)
+        fn sleepUntil(time: Tick)
+    }
+}

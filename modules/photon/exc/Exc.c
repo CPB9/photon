@@ -124,7 +124,7 @@ static PhotonError genReceipt(const PhotonExcDataHeader* incomingHeader, void* d
     //TODO: handle errors
     PhotonWriter writer;
     PhotonWriter_Init(&writer, outTemp, sizeof(outTemp));
-    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_EXC_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
@@ -339,7 +339,7 @@ static PhotonWriter writer;
 
 static PhotonError genQueuedPacket()
 {
-    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_EXC_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
@@ -365,7 +365,7 @@ static PhotonError genQueuedPacket()
 
 static PhotonError genFwtPacket()
 {
-    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_EXC_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
@@ -387,7 +387,7 @@ static PhotonError genFwtPacket()
 
 static PhotonError genTmPacket()
 {
-    PhotonWriter_WriteU16Be(&writer, PHOTON_STREAM_SEPARATOR);
+    PhotonWriter_WriteU16Be(&writer, PHOTON_EXC_STREAM_SEPARATOR);
 
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 

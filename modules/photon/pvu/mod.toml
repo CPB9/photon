@@ -1,0 +1,7 @@
+name = "pvu"
+decode = "pvu.decode"
+dest = "photon/pvu"
+id = 9
+sources = [
+  "Pvu.c"
+]
