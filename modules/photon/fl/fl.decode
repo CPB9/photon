@@ -1,0 +1,13 @@
+module fl
+
+type Checksum = u32;
+
+type FileChunk = &[u8; 128];
+
+component {
+    commands {
+        fn beginFile(id: varuint, size: varuint)
+        fn writeFile(id: varuint, offset: varuint, chunk: FileChunk)
+        fn endFile(id: varuint, size: varuint) -> Checksum
+    }
+}

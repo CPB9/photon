@@ -1,0 +1,7 @@
+name = "fl"
+decode = "fl.decode"
+dest = "photon/fl"
+id = 10
+sources = [
+  "Fl.c",
+]
