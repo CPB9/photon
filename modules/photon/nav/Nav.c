@@ -124,6 +124,7 @@ PhotonError PhotonNav_BeginRoute(uint64_t routeId, uint64_t size)
     }
     PHOTON_INFO("beginning route");
     info.isEditing = true;
+    info.size = size;
     return PhotonError_Ok;
 }
 
@@ -200,6 +201,7 @@ PhotonError PhotonNav_GetRouteInfo(uint64_t routeId, PhotonNavRouteInfo* rv)
         PHOTON_CRITICAL("Invalid route id");
         return PhotonError_InvalidValue;
     }
+    PHOTON_INFO("Getting route info");
     *rv = info;
     return PhotonError_Ok;
 }
@@ -214,6 +216,7 @@ PhotonError PhotonNav_GetRoutePoint(uint64_t routeId, uint64_t pointIndex, Photo
         PHOTON_CRITICAL("Invalid point index");
         return PhotonError_InvalidValue;
     }
+    PHOTON_INFO("Getting route point");
     *rv = tmpRoute[pointIndex];
     return PhotonError_Ok;
 }
