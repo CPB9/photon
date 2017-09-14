@@ -19,6 +19,9 @@
 #if defined(PHOTON_HAS_MODULE_NAV)
 # include "photon/nav/Nav.Component.h"
 #endif
+#if defined(PHOTON_HAS_MODULE_USM)
+# include "photon/usm/Usm.Component.h"
+#endif
 
 void Photon_Init()
 {
@@ -42,6 +45,9 @@ void Photon_Init()
 #endif
 #if defined(PHOTON_HAS_MODULE_TEST)
     PhotonTest_Init();
+#endif
+#if defined(PHOTON_HAS_MODULE_USM)
+    PhotonUsm_Init();
 #endif
 }
 
@@ -67,6 +73,9 @@ void Photon_Tick()
 #endif
 #if defined(PHOTON_HAS_MODULE_TEST)
     PhotonTest_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_USM)
+    PhotonUsm_Tick();
 #endif
 }
 

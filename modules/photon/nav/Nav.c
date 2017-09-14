@@ -98,6 +98,7 @@ PhotonError PhotonNav_SetActiveRoute(const PhotonNavOptionalRouteId* routeId)
         PHOTON_CRITICAL("Invalid route id");
         return PhotonError_InvalidValue;
     }
+    PHOTON_INFO("Setting active route");
     isActive = true;
     return PhotonError_Ok;
 }
@@ -108,6 +109,7 @@ PhotonError PhotonNav_SetRouteActivePoint(uint64_t routeId, const PhotonNavOptio
         PHOTON_CRITICAL("Invalid route id");
         return PhotonError_InvalidValue;
     }
+    PHOTON_INFO("Setting route active point");
     info.activePoint = *pointIndex;
     return PhotonError_Ok;
 }
@@ -122,7 +124,7 @@ PhotonError PhotonNav_BeginRoute(uint64_t routeId, uint64_t size)
         PHOTON_CRITICAL("Invalid route size");
         return PhotonError_InvalidValue;
     }
-    PHOTON_INFO("beginning route");
+    PHOTON_INFO("Beginning route");
     info.isEditing = true;
     info.size = size;
     return PhotonError_Ok;
