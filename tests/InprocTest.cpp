@@ -31,9 +31,7 @@ public:
     {
         return caf::behavior{
             [this](SendDataAtom, const bmcl::SharedBytes& data) {
-                for (uint8_t byte : data.view()) {
-                    PhotonExc_AcceptInput(&byte, 1);
-                }
+                PhotonExc_AcceptInput(data.data(), data.size());
                 Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
