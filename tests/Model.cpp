@@ -139,3 +139,5 @@ begin:
         }
     }
 }
+
+#undef _PHOTON_FNAME
