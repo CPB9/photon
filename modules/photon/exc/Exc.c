@@ -249,10 +249,10 @@ static bool findPacket(PhotonMemChunks* chunks)
     }
 
     if (expectedSize <= chunks->first.size) {
-        memcpy(inTemp, chunks->first.data, chunks->first.size);
+        memcpy(inTemp, chunks->first.data, expectedSize);
     } else {
         memcpy(inTemp, chunks->first.data, chunks->first.size);
-        memcpy(inTemp + chunks->first.size, chunks->second.data, size - expectedSize);
+        memcpy(inTemp + chunks->first.size, chunks->second.data, expectedSize - chunks->first.size);
     }
 
     return handlePacket(expectedSize);
