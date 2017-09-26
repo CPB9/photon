@@ -111,9 +111,13 @@ int main(int argc, char** argv)
     TCLAP::CmdLine cmdLine("UdpTest");
     TCLAP::ValueArg<std::string> addrArg("a", "address", "Ip address", false, "127.0.0.1", "ip address");
     TCLAP::ValueArg<unsigned short> portArg("p", "port", "Port", false, 6666, "port");
+    TCLAP::ValueArg<uint64_t> srcArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> destArg("u", "uav-id", "Uav id", false, 2, "number");
 
     cmdLine.add(&addrArg);
     cmdLine.add(&portArg);
+    cmdLine.add(&srcArg);
+    cmdLine.add(&destArg);
     cmdLine.parse(argc, argv);
 
     asio::error_code err;
@@ -132,5 +136,5 @@ int main(int argc, char** argv)
         return err.value();
     }
 
-    return runUiTest<UdpStream>(argc, argv, std::move(socket), std::move(endpoint));
+    return runUiTest<UdpStream>(argc, argv, srcArg.getValue(), destArg.getValue(), std::move(socket), std::move(endpoint));
 }

@@ -33,14 +33,14 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::PacketRequest);
 
 using namespace decode;
 
-UiActor::UiActor(caf::actor_config& cfg, caf::actor stream, int& argc, char** argv)
+UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddress, caf::actor stream, int& argc, char** argv)
     : caf::event_based_actor(cfg)
     , _argc(argc)
     , _argv(argv)
     , _stream(stream)
     , _widgetShown(false)
 {
-    _gc = spawn<decode::GroundControl>(_stream, this);
+    _gc = spawn<decode::GroundControl>(srcAddress, destAddress, _stream, this);
     send(_stream, SetStreamDestAtom::value, _gc);
 }
 

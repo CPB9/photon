@@ -110,7 +110,7 @@ int main(int argc, char** argv)
     caf::actor stream = system.spawn<PhotonStream>();
 
     caf::actor handler = system.spawn<FakeHandler>();
-    caf::actor gc = system.spawn<decode::GroundControl>(stream, handler);
+    caf::actor gc = system.spawn<decode::GroundControl>(1, 2, stream, handler);
 
     caf::anon_send(stream, decode::SetStreamDestAtom::value, gc);
     caf::anon_send(gc, decode::StartAtom::value);

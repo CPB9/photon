@@ -12,6 +12,8 @@
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
 
+#include <tclap/CmdLine.h>
+
 #include <caf/send.hpp>
 
 using namespace decode;
@@ -64,6 +66,14 @@ using namespace decode;
 
 int main(int argc, char** argv)
 {
-    return runUiTest<PhotonStream>(argc, argv);
+    TCLAP::CmdLine cmdLine("SerialTest");
+    TCLAP::ValueArg<uint64_t> srcArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> destArg("u", "uav-id", "Uav id", false, 2, "number");
+
+    cmdLine.add(&srcArg);
+    cmdLine.add(&destArg);
+    cmdLine.parse(argc, argv);
+
+    return runUiTest<PhotonStream>(argc, argv, srcArg.getValue(), destArg.getValue());
 }
 

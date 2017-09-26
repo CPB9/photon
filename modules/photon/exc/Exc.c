@@ -43,6 +43,8 @@ void PhotonExc_Init()
     _photonExc.currentPacket = 0;
     _photonExc.numPackets = 0;
     _photonExc.hasReceiptQueued = false;
+    _photonExc.mccAddress = 1;
+    _photonExc.uavAddress = 2;
 }
 
 void PhotonExc_Tick()
@@ -129,6 +131,8 @@ static PhotonError genReceipt(const PhotonExcDataHeader* incomingHeader, void* d
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
+    dataHeader.srcAddress = _photonExc.uavAddress;
+    dataHeader.destAddress = _photonExc.mccAddress;
     dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
     dataHeader.packetType = PhotonExcPacketType_Receipt;
     dataHeader.streamType = incomingHeader->streamType;
@@ -346,6 +350,8 @@ static PhotonError genQueuedPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
+    dataHeader.srcAddress = _photonExc.uavAddress;
+    dataHeader.destAddress = _photonExc.mccAddress;
     dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
     dataHeader.packetType = PhotonExcPacketType_Unreliable;
     dataHeader.streamType = PhotonExcStreamType_CmdTelem;
@@ -372,8 +378,8 @@ static PhotonError genFwtPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
-    dataHeader.srcAddress = 0;
-    dataHeader.destAddress = 0;
+    dataHeader.srcAddress = _photonExc.uavAddress;
+    dataHeader.destAddress = _photonExc.mccAddress;
     dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
     dataHeader.packetType = PhotonExcPacketType_Unreliable;
     dataHeader.streamType = PhotonExcStreamType_Firmware;
@@ -396,6 +402,8 @@ static PhotonError genTmPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
+    dataHeader.srcAddress = _photonExc.uavAddress;
+    dataHeader.destAddress = _photonExc.mccAddress;
     dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
     dataHeader.packetType = PhotonExcPacketType_Unreliable;
     dataHeader.streamType = PhotonExcStreamType_CmdTelem;

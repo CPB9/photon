@@ -98,9 +98,13 @@ int main(int argc, char** argv)
     TCLAP::CmdLine cmdLine("SerialTest");
     TCLAP::ValueArg<std::string> serialArg("s", "serial", "Read from serial", true, "", "serial device");
     TCLAP::ValueArg<unsigned> baudArg("b", "baud", "Serial baud rate", false, 9600, "baud rate");
+    TCLAP::ValueArg<uint64_t> srcArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> destArg("u", "uav-id", "Uav id", false, 2, "number");
 
     cmdLine.add(&serialArg);
     cmdLine.add(&baudArg);
+    cmdLine.add(&srcArg);
+    cmdLine.add(&destArg);
     cmdLine.parse(argc, argv);
 
     asio::io_service ioService;
@@ -120,5 +124,5 @@ int main(int argc, char** argv)
     }
 
 
-    return runUiTest<SerialStream>(argc, argv, std::move(serial));
+    return runUiTest<SerialStream>(argc, argv, srcArg.getValue(), destArg.getValue(), std::move(serial));
 }

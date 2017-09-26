@@ -223,7 +223,7 @@ void FwtTest::SetUp()
     _system.reset(new caf::actor_system(_cfg));
     _stream = _system->spawn<PhotonStream>(&_streamCfg);
     _handler = _system->spawn<FakeEventHandler>(&_testCfg);
-    _gc = _system->spawn<decode::GroundControl>(_stream, _handler);
+    _gc = _system->spawn<decode::GroundControl>(1, 2, _stream, _handler);
 }
 
 void FwtTest::TearDown()

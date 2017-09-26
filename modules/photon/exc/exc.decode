@@ -85,6 +85,8 @@ component {
         currentMsg: Msg,
         hasReceiptQueued: bool,
         receiptSize: usize,
+        uavAddress: varuint,
+        mccAddress: varuint,
     }
 
     statuses {

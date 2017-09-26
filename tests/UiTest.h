@@ -25,7 +25,7 @@ using RepeatEventLoopAtom = caf::atom_constant<caf::atom("reploop")>;
 
 class UiActor : public caf::event_based_actor {
 public:
-    UiActor(caf::actor_config& cfg, caf::actor stream, int& argc, char** argv);
+    UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddress, caf::actor stream, int& argc, char** argv);
     ~UiActor();
 
     caf::behavior make_behavior() override;
@@ -44,12 +44,12 @@ private:
 };
 
 template <typename S, typename... A>
-int runUiTest(int argc, char** argv, A&&... args)
+int runUiTest(int argc, char** argv, uint64_t srcAddress, uint64_t destAddress, A&&... args)
 {
     caf::actor_system_config cfg;
     caf::actor_system system(cfg);
     caf::actor stream = system.spawn<S>(std::forward<A>(args)...);
-    caf::actor uiActor = system.spawn<UiActor, caf::detached>(stream, argc, argv);
+    caf::actor uiActor = system.spawn<UiActor, caf::detached>(srcAddress, destAddress, stream, argc, argv);
 
     caf::anon_send(uiActor, decode::StartAtom::value);
     system.await_all_actors_done();

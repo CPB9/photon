@@ -236,6 +236,7 @@ macro(photon_add_device target)
         target_include_directories(test-inproc-${target}
             PRIVATE
             ${PHOTON_GEN_SRC_DIR}
+            ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
         )
         if(NOT MSVC)
             target_compile_options(test-inproc-${target} PRIVATE -std=c++11)
