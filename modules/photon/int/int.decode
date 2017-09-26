@@ -1,11 +1,12 @@
 module int
 
 import core::{Reader, Writer, Error}
+import exc::{DataHeader}
 
 component {
     impl {
         fn init()
         fn tick()
-        fn executeFrom(src: *mut Reader, results: *mut Writer) -> Error
+        fn executeFrom(header: *const DataHeader, src: *mut Reader, results: *mut Writer) -> Error
     }
 }

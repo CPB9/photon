@@ -133,9 +133,10 @@ static PhotonError stop(PhotonReader* src)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonFwt_AcceptCmd(PhotonReader* src, PhotonWriter* dest)
+PhotonError PhotonFwt_AcceptCmd(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* dest)
 {
     (void)dest;
+    (void)header;
     PhotonFwtCmdType cmd;
     PHOTON_TRY(PhotonFwtCmdType_Deserialize(&cmd, src));
 

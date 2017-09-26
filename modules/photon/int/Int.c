@@ -14,8 +14,9 @@ void PhotonInt_Tick()
 {
 }
 
-PhotonError PhotonInt_ExecuteFrom(PhotonReader* src, PhotonWriter* results)
+PhotonError PhotonInt_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* results)
 {
+    (void)header;
     if (PhotonReader_ReadableSize(src) == 0) {
         return PhotonError_Ok;
     }

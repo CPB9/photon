@@ -1,6 +1,7 @@
 module fwt
 
 import core::{Error, Reader, Writer}
+import exc::{DataHeader}
 
 enum State {
     Idle = 0,
@@ -38,7 +39,7 @@ component {
     impl {
         fn init()
         fn tick()
-        fn acceptCmd(src: *mut Reader, dest: *mut Writer) -> Error
+        fn acceptCmd(header: *const DataHeader, src: *mut Reader, dest: *mut Writer) -> Error
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool
         fn getFirmwareData() -> *const u8

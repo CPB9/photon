@@ -80,9 +80,9 @@ static uint8_t resultsTemp[512];
         PhotonRingBuf_Erase(&_photonExc.inStream, 1);           \
     } while(0);
 
-static bool handlePayload(PhotonExcStreamHandler handler, PhotonReader* payload, PhotonWriter* dest)
+static bool handlePayload(PhotonExcStreamHandler handler, const PhotonExcDataHeader* header, PhotonReader* payload, PhotonWriter* dest)
 {
-    if (handler(payload, dest) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
+    if (handler(header, payload, dest) != PhotonError_Ok) { //FIXME: handle NotEnoughSpace error
         HANDLE_INVALID_PACKET("Recieved packet with invalid payload");
         return false;
     }
@@ -189,8 +189,10 @@ static bool handlePacket(size_t size)
     switch (header.packetType) {
     case PhotonExcPacketType_Unreliable:
         //TODO: compare counters, check number of lost packets
-        handlePayload(handler, &payload, &results);
         state->expectedUnreliableUplinkCounter = header.counter;
+        if (!handlePayload(handler, &header, &payload, &results)) {
+            return true;
+        }
         break;
     case PhotonExcPacketType_Reliable:
         if (header.counter != state->expectedReliableUplinkCounter) {
@@ -198,7 +200,7 @@ static bool handlePacket(size_t size)
             HANDLE_INVALID_PACKET("Invalid expected reliable counter");
             return true;
         }
-        if (!handlePayload(handler, &payload, &results)) {
+        if (!handlePayload(handler, &header, &payload, &results)) {
             genReceipt(&header, 0, genPayloadErrorReceiptPayload);
             HANDLE_INVALID_PACKET("Invalid payload");
             return true;
@@ -370,6 +372,8 @@ static PhotonError genFwtPacket()
     PHOTON_EXC_ENCODE_PACKET_HEADER(&writer, reserved);
 
     PhotonExcDataHeader dataHeader;
+    dataHeader.srcAddress = 0;
+    dataHeader.destAddress = 0;
     dataHeader.streamDirection = PhotonExcStreamDirection_Downlink;
     dataHeader.packetType = PhotonExcPacketType_Unreliable;
     dataHeader.streamType = PhotonExcStreamType_Firmware;

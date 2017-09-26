@@ -41,6 +41,8 @@ impl ReceiptPacket {
 }
 
 struct DataHeader {
+    srcAddress: varuint,
+    destAddress: varuint,
     streamDirection: StreamDirection,
     packetType: PacketType,
     streamType: StreamType,
@@ -60,7 +62,7 @@ struct PacketRequest {
     address: u32,
 }
 
-type StreamHandler = &Fn(*mut Reader, *mut Writer) -> Error;
+type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer) -> Error;
 
 struct StreamState {
     currentReliableDownlinkCounter: u16,
