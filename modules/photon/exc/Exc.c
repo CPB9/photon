@@ -437,8 +437,7 @@ void PhotonExc_PrepareNextMsg()
         //HACK
         msgSize = _photonExc.receiptSize;
         _photonExc.hasReceiptQueued = false;
-    }
-    if (_photonExc.numPackets) {
+    } else if (_photonExc.numPackets) {
         msgSize = genPacket(genQueuedPacket);
     } else if (PhotonFwt_HasAnswers()) {
         msgSize = genPacket(genFwtPacket);
