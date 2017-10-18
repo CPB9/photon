@@ -71,6 +71,36 @@ struct StreamState {
     expectedUnreliableUplinkCounter: u16,
 }
 
+struct StreamHandlerVTable {
+    fwtHandler: StreamHandler,
+    cmdHandler: StreamHandler,
+    tmHandler: StreamHandler,
+    userHandler: StreamHandler,
+}
+
+struct Device {
+    address: varuint,
+    hasReceiptQueued: bool,
+    receiptSize: usize,
+    inRingBuf: RingBuf,
+    inRingBufData: [u8; 1024],
+
+    fwtStream: StreamState,
+    cmdTelemStream: StreamState,
+    userStream: StreamState,
+}
+
+impl Device {
+    fn init(&mut self, address: varuint, vtable: *const StreamHandlerVTable)
+    fn acceptInput(&mut self, src: *const void, size: usize)
+    fn prepareNextMsg()
+    fn getMsg() -> *const Msg
+}
+
+enum ClientError {
+    Ok = 0,
+}
+
 component {
     parameters {
         packetQueue: [PacketRequest; 8],
@@ -101,5 +131,8 @@ component {
         fn getMsg() -> *const Msg
         fn acceptInput(src: *const void, size: usize)
         fn queuePacket(address: u32, gen: Generator, data: *mut void) -> bool
+
+        fn registerClient(id: varuint, device: *mut *mut Device) -> ClientError
+        fn removeClient(id: varuint) -> ClientError
     }
 }
