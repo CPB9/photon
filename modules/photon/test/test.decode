@@ -1,6 +1,8 @@
 /// Module for testing generator
 module test
 
+import core::Option
+
 /// EnumParam short desc
 ///
 /// EnumParam long desc
@@ -79,6 +81,13 @@ struct ArrayStruct {
     param4: u8,
 }
 
+struct TestGeneric<A, B, C, D> {
+    a: A,
+    b: B,
+    c: C,
+    d: D,
+}
+
 component {
     parameters {
         /// param 1
@@ -116,8 +125,11 @@ component {
         /// param 12
         #[ranges(default=12, min=0, max=20)]
         param12: char,
+        optionParam: Option<Option<Option<ParamStruct>>>,
+        genericParam: TestGeneric<u64, u16, Option<u32>, u8>,
         dynArrayParam: &[ParamStruct; 10],
         arrayParam: [[u16; 4]; 5],
+        fnParam: &Fn(&Fn(u32, u16) -> ParamStruct, [u16; 5], *mut *mut *const u8) -> u64
 
     }
 
@@ -126,6 +138,7 @@ component {
         [p5_8, 0, true]: {param5, param6, param7, param8},
         [p9_12, 0, true]: {param9, param10, param11, param12},
         [darr, 0, true]: {dynArrayParam},
+        [opParam, 0, true]: {optionParam},
         [arr_test, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
     }
 
@@ -179,5 +192,6 @@ component {
         fn testArray(p: [u16; 4]) -> [u16; 4]
         fn testDynArray(p: &[u32; 4]) -> &[u32; 4]
         fn testString(p: &[char; 4]) -> &[char; 4]
+        fn testOptionU64(p: Option<u64>) -> Option<u64>
     }
 }

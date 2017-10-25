@@ -13,8 +13,9 @@ enum StreamDirection {
 
 enum StreamType {
     Firmware = 0,
-    CmdTelem = 1,
-    User = 2,
+    Cmd = 1,
+    Telem = 2,
+    User = 3,
 }
 
 enum PacketType {
@@ -59,7 +60,7 @@ struct Msg {
 struct PacketRequest {
     gen: Generator,
     data: *mut void,
-    address: u32,
+    header: DataHeader,
 }
 
 type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer) -> Error;
@@ -71,68 +72,57 @@ struct StreamState {
     expectedUnreliableUplinkCounter: u16,
 }
 
-struct StreamHandlerVTable {
-    fwtHandler: StreamHandler,
-    cmdHandler: StreamHandler,
-    tmHandler: StreamHandler,
-    userHandler: StreamHandler,
-}
-
 struct Device {
     address: varuint,
-    hasReceiptQueued: bool,
-    receiptSize: usize,
+    incomingHeader: DataHeader,
+
+    request: PacketRequest,
+    hasDataQueued: bool,
+    dataSize: usize,
+
     inRingBuf: RingBuf,
     inRingBufData: [u8; 1024],
+    outData: [u8; 512],
 
     fwtStream: StreamState,
-    cmdTelemStream: StreamState,
+    cmdStream: StreamState,
+    telemStream: StreamState,
     userStream: StreamState,
+    isGroundControl: bool,
 }
 
 impl Device {
-    fn init(&mut self, address: varuint, vtable: *const StreamHandlerVTable)
+    fn initGroundControl(&mut self, address: varuint)
+    fn initUav(&mut self, address: varuint)
     fn acceptInput(&mut self, src: *const void, size: usize)
-    fn prepareNextMsg()
-    fn getMsg() -> *const Msg
+    fn genNextPacket(&mut self, dest: *mut Writer) -> Error
 }
 
 enum ClientError {
     Ok = 0,
+    NoDescriptorsLeft = 1,
 }
 
 component {
     parameters {
-        packetQueue: [PacketRequest; 8],
-        currentPacket: usize,
-        numPackets: usize,
-
-        fwtStream: StreamState,
-        cmdTelemStream: StreamState,
-        userStream: StreamState,
-        inStream: RingBuf,
-        inStreamData: [u8; 1024],
-        currentMsg: Msg,
-        hasReceiptQueued: bool,
-        receiptSize: usize,
-        uavAddress: varuint,
-        mccAddress: varuint,
+        devices: &[Device; 8],
+        address: varuint,
     }
 
     statuses {
-        [fwt, 1, true]: fwtStream,
-        [cmd, 1, true]: cmdTelemStream,
     }
 
     impl {
         fn init()
         fn tick()
-        fn prepareNextMsg()
-        fn getMsg() -> *const Msg
-        fn acceptInput(src: *const void, size: usize)
-        fn queuePacket(address: u32, gen: Generator, data: *mut void) -> bool
 
-        fn registerClient(id: varuint, device: *mut *mut Device) -> ClientError
+        fn selfAddress() -> varuint
+        fn registerGroundControl(id: varuint, device: *mut *mut Device) -> ClientError
+        fn registerUav(id: varuint, device: *mut *mut Device) -> ClientError
         fn removeClient(id: varuint) -> ClientError
+    }
+
+    commands {
+        fn setAddress(address: varuint)
     }
 }

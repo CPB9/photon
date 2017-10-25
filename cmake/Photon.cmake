@@ -279,13 +279,13 @@ macro(photon_add_device target)
         ${PHOTON_GEN_SRC_DIR}
     )
 
-    add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
-    target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
-    target_include_directories(test-perf-${target}
-        PRIVATE
-        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
-        ${PHOTON_GEN_SRC_DIR}
-    )
+#     add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
+#     target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
+#     target_include_directories(test-perf-${target}
+#         PRIVATE
+#         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+#         ${PHOTON_GEN_SRC_DIR}
+#     )
 
     _photon_setup_target(photon-${target})
     _photon_setup_target(test-udpserver-${target})

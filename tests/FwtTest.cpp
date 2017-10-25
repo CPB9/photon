@@ -155,7 +155,8 @@ public:
         , _streamCfg(streamCfg)
     {
         Photon_Init();
-        _current = *PhotonExc_GetMsg();
+        auto err = PhotonExc_RegisterGroundControl(1, &_dev);
+        BMCL_ASSERT(err == PhotonExcClientError_Ok);
     }
 
     caf::behavior make_behavior() override
@@ -165,7 +166,7 @@ public:
                 if (_streamCfg->shouldRecievePacket()) {
                     for (const uint8_t* it = data.data(); it < data.view().end(); it += _streamCfg->chunkSize) {
                         std::size_t size = std::min<std::size_t>(_streamCfg->chunkSize, data.view().end() - it);
-                        PhotonExc_AcceptInput(it, size);
+                        PhotonExcDevice_AcceptInput(_dev, it, size);
                     }
                 }
                 Photon_Tick();
@@ -179,12 +180,16 @@ public:
             [this](RepeatStreamAtom) {
                 Photon_Tick();
                 if (_streamCfg->shouldDeliverPacket()) {
-                    auto data = bmcl::SharedBytes::create(_current.data, _current.size);
+                    uint8_t temp[1024];
+
+                    PhotonWriter writer;
+                    PhotonWriter_Init(&writer, temp, 1024);
+                    PhotonError err = PhotonExcDevice_GenNextPacket(_dev, &writer);
+
+                    auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
                     send(_dest, RecvDataAtom::value, data);
                 }
 
-                PhotonExc_PrepareNextMsg();
-                _current = *PhotonExc_GetMsg();
                 delayed_send(this, std::chrono::milliseconds(10), RepeatStreamAtom::value);
             },
         };
@@ -195,7 +200,7 @@ public:
         _dest = caf::actor();
     }
 
-    PhotonExcMsg _current;
+    PhotonExcDevice* _dev;
     caf::actor _dest;
     StreamConfig* _streamCfg;
 };

@@ -1,9 +1,11 @@
 #pragma once
 
-#include "decode/core/Rc.h"
+#include <decode/core/Rc.h>
 #include <decode/groundcontrol/GroundControl.h>
 #include <decode/groundcontrol/Atoms.h>
 #include <decode/groundcontrol/Exchange.h>
+
+#include <bmcl/String.h>
 
 #include <QApplication>
 

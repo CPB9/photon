@@ -1,5 +1,10 @@
 module core
 
+variant Option<T> {
+    Some(T),
+    None,
+}
+
 enum Error {
     Ok = 0,
     PacketNotFound = 1,
