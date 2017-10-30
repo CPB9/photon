@@ -27,6 +27,7 @@ static uint8_t inTemp[1024];
 static void initStream(PhotonExcStreamState* self)
 {
     self->currentReliableDownlinkCounter = UINT16_MAX / 2;
+    self->currentReliableUplinkCounter = UINT16_MAX / 2;
     self->currentUnreliableDownlinkCounter = UINT16_MAX / 2;
     self->expectedReliableUplinkCounter = UINT16_MAX / 2;
     self->expectedUnreliableUplinkCounter = UINT16_MAX / 2;
@@ -386,6 +387,22 @@ static PhotonError queueFwtPacket(PhotonExcDevice* self)
     self->request.header.destAddress = self->address;
 
     self->fwtStream.currentUnreliableDownlinkCounter++;
+    self->hasDataQueued = true;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonDevice_QueueCustomCmdPacket(PhotonExcDevice* self, void* data, PhotonGenerator gen)
+{
+    self->request.data = data;
+    self->request.gen = gen;
+    self->request.header.streamDirection = PhotonExcStreamDirection_Uplink;
+    self->request.header.packetType = PhotonExcPacketType_Unreliable; //TODO: make reliable
+    self->request.header.streamType = PhotonExcStreamType_Cmd;
+    self->request.header.counter = self->cmdStream.currentReliableUplinkCounter;
+    self->request.header.srcAddress = PhotonExc_SelfAddress();
+    self->request.header.destAddress = self->address;
+
+    self->fwtStream.currentReliableUplinkCounter++;
     self->hasDataQueued = true;
     return PhotonError_Ok;
 }

@@ -67,6 +67,7 @@ type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer) -> Error;
 
 struct StreamState {
     currentReliableDownlinkCounter: u16,
+    currentReliableUplinkCounter: u16,
     currentUnreliableDownlinkCounter: u16,
     expectedReliableUplinkCounter: u16,
     expectedUnreliableUplinkCounter: u16,
@@ -96,6 +97,7 @@ impl Device {
     fn initUav(&mut self, address: varuint)
     fn acceptInput(&mut self, src: *const void, size: usize)
     fn genNextPacket(&mut self, dest: *mut Writer) -> Error
+    fn queueCustomCmdPacket(&mut self, data: *mut void, gen: Generator) -> Error
 }
 
 enum ClientError {
