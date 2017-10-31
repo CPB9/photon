@@ -42,6 +42,7 @@ private:
     char** _argv;
     caf::actor _stream;
     caf::actor _gc;
+    caf::actor _testSub;
     bool _widgetShown;
 };
 

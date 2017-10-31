@@ -48,6 +48,15 @@ UiActor::~UiActor()
 {
 }
 
+caf::behavior testSubActor(caf::event_based_actor* self)
+{
+    return caf::behavior{
+        [](const decode::Value& value) {
+            BMCL_DEBUG() << "test.param2 update:" << value.asUnsigned();
+        }
+    };
+}
+
 caf::behavior UiActor::make_behavior()
 {
     return caf::behavior{
@@ -94,6 +103,8 @@ caf::behavior UiActor::make_behavior()
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
             _widget->setRootCmdNode(cmdNode.get());
+            _testSub = spawn(testSubActor);
+            send(_gc, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
