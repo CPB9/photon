@@ -275,7 +275,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     case PhotonExcPacketType_Unreliable:
         //TODO: compare counters, check number of lost packets
         state->expectedUnreliableUplinkCounter = self->incomingHeader.counter + 1;
-        if (!handler(&self->incomingHeader, &payload, &results)) {
+        if (handler(&self->incomingHeader, &payload, &results) != PhotonError_Ok) {
             HANDLE_INVALID_PACKET(self, "Recieved packet with invalid payload");
             return true;
         }
@@ -286,13 +286,16 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
             HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter");
             return false;
         }
-        if (!handler(&self->incomingHeader, &payload, &results)) {
+        if (handler(&self->incomingHeader, &payload, &results) != PhotonError_Ok) {
             queueReceipt(self, &self->incomingHeader, 0, genPayloadErrorReceiptPayload);
             HANDLE_INVALID_PACKET(self, "Invalid payload");
             return false;
         }
         self->dataSize = results.current - results.start;
-        queueReceipt(self, &self->incomingHeader, &results, genOkReceiptPayload);
+        PhotonError err = queueReceipt(self, &self->incomingHeader, self, genOkReceiptPayload);
+        if (err != PhotonError_Ok) {
+            PHOTON_CRITICAL("could not gen OK receipt");
+        }
         state->expectedReliableUplinkCounter++;
         PhotonRingBuf_Erase(&self->inRingBuf, size + 2);
         return false;

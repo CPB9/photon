@@ -24,6 +24,7 @@ class FirmwareStatusWidget;
 }
 
 using RepeatEventLoopAtom = caf::atom_constant<caf::atom("reploop")>;
+using RepeatParam2Atom    = caf::atom_constant<caf::atom("reppar2")>;
 
 class UiActor : public caf::event_based_actor {
 public:
@@ -44,6 +45,7 @@ private:
     caf::actor _gc;
     caf::actor _testSub;
     bool _widgetShown;
+    uint16_t _param2Value;
 };
 
 template <typename S, typename... A>

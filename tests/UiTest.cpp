@@ -30,6 +30,8 @@
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::PacketRequest);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<decode::Value>);
 
 using namespace decode;
 
@@ -39,6 +41,7 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
     , _argv(argv)
     , _stream(stream)
     , _widgetShown(false)
+    , _param2Value(0)
 {
     _gc = spawn<decode::GroundControl>(srcAddress, destAddress, _stream, this);
     send(_stream, SetStreamDestAtom::value, _gc);
@@ -69,6 +72,14 @@ caf::behavior UiActor::make_behavior()
                 return;
             }
             delayed_send<caf::message_priority::high>(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
+        },
+        [this](RepeatParam2Atom) {
+            std::vector<Value> args = {Value::makeUnsigned(_param2Value)};
+            _param2Value++;
+            request(_gc, caf::infinite, SendCustomCommandAtom::value, "test", "setParam2", std::move(args)).then([](const PacketResponse& resp) {
+                (void)resp;
+            });
+            delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
         [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
             _widget->applyTmUpdates(updater.get());
@@ -104,7 +115,7 @@ caf::behavior UiActor::make_behavior()
             Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
             _widget->setRootCmdNode(cmdNode.get());
             _testSub = spawn(testSubActor);
-            send(_gc, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
+            request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
@@ -163,6 +174,7 @@ caf::behavior UiActor::make_behavior()
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
             delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
+            delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
             //send(_gc, EnableLoggindAtom::value, true);
         },
     };
