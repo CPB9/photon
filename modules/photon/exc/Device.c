@@ -115,8 +115,8 @@ static bool findSep(PhotonExcDevice* self)
 
     uint8_t* it = chunks.first.data;
     uint8_t* next;
+    uint8_t* end = it + chunks.first.size;
     while (true) {
-        uint8_t* end = it + chunks.first.size;
         it = findByte(it, end, firstSepPart);
         if (it == end) {
             break;
@@ -138,6 +138,7 @@ static bool findSep(PhotonExcDevice* self)
             size_t skippedSize = it - chunks.first.data;
             handleJunk(self, chunks.first.data, skippedSize);
             PhotonRingBuf_Erase(&self->inRingBuf, skippedSize);
+            PHOTON_ASSERT(chunks.first.size >= (skippedSize + 2));
             chunks.first.data += skippedSize + 2;
             chunks.first.size -= skippedSize + 2;
             return findPacket(self, &chunks);
@@ -146,8 +147,8 @@ static bool findSep(PhotonExcDevice* self)
     }
 
     it = chunks.second.data;
+    end = it + chunks.second.size;
     while (true) {
-        uint8_t* end = it + chunks.second.size;
         it = findByte(it, end, firstSepPart);
         next = it + 1;
         if (next >= end) {
@@ -162,6 +163,7 @@ static bool findSep(PhotonExcDevice* self)
             handleJunk(self, chunks.second.data, skippedSize);
             PhotonRingBuf_Erase(&self->inRingBuf, chunks.first.size + skippedSize);
             chunks.first.size = 0;
+            PHOTON_ASSERT(chunks.second.size >= (skippedSize + 2));
             chunks.second.data += skippedSize + 2;
             chunks.second.size -= skippedSize + 2;
             return findPacket(self, &chunks);
