@@ -2,9 +2,11 @@
 #include "decode/groundcontrol/FwtState.h"
 #include "decode/groundcontrol/Atoms.h"
 #include "decode/groundcontrol/AllowUnsafeMessageType.h"
+#include "decode/groundcontrol/ProjectUpdate.h"
 #include "decode/model/NodeView.h"
 #include "decode/core/Diagnostics.h"
 #include "decode/parser/Project.h"
+#include "decode/model/ValueInfoCache.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Component.h"
 #include "photon/core/Core.Component.h"
@@ -102,7 +104,7 @@ public:
     caf::behavior make_behavior() override
     {
         return caf::behavior{
-            [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
+            [this](SetProjectAtom, const ProjectUpdate&) {
                 _testCfg->projectUpdated = true;
                 if (_testCfg->exitOnProjectUpdate) {
                     _testCfg->parent->stop();
@@ -277,7 +279,7 @@ TEST_F(FwtTest, setFirmware)
     Diagnostics::Pointer diag = new Diagnostics;
     auto p = Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
     ASSERT_TRUE(p.isOk());
-    caf::anon_send(_gc, SetProjectAtom::value, Project::ConstPointer(p.unwrap()), Device::ConstPointer(p.unwrap()->master()));
+    caf::anon_send(_gc, SetProjectAtom::value, ProjectUpdate(p.unwrap().get(), p.unwrap()->master(), new ValueInfoCache(p.unwrap()->package())));
     _testCfg.exitOnFirmwareDownload = true;
     run();
     EXPECT_TRUE(_testCfg.projectUpdated);

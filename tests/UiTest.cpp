@@ -16,6 +16,7 @@
 #include <decode/model/CmdModel.h>
 #include <decode/groundcontrol/TmParamUpdate.h>
 #include <decode/groundcontrol/Packet.h>
+#include "decode/groundcontrol/ProjectUpdate.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -54,8 +55,8 @@ UiActor::~UiActor()
 caf::behavior testSubActor(caf::event_based_actor* self)
 {
     return caf::behavior{
-        [](const decode::Value& value) {
-            BMCL_DEBUG() << "test.param2 update:" << value.asUnsigned();
+        [](const decode::Value& value, const std::string& path) {
+            BMCL_DEBUG() << path << ": " << value.asUnsigned();
         }
     };
 }
@@ -108,12 +109,12 @@ caf::behavior UiActor::make_behavior()
         [this](LogAtom, const std::string& msg) {
             BMCL_DEBUG() << msg;
         },
-        [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
+        [this](SetProjectAtom, const ProjectUpdate& update) {
             _widgetShown = true;
             _widget->resize(800, 600);
             _widget->showMaximized();
-            Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
-            _widget->setRootCmdNode(cmdNode.get());
+            Rc<CmdModel> cmdNode = new CmdModel(update.device.get(), update.cache.get(), bmcl::None);
+            _widget->setRootCmdNode(update.cache.get(), cmdNode.get());
             _testSub = spawn(testSubActor);
             request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
         },
