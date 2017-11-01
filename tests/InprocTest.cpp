@@ -24,12 +24,13 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 class PhotonStream : public caf::event_based_actor {
 public:
-    PhotonStream(caf::actor_config& cfg, uint64_t timeout)
+    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId, uint64_t timeout)
         : caf::event_based_actor(cfg)
         , _timeout(timeout)
     {
         Photon_Init();
-        auto err = PhotonExc_RegisterGroundControl(1, &_dev);
+        PhotonExc_SetAddress(uavId);
+        auto err = PhotonExc_RegisterGroundControl(mccId, &_dev);
         BMCL_ASSERT(err == PhotonExcClientError_Ok);
     }
 
@@ -76,15 +77,17 @@ using namespace decode;
 int main(int argc, char** argv)
 {
     TCLAP::CmdLine cmdLine("SerialTest");
-    TCLAP::ValueArg<uint64_t> srcArg("m", "mcc-id", "Mcc id", false, 1, "number");
-    TCLAP::ValueArg<uint64_t> destArg("u", "uav-id", "Uav id", false, 2, "number");
-    TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Exchange timeoit", false, 10, "milliseconds");
+    TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
+    TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Exchange timeout", false, 10, "milliseconds");
 
-    cmdLine.add(&srcArg);
-    cmdLine.add(&destArg);
+    cmdLine.add(&mccArg);
+    cmdLine.add(&uavArg);
     cmdLine.add(&timeoutArg);
     cmdLine.parse(argc, argv);
 
-    return runUiTest<PhotonStream>(argc, argv, srcArg.getValue(), destArg.getValue(), timeoutArg.getValue());
+    uint64_t uavId = uavArg.getValue();
+    uint64_t mccId = mccArg.getValue();
+    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeoutArg.getValue());
 }
 

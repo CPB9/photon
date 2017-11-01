@@ -45,9 +45,13 @@ int main(int argc, char* argv[])
     Photon_Init();
 
     TCLAP::CmdLine cmdLine("Photon model", ' ', "0.1");
+    TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
     TCLAP::ValueArg<uint16_t> portArg("p", "port", "Port", false, 6666, "number");
     TCLAP::ValueArg<unsigned> tickArg("t", "tick", "Tick period", false, 100, "milliseconds");
 
+    cmdLine.add(&mccArg);
+    cmdLine.add(&uavArg);
     cmdLine.add(&portArg);
     cmdLine.add(&tickArg);
     cmdLine.parse(argc, argv);
@@ -94,8 +98,9 @@ begin:
         return -1;
     }
 
+    PhotonExc_SetAddress(uavArg.getValue());
     PhotonExcDevice* dev;
-    auto rv = PhotonExc_RegisterGroundControl(1, &dev);
+    auto rv = PhotonExc_RegisterGroundControl(mccArg.getValue(), &dev);
     BMCL_ASSERT(rv == PhotonExcClientError_Ok);
     bool canSend = false;
     std::chrono::milliseconds tickTimeout(tickArg.getValue());
