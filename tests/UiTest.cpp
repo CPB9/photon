@@ -16,6 +16,7 @@
 #include <decode/model/CmdModel.h>
 #include <decode/groundcontrol/TmParamUpdate.h>
 #include <decode/groundcontrol/Packet.h>
+#include "decode/groundcontrol/ProjectUpdate.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -30,6 +31,8 @@
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::PacketRequest);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<decode::Value>);
 
 using namespace decode;
 
@@ -39,6 +42,7 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
     , _argv(argv)
     , _stream(stream)
     , _widgetShown(false)
+    , _param2Value(0)
 {
     _gc = spawn<decode::GroundControl>(srcAddress, destAddress, _stream, this);
     send(_stream, SetStreamDestAtom::value, _gc);
@@ -46,6 +50,15 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
 
 UiActor::~UiActor()
 {
+}
+
+caf::behavior testSubActor(caf::event_based_actor* self)
+{
+    return caf::behavior{
+        [](const decode::Value& value, const std::string& path) {
+            BMCL_DEBUG() << path << ": " << value.asUnsigned();
+        }
+    };
 }
 
 caf::behavior UiActor::make_behavior()
@@ -60,6 +73,14 @@ caf::behavior UiActor::make_behavior()
                 return;
             }
             delayed_send<caf::message_priority::high>(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
+        },
+        [this](RepeatParam2Atom) {
+            std::vector<Value> args = {Value::makeUnsigned(_param2Value)};
+            _param2Value++;
+            request(_gc, caf::infinite, SendCustomCommandAtom::value, "test", "setParam2", std::move(args)).then([](const PacketResponse& resp) {
+                (void)resp;
+            });
+            delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
         [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
             _widget->applyTmUpdates(updater.get());
@@ -88,12 +109,14 @@ caf::behavior UiActor::make_behavior()
         [this](LogAtom, const std::string& msg) {
             BMCL_DEBUG() << msg;
         },
-        [this](SetProjectAtom, const Project::ConstPointer& proj, const Device::ConstPointer& dev) {
+        [this](SetProjectAtom, const ProjectUpdate& update) {
             _widgetShown = true;
             _widget->resize(800, 600);
             _widget->showMaximized();
-            Rc<CmdModel> cmdNode = new CmdModel(dev.get(), new ValueInfoCache(proj->package()), bmcl::None);
-            _widget->setRootCmdNode(cmdNode.get());
+            Rc<CmdModel> cmdNode = new CmdModel(update.device.get(), update.cache.get(), bmcl::None);
+            _widget->setRootCmdNode(update.cache.get(), cmdNode.get());
+            _testSub = spawn(testSubActor);
+            request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
@@ -152,6 +175,7 @@ caf::behavior UiActor::make_behavior()
             delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
             delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
+            delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
             //send(_gc, EnableLoggindAtom::value, true);
         },
     };

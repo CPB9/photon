@@ -1,0 +1,19 @@
+module grp
+
+import core::{Reader, Writer, Error}
+
+component {
+    parameters {
+        groupAddress: varuint,
+        leaderAddress: varuint,
+    }
+
+    impl {
+        fn init()
+        fn tick()
+    }
+
+    commands {
+        fn setGroupAddress(address: varuint)
+    }
+}

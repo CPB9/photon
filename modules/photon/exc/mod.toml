@@ -4,5 +4,6 @@ dest = "photon/exc"
 id = 1
 sources = [
   "Exc.c",
+  "Device.c",
   "Utils.h"
 ]

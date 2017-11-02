@@ -72,7 +72,7 @@ public:
     caf::behavior make_behavior() override
     {
         return caf::behavior{
-            [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
+            [this](SetProjectAtom, const ProjectUpdate&) {
             },
             [this](FirmwareErrorEventAtom, const std::string& msg) {
             },

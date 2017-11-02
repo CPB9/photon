@@ -6,6 +6,9 @@ find_package(Qt5SerialPort)
 find_package(Qt5Network)
 
 set(_PHOTON_MOD_DIRS)
+set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
+set(PHOTON_GEN_SRC_ONBOARD_DIR ${PHOTON_GEN_SRC_DIR}/onboard)
+set(PHOTON_GEN_SRC_GROUNDCONTROL_DIR ${PHOTON_GEN_SRC_DIR}/groundcontrol)
 
 macro(photon_add_mod_dir dir)
     list(APPEND _PHOTON_MOD_DIRS ${dir})
@@ -69,7 +72,6 @@ macro(photon_init dir)
     endif()
 
     find_package(Threads)
-    set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
     set(_PHOTON_DEPENDS)
     set(_PHOTON_DEPENDS_H)
@@ -162,7 +164,6 @@ function(_photon_install_target target)
 endfunction()
 
 macro(photon_generate_sources proj)
-    set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
 
     foreach(dir ${_PHOTON_MOD_DIRS})
         file(GLOB_RECURSE _DIR_SOURCES "${dir}/*.c" "${dir}/*.h" "${dir}/*.toml" "${dir}/*.decode")
@@ -176,22 +177,22 @@ macro(photon_generate_sources proj)
         COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:decode_gen> -p  ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4
         DEPENDS decode_gen ${proj} ${_PHOTON_MOD_SOURCES}
     )
-    install(DIRECTORY ${PHOTON_GEN_SRC_DIR}/photon DESTINATION gen)
+    install(DIRECTORY ${PHOTON_GEN_SRC_ONBOARD_DIR}/photon DESTINATION gen)
+    install(DIRECTORY ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon DESTINATION gen)
     install(FILES ${_PHOTON_DEPENDS} ${_PHOTON_DEPENDS_H} DESTINATION gen)
 
     add_library(_photon-impl EXCLUDE_FROM_ALL ${_PHOTON_MOD_SOURCES})
-    target_include_directories(_photon-impl PUBLIC ${_PHOTON_MOD_DIRS} ${PHOTON_GEN_SRC_DIR})
+    target_include_directories(_photon-impl PUBLIC ${_PHOTON_MOD_DIRS} ${PHOTON_GEN_SRC_ONBOARD_DIR})
 endmacro()
 
 macro(photon_add_device target)
-    set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
     string(SUBSTRING ${target} 0 1 _FIRST_LETTER)
     string(TOUPPER ${_FIRST_LETTER} _FIRST_LETTER)
     string(REGEX REPLACE "^.(.*)" "${_FIRST_LETTER}\\1" _SOURCE_NAME "${target}")
 
-    set(_SRC_FILE ${PHOTON_GEN_SRC_DIR}/Photon${_SOURCE_NAME}.c)
+    set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.c)
     set(_PHOTON_DEPENDS ${_PHOTON_DEPENDS} ${_SRC_FILE})
-    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_DIR}/Photon${_SOURCE_NAME}.h)
+    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.h)
 
     add_library(photon-${target}
         ${_SRC_FILE}
@@ -219,7 +220,7 @@ macro(photon_add_device target)
     target_include_directories(photon-${target}
         PUBLIC
         #${IMPL_DIR}
-        ${PHOTON_GEN_SRC_DIR}
+        ${PHOTON_GEN_SRC_ONBOARD_DIR}
     )
 
     #TODO: check for other qt modules
@@ -235,7 +236,7 @@ macro(photon_add_device target)
         )
         target_include_directories(test-inproc-${target}
             PRIVATE
-            ${PHOTON_GEN_SRC_DIR}
+            ${PHOTON_GEN_SRC_ONBOARD_DIR}
             ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
         )
         if(NOT MSVC)
@@ -276,16 +277,16 @@ macro(photon_add_device target)
     target_include_directories(test-udpserver-${target}
         PRIVATE
         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
-        ${PHOTON_GEN_SRC_DIR}
+        ${PHOTON_GEN_SRC_ONBOARD_DIR}
     )
 
-    add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
-    target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
-    target_include_directories(test-perf-${target}
-        PRIVATE
-        ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
-        ${PHOTON_GEN_SRC_DIR}
-    )
+#     add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
+#     target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
+#     target_include_directories(test-perf-${target}
+#         PRIVATE
+#         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
+#         ${PHOTON_GEN_SRC_ONBOARD_DIR}
+#     )
 
     _photon_setup_target(photon-${target})
     _photon_setup_target(test-udpserver-${target})
@@ -311,7 +312,7 @@ macro(photon_init_project)
         photon_add_device(${dev})
         foreach (lib ${_PHOTON_${dev}_LINK_LIBRARIES})
             target_link_libraries(test-udpserver-${dev} ${lib})
-            target_link_libraries(test-perf-${dev} ${lib})
+#            target_link_libraries(test-perf-${dev} ${lib})
             target_link_libraries(test-inproc-${dev} ${lib})
             target_link_libraries(fwt-test-${dev} ${lib})
         endforeach()

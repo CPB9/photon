@@ -97,6 +97,20 @@ struct AllRoutesInfo {
     activeRoute: OptionalRouteId,
 }
 
+cmdtrait Routing {
+    fn beginRoute(routeId: RouteId, size: varuint)
+    fn clearRoute(routeId: RouteId)
+    fn setRoutePoint(routeId: RouteId, pointIndex: varuint, waypoint: Waypoint)
+    fn endRoute(routeId: RouteId)
+    fn setActiveRoute(routeId: OptionalRouteId)
+    fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
+    fn setRouteInverted(routeId: RouteId, isInverted: bool)
+    fn setRouteClosed(routeId: RouteId, isClosed: bool)
+    fn getRouteInfo(routeId: RouteId) -> RouteInfo
+    fn getRoutePoint(routeId: RouteId, pointIndex: varuint) -> Waypoint
+    fn getRoutesInfo() -> AllRoutesInfo
+}
+
 component {
     parameters {
         latLon: LatLon,
@@ -112,18 +126,7 @@ component {
         [gps, 0, true]: {gpsState}
     }
 
-    commands {
-        fn beginRoute(routeId: RouteId, size: varuint)
-        fn clearRoute(routeId: RouteId)
-        fn setRoutePoint(routeId: RouteId, pointIndex: varuint, waypoint: Waypoint)
-        fn endRoute(routeId: RouteId)
-        fn setActiveRoute(routeId: OptionalRouteId)
-        fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
-        fn setRouteInverted(routeId: RouteId, isInverted: bool)
-        fn setRouteClosed(routeId: RouteId, isClosed: bool)
-        fn getRouteInfo(routeId: RouteId) -> RouteInfo
-        fn getRoutePoint(routeId: RouteId, pointIndex: varuint) -> Waypoint
-        fn getRoutesInfo() -> AllRoutesInfo
+    commands: Routing {
     }
 
     impl {

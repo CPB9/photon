@@ -1,9 +1,11 @@
 #pragma once
 
-#include "decode/core/Rc.h"
+#include <decode/core/Rc.h>
 #include <decode/groundcontrol/GroundControl.h>
 #include <decode/groundcontrol/Atoms.h>
 #include <decode/groundcontrol/Exchange.h>
+
+#include <bmcl/String.h>
 
 #include <QApplication>
 
@@ -22,6 +24,7 @@ class FirmwareStatusWidget;
 }
 
 using RepeatEventLoopAtom = caf::atom_constant<caf::atom("reploop")>;
+using RepeatParam2Atom    = caf::atom_constant<caf::atom("reppar2")>;
 
 class UiActor : public caf::event_based_actor {
 public:
@@ -40,7 +43,9 @@ private:
     char** _argv;
     caf::actor _stream;
     caf::actor _gc;
+    caf::actor _testSub;
     bool _widgetShown;
+    uint16_t _param2Value;
 };
 
 template <typename S, typename... A>

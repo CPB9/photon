@@ -77,7 +77,7 @@ PhotonError PhotonNav_GetRoutesInfo(PhotonNavAllRoutesInfo* rv)
 {
     if (isActive) {
         rv->activeRoute.type = PhotonNavOptionalRouteIdType_Some;
-        rv->activeRoute.data.someOptionalRouteId.id = 0;
+        rv->activeRoute.data.someNavOptionalRouteId.id = 0;
     } else {
         rv->activeRoute.type = PhotonNavOptionalRouteIdType_None;
     }
@@ -94,7 +94,7 @@ PhotonError PhotonNav_SetActiveRoute(const PhotonNavOptionalRouteId* routeId)
         isActive = false;
         return PhotonError_Ok;
     }
-    if (routeId->data.someOptionalRouteId.id != 0) {
+    if (routeId->data.someNavOptionalRouteId.id != 0) {
         PHOTON_CRITICAL("Invalid route id");
         return PhotonError_InvalidValue;
     }

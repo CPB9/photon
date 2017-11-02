@@ -2,9 +2,11 @@
 #include "decode/groundcontrol/FwtState.h"
 #include "decode/groundcontrol/Atoms.h"
 #include "decode/groundcontrol/AllowUnsafeMessageType.h"
+#include "decode/groundcontrol/ProjectUpdate.h"
 #include "decode/model/NodeView.h"
 #include "decode/core/Diagnostics.h"
 #include "decode/parser/Project.h"
+#include "decode/model/ValueInfoCache.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Component.h"
 #include "photon/core/Core.Component.h"
@@ -102,7 +104,7 @@ public:
     caf::behavior make_behavior() override
     {
         return caf::behavior{
-            [this](SetProjectAtom, const Rc<const Project>& proj, const Rc<const Device>& dev) {
+            [this](SetProjectAtom, const ProjectUpdate&) {
                 _testCfg->projectUpdated = true;
                 if (_testCfg->exitOnProjectUpdate) {
                     _testCfg->parent->stop();
@@ -155,7 +157,8 @@ public:
         , _streamCfg(streamCfg)
     {
         Photon_Init();
-        _current = *PhotonExc_GetMsg();
+        auto err = PhotonExc_RegisterGroundControl(1, &_dev);
+        BMCL_ASSERT(err == PhotonExcClientError_Ok);
     }
 
     caf::behavior make_behavior() override
@@ -165,7 +168,7 @@ public:
                 if (_streamCfg->shouldRecievePacket()) {
                     for (const uint8_t* it = data.data(); it < data.view().end(); it += _streamCfg->chunkSize) {
                         std::size_t size = std::min<std::size_t>(_streamCfg->chunkSize, data.view().end() - it);
-                        PhotonExc_AcceptInput(it, size);
+                        PhotonExcDevice_AcceptInput(_dev, it, size);
                     }
                 }
                 Photon_Tick();
@@ -179,12 +182,16 @@ public:
             [this](RepeatStreamAtom) {
                 Photon_Tick();
                 if (_streamCfg->shouldDeliverPacket()) {
-                    auto data = bmcl::SharedBytes::create(_current.data, _current.size);
+                    uint8_t temp[1024];
+
+                    PhotonWriter writer;
+                    PhotonWriter_Init(&writer, temp, 1024);
+                    PhotonError err = PhotonExcDevice_GenNextPacket(_dev, &writer);
+
+                    auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
                     send(_dest, RecvDataAtom::value, data);
                 }
 
-                PhotonExc_PrepareNextMsg();
-                _current = *PhotonExc_GetMsg();
                 delayed_send(this, std::chrono::milliseconds(10), RepeatStreamAtom::value);
             },
         };
@@ -195,7 +202,7 @@ public:
         _dest = caf::actor();
     }
 
-    PhotonExcMsg _current;
+    PhotonExcDevice* _dev;
     caf::actor _dest;
     StreamConfig* _streamCfg;
 };
@@ -272,7 +279,7 @@ TEST_F(FwtTest, setFirmware)
     Diagnostics::Pointer diag = new Diagnostics;
     auto p = Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
     ASSERT_TRUE(p.isOk());
-    caf::anon_send(_gc, SetProjectAtom::value, Project::ConstPointer(p.unwrap()), Device::ConstPointer(p.unwrap()->master()));
+    caf::anon_send(_gc, SetProjectAtom::value, ProjectUpdate(p.unwrap().get(), p.unwrap()->master(), new ValueInfoCache(p.unwrap()->package())));
     _testCfg.exitOnFirmwareDownload = true;
     run();
     EXPECT_TRUE(_testCfg.projectUpdated);

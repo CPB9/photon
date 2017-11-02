@@ -1,5 +1,10 @@
 module core
 
+variant Option<T> {
+    Some(T),
+    None,
+}
+
 enum Error {
     Ok = 0,
     PacketNotFound = 1,
@@ -29,6 +34,7 @@ enum Error {
     MaximumOnceRequestsReached = 25,
     WouldBlock = 26,
     BlockingCmdOutsidePvu = 27,
+    InvalidDeviceId = 28,
 
     NoDataAvailable = 99,
     NotImplemented = 100,

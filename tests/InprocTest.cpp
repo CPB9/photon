@@ -8,7 +8,9 @@
 
 #include "photon/core/Core.Component.h"
 #include "photon/exc/Exc.Component.h"
+#include "photon/exc/Device.h"
 
+#include <bmcl/Assert.h>
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
 
@@ -22,18 +24,21 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 class PhotonStream : public caf::event_based_actor {
 public:
-    PhotonStream(caf::actor_config& cfg)
+    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId, uint64_t timeout)
         : caf::event_based_actor(cfg)
+        , _timeout(timeout)
     {
         Photon_Init();
-        _current = *PhotonExc_GetMsg();
+        PhotonExc_SetAddress(uavId);
+        auto err = PhotonExc_RegisterGroundControl(mccId, &_dev);
+        BMCL_ASSERT(err == PhotonExcClientError_Ok);
     }
 
     caf::behavior make_behavior() override
     {
         return caf::behavior{
             [this](SendDataAtom, const bmcl::SharedBytes& data) {
-                PhotonExc_AcceptInput(data.data(), data.size());
+                PhotonExcDevice_AcceptInput(_dev, data.data(), data.size());
                 Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
@@ -44,11 +49,15 @@ public:
             },
             [this](RepeatStreamAtom) {
                 Photon_Tick();
-                auto data = bmcl::SharedBytes::create(_current.data, _current.size);
+
+                uint8_t temp[1024];
+                PhotonWriter writer;
+                PhotonWriter_Init(&writer, temp, 1024);
+                PhotonError err = PhotonExcDevice_GenNextPacket(_dev, &writer);
+
+                auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
                 send(_dest, RecvDataAtom::value, data);
-                PhotonExc_PrepareNextMsg();
-                _current = *PhotonExc_GetMsg();
-                delayed_send(this, std::chrono::milliseconds(10), RepeatStreamAtom::value);
+                delayed_send(this, std::chrono::milliseconds(_timeout), RepeatStreamAtom::value);
             },
         };
     }
@@ -58,8 +67,9 @@ public:
         destroy(_dest);
     }
 
-    PhotonExcMsg _current;
+    PhotonExcDevice* _dev;
     caf::actor _dest;
+    uint64_t _timeout;
 };
 
 using namespace decode;
@@ -67,13 +77,17 @@ using namespace decode;
 int main(int argc, char** argv)
 {
     TCLAP::CmdLine cmdLine("SerialTest");
-    TCLAP::ValueArg<uint64_t> srcArg("m", "mcc-id", "Mcc id", false, 1, "number");
-    TCLAP::ValueArg<uint64_t> destArg("u", "uav-id", "Uav id", false, 2, "number");
+    TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
+    TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Exchange timeout", false, 10, "milliseconds");
 
-    cmdLine.add(&srcArg);
-    cmdLine.add(&destArg);
+    cmdLine.add(&mccArg);
+    cmdLine.add(&uavArg);
+    cmdLine.add(&timeoutArg);
     cmdLine.parse(argc, argv);
 
-    return runUiTest<PhotonStream>(argc, argv, srcArg.getValue(), destArg.getValue());
+    uint64_t uavId = uavArg.getValue();
+    uint64_t mccId = mccArg.getValue();
+    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeoutArg.getValue());
 }
 

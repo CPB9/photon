@@ -52,7 +52,7 @@ void PhotonClk_Init()
 {
     getTime(&_photonClk.time);
     _photonClk.timeKind.type = PhotonClkTimeKindType_Absolute;
-    _photonClk.timeKind.data.absoluteTimeKind.epoch = 0;
+    _photonClk.timeKind.data.absoluteClkTimeKind.epoch = 0;
 }
 
 void PhotonClk_Tick()

@@ -6,6 +6,8 @@
 
 #include <tclap/CmdLine.h>
 
+#include <bmcl/Assert.h>
+
 #include <chrono>
 #include <thread>
 #include <cstring>
@@ -43,9 +45,13 @@ int main(int argc, char* argv[])
     Photon_Init();
 
     TCLAP::CmdLine cmdLine("Photon model", ' ', "0.1");
+    TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
+    TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
     TCLAP::ValueArg<uint16_t> portArg("p", "port", "Port", false, 6666, "number");
     TCLAP::ValueArg<unsigned> tickArg("t", "tick", "Tick period", false, 100, "milliseconds");
 
+    cmdLine.add(&mccArg);
+    cmdLine.add(&uavArg);
     cmdLine.add(&portArg);
     cmdLine.add(&tickArg);
     cmdLine.parse(argc, argv);
@@ -92,6 +98,10 @@ begin:
         return -1;
     }
 
+    PhotonExc_SetAddress(uavArg.getValue());
+    PhotonExcDevice* dev;
+    auto rv = PhotonExc_RegisterGroundControl(mccArg.getValue(), &dev);
+    BMCL_ASSERT(rv == PhotonExcClientError_Ok);
     bool canSend = false;
     std::chrono::milliseconds tickTimeout(tickArg.getValue());
     while (true) {
@@ -101,7 +111,7 @@ begin:
         if (recvSize != socketError) {
             canSend = true;
             //PHOTON_DEBUG("Recieved %zi bytes", recvSize);
-            PhotonExc_AcceptInput(_temp, recvSize);
+            PhotonExcDevice_AcceptInput(dev, _temp, recvSize);
         } else {
 #ifdef _WIN32
             int err = WSAGetLastError();
@@ -120,22 +130,24 @@ begin:
 
         Photon_Tick();
 
-        const  PhotonExcMsg* msg = PhotonExc_GetMsg();
-
         if (!canSend) {
             continue;
         }
 
         //PHOTON_DEBUG("Sending %zu bytes", genSize);
 
+        PhotonWriter writer;
+        PhotonWriter_Init(&writer, _temp, sizeof(_temp));
+        PhotonError err = PhotonExcDevice_GenNextPacket(dev, &writer);
+        const void* data = writer.start;
+        std::size_t size = writer.current - writer.start;
+
 #ifdef _WIN32
-        if (sendto(sock, (const char*)msg->data, msg->size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
+        if (sendto(sock, (const char*)data, size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
 #else
-        if (sendto(sock, msg->data, msg->size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
+        if (sendto(sock, data, size, 0, (struct sockaddr*)&from, addrLen) == socketError) {
 #endif
             PHOTON_WARNING("Error sending reply");
-        } else {
-            PhotonExc_PrepareNextMsg();
         }
     }
 }

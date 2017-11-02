@@ -42,8 +42,8 @@ PhotonError PhotonTest_SetParam1AndReturn(uint8_t p, PhotonTestReturnStruct* rv)
     rv->param1 = p;
     rv->param2 = -66;
     rv->param3.type = PhotonTestVariantParamType_StructType;
-    rv->param3.data.structTypeVariantParam.a = -66;
-    rv->param3.data.structTypeVariantParam.b = p;
+    rv->param3.data.structTypeTestVariantParam.a = -66;
+    rv->param3.data.structTypeTestVariantParam.b = p;
     return PhotonError_Ok;
 }
 
@@ -239,5 +239,11 @@ PhotonError PhotonTest_TestString(const PhotonDynArrayOfCharMaxSize4* p, PhotonD
     rv->data[2] = p->data[2];
     rv->data[3] = p->data[3];
     rv->size = p->size;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_TestOptionU64(const PhotonOptionU64* p, PhotonOptionU64* rv)
+{
+    *rv = *p;
     return PhotonError_Ok;
 }
