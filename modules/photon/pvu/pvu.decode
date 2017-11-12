@@ -1,7 +1,8 @@
 module pvu
 
-import core::{Error, Reader}
+import core::{Error, Reader, Writer}
 import clk::{Tick}
+import exc::{DataHeader}
 
 struct Script {
     data: Reader,
@@ -13,17 +14,26 @@ struct Script {
 const SCRIPT_NUM: usize = 10;
 const TOTAL_SCRIPTS_SIZE: usize = 2048;
 
+enum ExecutionMode {
+    None,
+    CmdArray,
+    Script,
+}
+
 component {
     parameters {
         numScripts: usize,
         totalScriptsSize: usize,
-        current: *mut Script,
+        currentScript: *mut Script,
+        currentHeader: *const DataHeader,
     }
 
     impl {
         fn init()
         fn tick()
         fn addScript(src: *mut Reader) -> Error
+        fn executeFrom(header: *const DataHeader, src: *mut Reader, results: *mut Writer) -> Error
+        fn currentHeader() -> *const DataHeader
     }
 
     commands {

@@ -11,6 +11,32 @@
 
 #define _PHOTON_FNAME "int/Int.c"
 
+PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* results)
+{
+    if (PhotonReader_ReadableSize(src) == 0) {
+        return PhotonError_Ok;
+    }
+    _photonPvu.currentHeader = header;
+    while (PhotonReader_ReadableSize(src) != 0) {
+        if (PhotonReader_ReadableSize(src) < 2) {
+            PHOTON_CRITICAL("Unable to decode cmd header");
+            return PhotonError_NotEnoughData;
+        }
+
+        uint8_t compNum = PhotonReader_ReadU8(src);
+        uint8_t cmdNum = PhotonReader_ReadU8(src);
+
+        PHOTON_TRY(Photon_ExecCmd(compNum, cmdNum, src, results));
+    }
+
+    return PhotonError_Ok;
+}
+
+const PhotonExcDataHeader* PhotonPvu_CurrentHeader()
+{
+    return _photonPvu.currentHeader;
+}
+
 static void initScript(PhotonPvuScript* self)
 {
     self->isSleeping = false;
@@ -30,13 +56,14 @@ static uint8_t _scriptData[PHOTON_PVU_TOTAL_SCRIPTS_SIZE];
 
 static void endCurrent()
 {
-    _photonPvu.current->isFinished = true;
+    _photonPvu.currentScript->isFinished = true;
 }
 
 static void execCurrent()
 {
     PhotonClkTick currentTime = PhotonClk_GetTime();
-    PhotonPvuScript* current = _photonPvu.current;
+    PhotonPvuScript* current = _photonPvu.currentScript;
+    _photonPvu.currentHeader = NULL; //HACK
     if (current->isSleeping) {
         if (current->sleepUntil < currentTime) {
             return;
@@ -78,10 +105,10 @@ void PhotonPvu_Tick()
         return;
     }
     for (size_t i = 0; i < _photonPvu.numScripts; i++) {
-        _photonPvu.current = &_scripts[i];
+        _photonPvu.currentScript = &_scripts[i];
         execCurrent();
     }
-    _photonPvu.current = NULL;
+    _photonPvu.currentScript = NULL;
 
     size_t deletedIndex = _photonPvu.numScripts;
     while (true) {
@@ -132,28 +159,28 @@ PhotonError PhotonPvu_AddScript(PhotonReader* src)
 
 PhotonError PhotonPvu_SleepFor(uint64_t delta)
 {
-    if (!_photonPvu.current) {
+    if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
     }
     if (delta == 0) {
         return PhotonError_Ok;
     }
-    _photonPvu.current->isSleeping = true;
-    _photonPvu.current->sleepUntil = PhotonClk_GetTime() + delta;
+    _photonPvu.currentScript->isSleeping = true;
+    _photonPvu.currentScript->sleepUntil = PhotonClk_GetTime() + delta;
     return PhotonError_WouldBlock;
 }
 
 PhotonError PhotonPvu_SleepUntil(uint64_t time)
 {
-    if (!_photonPvu.current) {
+    if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
     }
     PhotonClkTick currentTime = PhotonClk_GetTime();
     if (time >= currentTime) {
         return PhotonError_Ok;
     }
-    _photonPvu.current->isSleeping = true;
-    _photonPvu.current->sleepUntil = time;
+    _photonPvu.currentScript->isSleeping = true;
+    _photonPvu.currentScript->sleepUntil = time;
     return PhotonError_WouldBlock;
 }
 

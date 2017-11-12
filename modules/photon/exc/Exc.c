@@ -1,5 +1,5 @@
 #include "photon/exc/Exc.Component.h"
-#include "photon/int/Int.Component.h"
+#include "photon/pvu/Pvu.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/tm/Tm.Component.h"
 
@@ -12,7 +12,7 @@
 
 void PhotonExc_Init()
 {
-    PhotonInt_Init();
+    PhotonPvu_Init();
     PhotonTm_Init();
     PhotonFwt_Init();
     _photonExc.address = 2;

@@ -1,13 +1,12 @@
 [project]
 name = "default"
 master = "model1"
-common_modules = ["core", "tm", "int", "fwt", "exc", "clk", "nav"]
+common_modules = ["core", "tm", "fwt", "exc", "clk", "nav", "pvu"]
 mcc_id = 0
 module_dirs = [
   "modules/photon/core",
   "modules/photon/tm",
   "modules/photon/fwt",
-  "modules/photon/int",
   "modules/photon/test",
   "modules/photon/exc",
   "modules/photon/clk",
@@ -22,7 +21,7 @@ name = "model1"
 id = 1
 cmd_targets = ["model2"]
 tm_sources = ["model2"]
-modules = ["pvu", "test", "fl", "grp"]
+modules = ["test", "fl", "grp"]
 
 [[devices]]
 name = "model2"

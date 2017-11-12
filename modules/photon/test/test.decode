@@ -3,6 +3,8 @@ module test
 
 import core::Option
 
+type FnTypedef = &Fn(&Fn(i64) -> &Fn(i32) -> i8, i16) -> &Fn(f64) -> f32;
+
 /// EnumParam short desc
 ///
 /// EnumParam long desc
@@ -10,7 +12,11 @@ enum EnumParam {
     /// Type 1 enum
     Type1 = 1,
     /// Type 4 enum
-    Type4 = 4,
+    Type2,
+    /// Type 2 enum
+    Type5 = 5,
+    /// Type 6 enum
+    Type6,
 }
 
 /// VariantParam short desc

@@ -11,7 +11,7 @@
 #include "photon/exc/StreamHandler.h"
 #include "photon/exc/ReceiptType.h"
 #include "photon/exc/Utils.h"
-#include "photon/int/Int.Component.h"
+#include "photon/pvu/Pvu.Component.h"
 #include "photon/tm/Tm.Component.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/clk/Clk.Component.h"
@@ -259,7 +259,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     }
     case PhotonExcStreamType_Cmd: {
         state = &self->cmdStream;
-        handler = PhotonInt_ExecuteFrom;
+        handler = PhotonPvu_ExecuteFrom;
         break;
     }
     case PhotonExcStreamType_Telem:
