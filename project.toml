@@ -13,7 +13,6 @@ module_dirs = [
   "modules/photon/nav",
   "modules/photon/pvu",
   "modules/photon/fl",
-  "modules/photon/grp",
 ]
 
 [[devices]]
@@ -21,7 +20,7 @@ name = "model1"
 id = 1
 cmd_targets = ["model2"]
 tm_sources = ["model2"]
-modules = ["test", "fl", "grp"]
+modules = ["test", "fl"]
 
 [[devices]]
 name = "model2"
