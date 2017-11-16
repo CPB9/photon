@@ -396,7 +396,7 @@ static PhotonError queueFwtPacket(PhotonExcDevice* self)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonDevice_QueueCustomCmdPacket(PhotonExcDevice* self, void* data, PhotonGenerator gen)
+PhotonError PhotonExcDevice_QueueCustomCmdPacket(PhotonExcDevice* self, void* data, PhotonGenerator gen)
 {
     self->request.data = data;
     self->request.gen = gen;
