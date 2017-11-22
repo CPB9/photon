@@ -17,9 +17,11 @@
 #include <photon/groundcontrol/TmParamUpdate.h>
 #include <photon/groundcontrol/Packet.h>
 #include <photon/groundcontrol/ProjectUpdate.h>
+#include <photon/Interface.hpp>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
+#include <bmcl/MemWriter.h>
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -43,6 +45,7 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
     , _stream(stream)
     , _widgetShown(false)
     , _param2Value(0)
+    , _validator(nullptr)
 {
     _gc = spawn<GroundControl>(srcAddress, destAddress, _stream, this);
     send(_stream, SetStreamDestAtom::value, _gc);
@@ -50,6 +53,9 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
 
 UiActor::~UiActor()
 {
+    if (_validator) {
+        delete _validator;
+    }
 }
 
 caf::behavior testSubActor(caf::event_based_actor* self)
@@ -80,6 +86,23 @@ caf::behavior UiActor::make_behavior()
             request(_gc, caf::infinite, SendCustomCommandAtom::value, "test", "setParam2", std::move(args)).then([](const PacketResponse& resp) {
                 (void)resp;
             });
+
+            if (_validator) {
+                uint8_t tmp[2048]; //TODO: temp
+                bmcl::MemWriter dest(tmp, sizeof(tmp));
+                CoderState state;
+                if (_validator->encodeCmdTestSetParam3(_param2Value * 11, &dest, &state)) {
+                    PacketRequest req;
+                    req.streamType = StreamType::Cmd;
+                    req.payload = bmcl::SharedBytes::create(dest.writenData());
+
+                    request(_gc, caf::infinite, SendReliablePacketAtom::value, req).then([this](const PacketResponse& response) {
+                    });
+                } else {
+                    BMCL_CRITICAL() << "failed to encode cmd setParam3";
+                }
+            }
+
             delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
         [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
@@ -116,7 +139,12 @@ caf::behavior UiActor::make_behavior()
             Rc<CmdModel> cmdNode = new CmdModel(update.device.get(), update.cache.get(), bmcl::None);
             _widget->setRootCmdNode(update.cache.get(), cmdNode.get());
             _testSub = spawn(testSubActor);
+            if (_validator) {
+                delete _validator;
+            }
+            _validator = new photongen::Validator(update.project.get(), update.device.get());
             request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
+            request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param3"), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());

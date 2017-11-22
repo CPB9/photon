@@ -74,7 +74,7 @@ macro(photon_init dir)
 
     find_package(Threads)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
-    set(_PHOTON_DEPENDS)
+    set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon/Interface.hpp)
     set(_PHOTON_DEPENDS_H)
     set(_PHOTON_DIR ${dir})
 
@@ -275,6 +275,7 @@ macro(photon_init dir)
         ${DECODE_UI_SRC}
         ${DECODE_GROUNDCONTROL_SRC}
         ${DECODE_MODEL_SRC}
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon/Interface.hpp
     )
 
     target_link_libraries(photon-gc decode bmcl Qt5::Widgets ${CAF_CORE_LIBRARIES})
@@ -294,6 +295,7 @@ macro(photon_init dir)
         PUBLIC
         ${_PHOTON_DIR}/src
         ${_PHOTON_DIR}/thirdparty
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}
     )
     _photon_setup_target(photon-gc)
     _photon_install_target(photon-gc)

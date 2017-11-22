@@ -1,9 +1,9 @@
 module tm
 
-import core::{Writer, Error, Generator}
+import core::{Writer, Error, Generator, StatelessGenerator}
 
 struct MessageDesc {
-    func: &Fn(*mut Writer) -> Error,
+    func: StatelessGenerator,
     priority: i16,
     interest: i16,
     isEnabled: bool,

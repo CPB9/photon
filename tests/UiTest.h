@@ -23,6 +23,10 @@ class FirmwareWidget;
 class FirmwareStatusWidget;
 }
 
+namespace photongen {
+class Validator;
+}
+
 using RepeatEventLoopAtom = caf::atom_constant<caf::atom("reploop")>;
 using RepeatParam2Atom    = caf::atom_constant<caf::atom("reppar2")>;
 
@@ -44,8 +48,10 @@ private:
     caf::actor _stream;
     caf::actor _gc;
     caf::actor _testSub;
+    photongen::Validator* _validator;
     bool _widgetShown;
     uint16_t _param2Value;
+
 };
 
 template <typename S, typename... A>
