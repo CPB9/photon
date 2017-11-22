@@ -1,12 +1,12 @@
-#include "decode/groundcontrol/GroundControl.h"
-#include "decode/groundcontrol/FwtState.h"
-#include "decode/groundcontrol/Atoms.h"
-#include "decode/groundcontrol/AllowUnsafeMessageType.h"
-#include "decode/groundcontrol/ProjectUpdate.h"
-#include "decode/model/NodeView.h"
+#include "photon/groundcontrol/GroundControl.h"
+#include "photon/groundcontrol/FwtState.h"
+#include "photon/groundcontrol/Atoms.h"
+#include "photon/groundcontrol/AllowUnsafeMessageType.h"
+#include "photon/groundcontrol/ProjectUpdate.h"
+#include "photon/model/NodeView.h"
 #include "decode/core/Diagnostics.h"
 #include "decode/parser/Project.h"
-#include "decode/model/ValueInfoCache.h"
+#include "photon/model/ValueInfoCache.h"
 #include "photon/fwt/Fwt.Component.h"
 #include "photon/exc/Exc.Component.h"
 #include "photon/core/Core.Component.h"
@@ -22,7 +22,7 @@
 #include <memory>
 #include <random>
 
-using namespace decode;
+using namespace photon;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
@@ -230,7 +230,7 @@ void FwtTest::SetUp()
     _system.reset(new caf::actor_system(_cfg));
     _stream = _system->spawn<PhotonStream>(&_streamCfg);
     _handler = _system->spawn<FakeEventHandler>(&_testCfg);
-    _gc = _system->spawn<decode::GroundControl>(1, 2, _stream, _handler);
+    _gc = _system->spawn<photon::GroundControl>(1, 2, _stream, _handler);
 }
 
 void FwtTest::TearDown()
@@ -276,8 +276,8 @@ TEST_F(FwtTest, looseFiftyPercentPackets)
 
 TEST_F(FwtTest, setFirmware)
 {
-    Diagnostics::Pointer diag = new Diagnostics;
-    auto p = Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
+    decode::Diagnostics::Pointer diag = new decode::Diagnostics;
+    auto p = decode::Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
     ASSERT_TRUE(p.isOk());
     caf::anon_send(_gc, SetProjectAtom::value, ProjectUpdate(p.unwrap().get(), p.unwrap()->master(), new ValueInfoCache(p.unwrap()->package())));
     _testCfg.exitOnFirmwareDownload = true;

@@ -1,14 +1,15 @@
 include(CPack)
 include(DeployQt5)
 include(CMakeParseArguments)
-find_package(Qt5Widgets)
-find_package(Qt5SerialPort)
-find_package(Qt5Network)
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5SerialPort REQUIRED)
+find_package(Qt5Network REQUIRED)
 
 set(_PHOTON_MOD_DIRS)
 set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
 set(PHOTON_GEN_SRC_ONBOARD_DIR ${PHOTON_GEN_SRC_DIR}/onboard)
 set(PHOTON_GEN_SRC_GROUNDCONTROL_DIR ${PHOTON_GEN_SRC_DIR}/groundcontrol)
+
 
 macro(photon_add_mod_dir dir)
     list(APPEND _PHOTON_MOD_DIRS ${dir})
@@ -42,7 +43,7 @@ macro(_photon_add_unit_test target test file)
         gtest_main
         photon-${target}
         decode
-        decode-gc
+        photon-gc
     )
 
     target_include_directories(${test}-${target}
@@ -81,6 +82,34 @@ macro(photon_init dir)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/dtacan EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/gtest EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/asio EXCLUDE_FROM_ALL)
+
+    # caf
+    if (NOT CAF_INCLUDED) #for parent project
+        set(CAF_NO_EXAMPLES 1)
+        set(CAF_NO_BENCHMARKS 1)
+        set(CAF_NO_PYTHON 1)
+        set(CAF_NO_OPENCL 1)
+        set(CAF_NO_TOOLS 1)
+        set(CAF_NO_UNIT_TESTS 1)
+        set(CAF_LOG_LEVEL 0)
+        if (UNIX)
+            set(CAF_CORE_LIBRARIES libcaf_core_shared)
+            set(CAF_IO_LIBRARIES libcaf_io_shared)
+        else()
+            set(CAF_CORE_LIBRARIES libcaf_core_static)
+            set(CAF_IO_LIBRARIES libcaf_io_static)
+        endif()
+        if (NOT MSVC)
+            set(_TMP_FLAGS ${CMAKE_CXX_FLAGS})
+            set(CMAKE_CXX_FLAGS "")
+        endif()
+        add_subdirectory(${_PHOTON_DIR}/thirdparty/caf EXCLUDE_FROM_ALL)
+        if (NOT MSVC)
+            set(CMAKE_CXX_FLAGS ${_TMP_FLAGS})
+        endif()
+        target_include_directories(${CAF_CORE_LIBRARIES} SYSTEM INTERFACE ${_PHOTON_DIR}/thirdparty/caf/libcaf_core)
+    endif()
+
     install(FILES $<TARGET_FILE:decode_gen> DESTINATION bin)
     get_target_property(_TARGET_TYPE bmcl TYPE)
     if(_TARGET_TYPE STREQUAL  "SHARED_LIBRARY")
@@ -103,7 +132,7 @@ macro(photon_init dir)
     )
     target_link_libraries(photon-ui-test
         decode
-        decode-gc
+        photon-gc
         Qt5::Core
     )
     add_executable(test-serialclient
@@ -111,7 +140,7 @@ macro(photon_init dir)
     )
     target_link_libraries(test-serialclient
         decode
-        decode-gc
+        photon-gc
         bmcl
         photon-ui-test
         asio
@@ -135,7 +164,7 @@ macro(photon_init dir)
     )
     target_link_libraries(test-udpclient
         decode
-        decode-gc
+        photon-gc
         bmcl
         photon-ui-test
         asio
@@ -153,6 +182,121 @@ macro(photon_init dir)
     if (NOT MSVC)
         target_compile_options(test-udpclient PUBLIC -std=c++11)
     endif()
+
+    set(DECODE_GROUNDCONTROL_SRC
+        ${_PHOTON_DIR}/src/photon/groundcontrol/AllowUnsafeMessageType.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/Atoms.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/CmdState.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/CmdState.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/Crc.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/Crc.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/Exchange.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/Exchange.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/FwtState.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/FwtState.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/GcInterface.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/GcInterface.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/GcStructs.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/GroundControl.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/GroundControl.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/MemIntervalSet.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/MemIntervalSet.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/ProjectUpdate.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/ProjectUpdate.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/TmParamUpdate.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/TmState.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/TmState.h
+    )
+    source_group("groundcontrol" FILES ${DECODE_GROUNDCONTROL_SRC})
+
+    set(DECODE_MODEL_SRC
+        ${_PHOTON_DIR}/src/photon/model/CmdModel.cpp
+        ${_PHOTON_DIR}/src/photon/model/CmdModel.h
+        ${_PHOTON_DIR}/src/photon/model/CmdNode.cpp
+        ${_PHOTON_DIR}/src/photon/model/CmdNode.h
+        ${_PHOTON_DIR}/src/photon/model/Decoder.cpp
+        ${_PHOTON_DIR}/src/photon/model/Decoder.h
+        ${_PHOTON_DIR}/src/photon/model/Encoder.cpp
+        ${_PHOTON_DIR}/src/photon/model/Encoder.h
+        ${_PHOTON_DIR}/src/photon/model/FieldsNode.cpp
+        ${_PHOTON_DIR}/src/photon/model/FieldsNode.h
+        ${_PHOTON_DIR}/src/photon/model/FindNode.cpp
+        ${_PHOTON_DIR}/src/photon/model/FindNode.h
+        ${_PHOTON_DIR}/src/photon/model/Node.cpp
+        ${_PHOTON_DIR}/src/photon/model/Node.h
+        ${_PHOTON_DIR}/src/photon/model/NodeView.cpp
+        ${_PHOTON_DIR}/src/photon/model/NodeView.h
+        ${_PHOTON_DIR}/src/photon/model/NodeViewStore.cpp
+        ${_PHOTON_DIR}/src/photon/model/NodeViewStore.h
+        ${_PHOTON_DIR}/src/photon/model/NodeViewUpdate.cpp
+        ${_PHOTON_DIR}/src/photon/model/NodeViewUpdate.h
+        ${_PHOTON_DIR}/src/photon/model/NodeViewUpdater.cpp
+        ${_PHOTON_DIR}/src/photon/model/NodeViewUpdater.h
+        ${_PHOTON_DIR}/src/photon/model/OnboardTime.cpp
+        ${_PHOTON_DIR}/src/photon/model/OnboardTime.h
+        ${_PHOTON_DIR}/src/photon/model/StatusDecoder.cpp
+        ${_PHOTON_DIR}/src/photon/model/StatusDecoder.h
+        ${_PHOTON_DIR}/src/photon/model/TmModel.cpp
+        ${_PHOTON_DIR}/src/photon/model/TmModel.h
+        ${_PHOTON_DIR}/src/photon/model/Value.cpp
+        ${_PHOTON_DIR}/src/photon/model/Value.h
+        ${_PHOTON_DIR}/src/photon/model/ValueInfoCache.cpp
+        ${_PHOTON_DIR}/src/photon/model/ValueInfoCache.h
+        ${_PHOTON_DIR}/src/photon/model/ValueKind.h
+        ${_PHOTON_DIR}/src/photon/model/ValueNode.cpp
+        ${_PHOTON_DIR}/src/photon/model/ValueNode.h
+    )
+    source_group("model" FILES ${DECODE_MODEL_SRC})
+
+    set(DECODE_UI_HEADERS
+        ${_PHOTON_DIR}/src/photon/ui/FirmwareWidget.h
+        ${_PHOTON_DIR}/src/photon/ui/FirmwareStatusWidget.h
+        ${_PHOTON_DIR}/src/photon/ui/QModelBase.h
+        ${_PHOTON_DIR}/src/photon/ui/QCmdModel.h
+        ${_PHOTON_DIR}/src/photon/ui/QNodeModel.h
+        ${_PHOTON_DIR}/src/photon/ui/QNodeViewModel.h
+    )
+    qt5_wrap_cpp(DECODE_UI_MOC
+        ${DECODE_UI_HEADERS}
+    )
+    set(DECODE_UI_SRC
+        ${_PHOTON_DIR}/src/photon/ui/FirmwareWidget.cpp
+        ${_PHOTON_DIR}/src/photon/ui/FirmwareStatusWidget.cpp
+        ${_PHOTON_DIR}/src/photon/ui/QModelBase.cpp
+        ${_PHOTON_DIR}/src/photon/ui/QCmdModel.cpp
+        ${_PHOTON_DIR}/src/photon/ui/QNodeModel.cpp
+        ${_PHOTON_DIR}/src/photon/ui/QNodeViewModel.cpp
+        ${DECODE_UI_MOC}
+    )
+    source_group("ui" FILES ${DECODE_UI_SRC})
+    source_group("ui_moc" FILES ${DECODE_UI_MOC})
+
+    add_library(photon-gc
+        ${DECODE_UI_SRC}
+        ${DECODE_GROUNDCONTROL_SRC}
+        ${DECODE_MODEL_SRC}
+    )
+
+    target_link_libraries(photon-gc decode bmcl Qt5::Widgets ${CAF_CORE_LIBRARIES})
+    target_compile_definitions(photon-gc PRIVATE -DBUILDING_PHOTON)
+
+    set_target_properties(photon-gc
+        PROPERTIES
+        PREFIX "lib"
+    )
+
+    if (NOT MSVC)
+        target_compile_options(photon-gc PUBLIC -std=c++11)
+        target_compile_options(photon-gc PRIVATE -Wall -Wextra -Wno-unused-parameter)
+    endif()
+
+    target_include_directories(photon-gc
+        PUBLIC
+        ${_PHOTON_DIR}/src
+        ${_PHOTON_DIR}/thirdparty
+    )
+    _photon_setup_target(photon-gc)
+    _photon_install_target(photon-gc)
 endmacro()
 
 function(_photon_install_target target)
@@ -229,7 +373,7 @@ macro(photon_add_device target)
         target_link_libraries(test-inproc-${target} photon-${target}
             bmcl
             decode
-            decode-gc
+            photon-gc
             photon-ui-test
             ${PHOTON_PROFILER_LIB}
             Qt5::Core
@@ -281,7 +425,7 @@ macro(photon_add_device target)
     )
 
 #     add_executable(test-perf-${target} ${_PHOTON_DIR}/tests/PerfTest.cpp)
-#     target_link_libraries(test-perf-${target} photon-${target} decode decode-gc ${CMAKE_THREAD_LIBS_INIT})
+#     target_link_libraries(test-perf-${target} photon-${target} decode photon-gc ${CMAKE_THREAD_LIBS_INIT})
 #     target_include_directories(test-perf-${target}
 #         PRIVATE
 #         ${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap/include
@@ -323,3 +467,4 @@ endmacro()
 macro(photon_set_device_link_libraries dev)
     set(_PHOTON_${dev}_LINK_LIBRARIES ${ARGN})
 endmacro()
+

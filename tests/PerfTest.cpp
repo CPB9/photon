@@ -1,9 +1,9 @@
 #include <decode/core/Rc.h>
 #include <decode/parser/Project.h>
-#include <decode/groundcontrol/Exchange.h>
-#include <decode/groundcontrol/GroundControl.h>
-#include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AllowUnsafeMessageType.h>
+#include <photon/groundcontrol/Exchange.h>
+#include <photon/groundcontrol/GroundControl.h>
+#include <photon/groundcontrol/Atoms.h>
+#include <photon/groundcontrol/AllowUnsafeMessageType.h>
 #include <decode/model/NodeViewUpdater.h>
 
 #include "photon/core/Core.Component.h"
@@ -16,7 +16,7 @@
 #include <caf/actor_system.hpp>
 #include <caf/actor_system_config.hpp>
 
-using namespace decode;
+using namespace photon;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 

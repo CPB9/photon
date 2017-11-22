@@ -1,10 +1,10 @@
 #include "UiTest.h"
 
 #include <decode/core/Rc.h>
-#include <decode/groundcontrol/Exchange.h>
-#include <decode/groundcontrol/FwtState.h>
-#include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AllowUnsafeMessageType.h>
+#include <photon/groundcontrol/Exchange.h>
+#include <photon/groundcontrol/FwtState.h>
+#include <photon/groundcontrol/Atoms.h>
+#include <photon/groundcontrol/AllowUnsafeMessageType.h>
 
 #include "photon/core/Core.Component.h"
 #include "photon/exc/Exc.Component.h"
@@ -18,7 +18,7 @@
 
 #include <caf/send.hpp>
 
-using namespace decode;
+using namespace photon;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 

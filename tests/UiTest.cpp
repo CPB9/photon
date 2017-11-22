@@ -1,22 +1,22 @@
 #include "UiTest.h"
 
-#include <decode/ui/QNodeModel.h>
-#include <decode/ui/QNodeViewModel.h>
-#include <decode/ui/QCmdModel.h>
-#include <decode/ui/FirmwareWidget.h>
-#include <decode/ui/FirmwareStatusWidget.h>
-#include <decode/groundcontrol/AllowUnsafeMessageType.h>
-#include <decode/model/CmdNode.h>
+#include <photon/ui/QNodeModel.h>
+#include <photon/ui/QNodeViewModel.h>
+#include <photon/ui/QCmdModel.h>
+#include <photon/ui/FirmwareWidget.h>
+#include <photon/ui/FirmwareStatusWidget.h>
+#include <photon/groundcontrol/AllowUnsafeMessageType.h>
+#include <photon/model/CmdNode.h>
 #include <decode/parser/Package.h>
-#include <decode/model/NodeView.h>
-#include <decode/model/ValueInfoCache.h>
-#include <decode/model/NodeViewUpdater.h>
+#include <photon/model/NodeView.h>
+#include <photon/model/ValueInfoCache.h>
+#include <photon/model/NodeViewUpdater.h>
 #include <decode/parser/Project.h>
 #include <decode/core/Diagnostics.h>
-#include <decode/model/CmdModel.h>
-#include <decode/groundcontrol/TmParamUpdate.h>
-#include <decode/groundcontrol/Packet.h>
-#include "decode/groundcontrol/ProjectUpdate.h"
+#include <photon/model/CmdModel.h>
+#include <photon/groundcontrol/TmParamUpdate.h>
+#include <photon/groundcontrol/Packet.h>
+#include <photon/groundcontrol/ProjectUpdate.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -30,11 +30,11 @@
 #include <unordered_set>
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
-DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::PacketRequest);
-DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Value);
-DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<decode::Value>);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<photon::Value>);
 
-using namespace decode;
+using namespace photon;
 
 UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddress, caf::actor stream, int& argc, char** argv)
     : caf::event_based_actor(cfg)
@@ -44,7 +44,7 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
     , _widgetShown(false)
     , _param2Value(0)
 {
-    _gc = spawn<decode::GroundControl>(srcAddress, destAddress, _stream, this);
+    _gc = spawn<GroundControl>(srcAddress, destAddress, _stream, this);
     send(_stream, SetStreamDestAtom::value, _gc);
 }
 
@@ -55,7 +55,7 @@ UiActor::~UiActor()
 caf::behavior testSubActor(caf::event_based_actor* self)
 {
     return caf::behavior{
-        [](const decode::Value& value, const std::string& path) {
+        [](const Value& value, const std::string& path) {
             BMCL_DEBUG() << path << ": " << value.asUnsigned();
         }
     };
@@ -153,8 +153,8 @@ caf::behavior UiActor::make_behavior()
         [this](StartAtom) {
             _app = bmcl::makeUnique<QApplication>(_argc, _argv);
             _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
-            bmcl::Rc<decode::Node> emptyNode = new decode::Node(bmcl::None);
-            std::unique_ptr<decode::QNodeViewModel> paramViewModel = bmcl::makeUnique<QNodeViewModel>(new decode::NodeView(emptyNode.get()));
+            bmcl::Rc<Node> emptyNode = new Node(bmcl::None);
+            std::unique_ptr<QNodeViewModel> paramViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
             _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel));
 
             QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
@@ -172,8 +172,8 @@ caf::behavior UiActor::make_behavior()
                 });
             });
 
-            delayed_send(_stream, std::chrono::milliseconds(100), decode::StartAtom::value);
-            delayed_send(_gc, std::chrono::milliseconds(200), decode::StartAtom::value);
+            delayed_send(_stream, std::chrono::milliseconds(100), StartAtom::value);
+            delayed_send(_gc, std::chrono::milliseconds(200), StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
             delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
             //send(_gc, EnableLoggindAtom::value, true);

@@ -1,10 +1,10 @@
 #include "UiTest.h"
 
 #include <decode/core/Rc.h>
-#include <decode/groundcontrol/Exchange.h>
-#include <decode/groundcontrol/FwtState.h>
-#include <decode/groundcontrol/Atoms.h>
-#include <decode/groundcontrol/AllowUnsafeMessageType.h>
+#include <photon/groundcontrol/Exchange.h>
+#include <photon/groundcontrol/FwtState.h>
+#include <photon/groundcontrol/Atoms.h>
+#include <photon/groundcontrol/AllowUnsafeMessageType.h>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -17,7 +17,7 @@
 #include <caf/others.hpp>
 #include <caf/blocking_actor.hpp>
 
-using namespace decode;
+using namespace photon;
 using asio::ip::udp;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
