@@ -80,8 +80,13 @@ macro(photon_init dir)
 
     add_subdirectory(${_PHOTON_DIR}/thirdparty/decode EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/dtacan EXCLUDE_FROM_ALL)
-    add_subdirectory(${_PHOTON_DIR}/thirdparty/gtest EXCLUDE_FROM_ALL)
-    add_subdirectory(${_PHOTON_DIR}/thirdparty/asio EXCLUDE_FROM_ALL)
+
+    if (NOT GTEST_INCLUDED)
+        add_subdirectory(${_PHOTON_DIR}/thirdparty/gtest EXCLUDE_FROM_ALL)
+    endif()
+    if (NOT ASIO_INCLUDED)
+        add_subdirectory(${_PHOTON_DIR}/thirdparty/asio EXCLUDE_FROM_ALL)
+    endif()
 
     # caf
     if (NOT CAF_INCLUDED) #for parent project
