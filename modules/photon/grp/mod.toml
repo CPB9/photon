@@ -1,0 +1,7 @@
+name = "grp"
+decode = "grp.decode"
+dest = "photon/grp"
+id = 13
+sources = [
+  "Grp.c"
+]
