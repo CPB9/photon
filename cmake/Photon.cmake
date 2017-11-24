@@ -321,11 +321,14 @@ macro(photon_generate_sources proj)
         list(APPEND _PHOTON_MOD_SOURCES ${_DIR_SOURCES})
     endforeach()
 
+    if(PHOTON_USE_ABS_PATHS)
+        set(_PHOTON_ABS_FLAG "-a")
+    endif()
     add_custom_command(
         OUTPUT ${_PHOTON_DEPENDS}
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${PHOTON_GEN_SRC_DIR}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PHOTON_GEN_SRC_DIR}
-        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:decode_gen> -p  ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4
+        COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:decode_gen> -p  ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4 ${_PHOTON_ABS_FLAG}
         DEPENDS decode_gen ${proj} ${_PHOTON_MOD_SOURCES}
     )
     install(DIRECTORY ${PHOTON_GEN_SRC_ONBOARD_DIR}/photon DESTINATION gen)
@@ -373,6 +376,12 @@ macro(photon_add_device target)
         #${IMPL_DIR}
         ${PHOTON_GEN_SRC_ONBOARD_DIR}
     )
+    if (PHOTON_USE_ABS_PATHS)
+        target_include_directories(photon-${target}
+            PUBLIC
+            ${_PHOTON_MOD_DIRS}
+        )
+    endif()
 
     #TODO: check for other qt modules
     if (Qt5Widgets_FOUND)
