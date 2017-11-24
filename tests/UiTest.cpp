@@ -22,6 +22,7 @@
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
 #include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -88,13 +89,12 @@ caf::behavior UiActor::make_behavior()
             });
 
             if (_validator) {
-                uint8_t tmp[2048]; //TODO: temp
-                bmcl::MemWriter dest(tmp, sizeof(tmp));
+                bmcl::Buffer dest;
                 CoderState state;
                 if (_validator->encodeCmdTestSetParam3(_param2Value * 11, &dest, &state)) {
                     PacketRequest req;
                     req.streamType = StreamType::Cmd;
-                    req.payload = bmcl::SharedBytes::create(dest.writenData());
+                    req.payload = bmcl::SharedBytes::create(dest);
 
                     request(_gc, caf::infinite, SendReliablePacketAtom::value, req).then([this](const PacketResponse& response) {
                     });
