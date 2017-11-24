@@ -22,6 +22,9 @@
 #if defined(PHOTON_HAS_MODULE_USM)
 # include "photon/usm/Usm.Component.h"
 #endif
+#if defined(PHOTON_HAS_MODULE_GRP)
+# include "photon/grp/Grp.Component.h"
+#endif
 
 void Photon_Init()
 {
@@ -48,6 +51,9 @@ void Photon_Init()
 #endif
 #if defined(PHOTON_HAS_MODULE_USM)
     PhotonUsm_Init();
+#endif
+#if defined(PHOTON_HAS_MODULE_GRP)
+    PhotonGrp_Init();
 #endif
 }
 
@@ -76,6 +82,9 @@ void Photon_Tick()
 #endif
 #if defined(PHOTON_HAS_MODULE_USM)
     PhotonUsm_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_GRP)
+    PhotonGrp_Tick();
 #endif
 }
 
