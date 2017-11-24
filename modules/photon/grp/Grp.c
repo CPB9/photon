@@ -15,7 +15,7 @@ void PhotonGrp_Tick()
 
 PhotonError PhotonGrp_SetGroupAddress(uint64_t address)
 {
-    PHOTON_INFO("SetGroupAddress (%" PRIu64 "), offset(%" PRIu64 "), size(%" PRIu64 ")", id, offset, chunk->size);
+    PHOTON_INFO("SetGroupAddress (%" PRIu64 ")", address);
     return PhotonError_Ok;
 }
 
