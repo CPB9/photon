@@ -19,6 +19,22 @@ PhotonError PhotonGrp_SetGroupAddress(uint64_t address)
     return PhotonError_Ok;
 }
 
+PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members)
+{
+    PHOTON_INFO("CreateGroup: group(%" PRIu64 "), count(%" PRIu64 ")", group, members->size);
+    for(uint64_t i = 0; i < members->size; ++i)
+    {
+        PHOTON_INFO("CreateGroup: group(%" PRIu64 "), index(%" PRIu64 "), member(%" PRIu64 ")", group, i, members->data[i]);
+    }
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonGrp_DeleteGroup(uint64_t group)
+{
+    PHOTON_INFO("DeleteGroup: group(%" PRIu64 ")", group);
+    return PhotonError_Ok;
+}
+
 PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
     PHOTON_INFO("AddMember: group(%" PRIu64 "), member(%" PRIu64 ")", group, member);
