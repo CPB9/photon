@@ -30,6 +30,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::GcCmd);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<photon::Value>);
 
 namespace photon {
@@ -78,8 +79,8 @@ caf::behavior GroundControl::make_behavior()
             _isRunning = false;
             send(_exc, StopAtom::value);
         },
-        [this](SetProjectAtom, const ProjectUpdate& update) {
-            if (_project == update.project && _dev == update.device) {
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+            if (_project == update->project() && _dev == update->device()) {
                 return;
             }
             updateProject(update);
@@ -108,10 +109,10 @@ void GroundControl::on_exit()
     destroy(_cmd);
 }
 
-void GroundControl::updateProject(const ProjectUpdate& update)
+void GroundControl::updateProject(const ProjectUpdate::ConstPointer& update)
 {
-    _project = update.project;
-    _dev = update.device;
+    _project = update->project();
+    _dev = update->device();
     send(_cmd, SetProjectAtom::value, update);
     send(_exc, SetProjectAtom::value, update);
     send(_handler, SetProjectAtom::value, update);

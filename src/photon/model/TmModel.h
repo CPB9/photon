@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace decode {
-struct Device;
+class Device;
 }
 
 namespace photon {

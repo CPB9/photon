@@ -41,6 +41,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::string);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 
 namespace photon {
 
@@ -103,8 +104,8 @@ caf::behavior FwtState::make_behavior()
             _isRunning = false;
             stopDownload();
         },
-        [this](SetProjectAtom, const ProjectUpdate& update) {
-            setProject(update.project.get(), update.device.get(), update.cache.get());
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+            setProject(update->project(), update->device(), update->cache());
         },
         [this](EnableLoggindAtom, bool isEnabled) {
             _isLoggingEnabled = isEnabled;
@@ -126,13 +127,12 @@ bool FwtState::hashMatches(const HashContainer& hash, bmcl::Bytes data)
 void FwtState::setProject(const decode::Project* proj, const decode::Device* dev, const ValueInfoCache* cache)
 {
     FWT_LOG("setting project");
-    if (_project == proj && _device == dev && _cache == cache) {
+    if (_project == proj && _device == dev) {
         FWT_LOG("no need to update project");
         return;
     }
     _project = proj;
     _device = dev;
-    _cache = cache;
     if (_downloadedHash.isNone()) {
         FWT_LOG("project set");
         decode::Project::HashType state;
@@ -401,19 +401,18 @@ void FwtState::readFirmware()
         return;
     }
 
-    auto dev = project.unwrap()->deviceWithName(_deviceName);
-    if (dev.isNone()) {
+    _downloadedHash = _hash.unwrap();
+    _project = project.unwrap();
+    auto update = ProjectUpdate::fromProjectAndName(_project.get(), _deviceName);
+    if (update.isErr()) {
         //TODO: restart download
         //TODO: print errors
         stopDownload();
         return;
     }
+    _device = update.unwrap()->device();
 
-    _downloadedHash = _hash.unwrap();
-    _project = project.unwrap();
-    _device = dev.unwrap();
-    _cache = new ValueInfoCache(project.unwrap()->package());
-    send(_exc, SetProjectAtom::value, ProjectUpdate(project.unwrap().get(), dev.unwrap(), _cache.get()));
+    send(_exc, SetProjectAtom::value, update.take());
     stopDownload();
 }
 
@@ -481,7 +480,16 @@ void FwtState::acceptHashResponse(bmcl::MemReader* src)
     }
 
     send(_handler, FirmwareDownloadFinishedEventAtom::value);
-    send(_exc, SetProjectAtom::value, ProjectUpdate(_project.get(), _device.get(), _cache.get()));
+    auto update = ProjectUpdate::fromProjectAndName(_project.get(), _deviceName);
+    if (update.isErr()) {
+        //TODO: restart download
+        //TODO: print errors
+        stopDownload();
+        return;
+    }
+
+    send(_exc, SetProjectAtom::value, update.unwrap());
+    _device = update.unwrap()->device();
     FWT_LOG("hash matches, no need to download");
     stopDownload();
 }

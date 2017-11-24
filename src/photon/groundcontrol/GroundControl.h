@@ -20,7 +20,7 @@
 
 namespace decode {
 class Project;
-struct Device;
+class Device;
 }
 
 namespace photon {
@@ -31,7 +31,7 @@ class GcFwtState;
 class GcTmState;
 class Model;
 struct PacketRequest;
-struct ProjectUpdate;
+class ProjectUpdate;
 
 struct SearchResult {
 public:
@@ -78,7 +78,7 @@ private:
     bool acceptPacket(bmcl::Bytes packet);
     void reportError(std::string&& msg);
 
-    void updateProject(const ProjectUpdate& update);
+    void updateProject(const Rc<const ProjectUpdate>& update);
 
     caf::actor _sink;
     caf::actor _handler;

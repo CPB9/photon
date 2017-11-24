@@ -20,7 +20,7 @@
 
 namespace decode {
 class Project;
-struct Device;
+class Device;
 }
 
 namespace photon {

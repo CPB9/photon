@@ -28,6 +28,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketResponse);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::StreamState*);
 
@@ -130,7 +131,7 @@ caf::behavior Exchange::make_behavior()
             (void)isEnabled;
             sendAllStreams(EnableLoggindAtom::value, isEnabled);
         },
-        [this](SetProjectAtom, const ProjectUpdate& update) {
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
             sendAllStreams(SetProjectAtom::value, update);
             send(_gc, SetProjectAtom::value, update);
         },

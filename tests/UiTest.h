@@ -48,9 +48,9 @@ private:
     caf::actor _stream;
     caf::actor _gc;
     caf::actor _testSub;
-    photongen::Validator* _validator;
     bool _widgetShown;
     uint16_t _param2Value;
+    photongen::Validator* _validator;
 
 };
 

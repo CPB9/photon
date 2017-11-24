@@ -27,6 +27,7 @@ using namespace photon;
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 
 class FwtTest;
 
@@ -279,7 +280,9 @@ TEST_F(FwtTest, setFirmware)
     decode::Diagnostics::Pointer diag = new decode::Diagnostics;
     auto p = decode::Project::decodeFromMemory(diag.get(), PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
     ASSERT_TRUE(p.isOk());
-    caf::anon_send(_gc, SetProjectAtom::value, ProjectUpdate(p.unwrap().get(), p.unwrap()->master(), new ValueInfoCache(p.unwrap()->package())));
+    auto u = ProjectUpdate::fromProjectAndName(p.unwrap().get(), p.unwrap()->master()->name());
+    ASSERT_TRUE(u.isOk());
+    caf::anon_send(_gc, SetProjectAtom::value, u.unwrap());
     _testCfg.exitOnFirmwareDownload = true;
     run();
     EXPECT_TRUE(_testCfg.projectUpdated);

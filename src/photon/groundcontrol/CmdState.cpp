@@ -605,12 +605,12 @@ private:
 caf::behavior CmdState::make_behavior()
 {
     return caf::behavior{
-        [this](SetProjectAtom, const ProjectUpdate& update) {
-            _valueInfoCache = update.cache;
-            _model = new CmdModel(update.device.get(), update.cache.get(), bmcl::None);
-            _proj = update.project;
-            _dev = update.device;
-            _ifaces = new AllGcInterfaces(update.device.get(), update.cache.get());
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+            _valueInfoCache = update->cache();
+            _model = new CmdModel(update->device(), update->cache(), bmcl::None);
+            _proj = update->project();
+            _dev = update->device();
+            _ifaces = new AllGcInterfaces(update->device(), update->cache());
             if (!_ifaces->errors().empty()) {
                 BMCL_CRITICAL() << _ifaces->errors();
             }

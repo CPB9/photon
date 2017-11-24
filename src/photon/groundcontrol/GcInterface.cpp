@@ -108,10 +108,10 @@ static std::string wrapWithQuotes(bmcl::StringView str)
 
 bmcl::Option<std::string> findModule(const decode::Device* dev, bmcl::StringView name, Rc<const decode::Ast>* dest)
 {
-    auto it = std::find_if(dev->modules.begin(), dev->modules.end(), [name](const Rc<decode::Ast>& module) {
+    auto it = std::find_if(dev->modules().begin(), dev->modules().end(), [name](const decode::Ast* module) {
         return module->moduleInfo()->moduleName() == name;
     });
-    if (it == dev->modules.end()) {
+    if (it == dev->modules().end()) {
         return "failed to find module " + wrapWithQuotes(name);
     }
     *dest = *it;

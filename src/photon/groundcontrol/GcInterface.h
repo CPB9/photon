@@ -9,7 +9,7 @@
 #include <string>
 
 namespace decode {
-struct Device;
+class Device;
 class BuiltinType;
 class StructType;
 class VariantType;

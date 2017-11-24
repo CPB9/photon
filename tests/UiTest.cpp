@@ -132,17 +132,17 @@ caf::behavior UiActor::make_behavior()
         [this](LogAtom, const std::string& msg) {
             BMCL_DEBUG() << msg;
         },
-        [this](SetProjectAtom, const ProjectUpdate& update) {
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
             _widgetShown = true;
             _widget->resize(800, 600);
             _widget->showMaximized();
-            Rc<CmdModel> cmdNode = new CmdModel(update.device.get(), update.cache.get(), bmcl::None);
-            _widget->setRootCmdNode(update.cache.get(), cmdNode.get());
+            Rc<CmdModel> cmdNode = new CmdModel(update->device(), update->cache(), bmcl::None);
+            _widget->setRootCmdNode(update->cache(), cmdNode.get());
             _testSub = spawn(testSubActor);
             if (_validator) {
                 delete _validator;
             }
-            _validator = new photongen::Validator(update.project.get(), update.device.get());
+            _validator = new photongen::Validator(update->project(), update->device());
             request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param3"), _testSub);
         },

@@ -62,8 +62,8 @@ void TmState::on_exit()
 caf::behavior TmState::make_behavior()
 {
     return caf::behavior{
-        [this](SetProjectAtom, const ProjectUpdate& update) {
-            _model = new TmModel(update.device.get(), update.cache.get()); //TODO: reuse valueinfocache
+        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+            _model = new TmModel(update->device(), update->cache()); //TODO: reuse valueinfocache
             initTmNodes();
             Rc<NodeView> view = new NodeView(_model.get());
             send(_handler, SetTmViewAtom::value, view);

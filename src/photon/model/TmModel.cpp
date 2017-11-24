@@ -45,7 +45,7 @@ private:
 TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : NodeWithNamedChildren(parent)
 {
-    for (const Rc<decode::Ast>& ast : dev->modules) {
+    for (const decode::Ast* ast : dev->modules()) {
         if (ast->component().isNone()) {
             continue;
         }

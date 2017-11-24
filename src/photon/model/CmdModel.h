@@ -12,7 +12,7 @@
 #include "photon/model/Node.h"
 
 namespace decode {
-struct Device;
+class Device;
 }
 
 namespace photon {
