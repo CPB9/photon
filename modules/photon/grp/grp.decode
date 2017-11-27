@@ -58,7 +58,7 @@ enum MemberState {
 
 component {
     parameters {
-        group: GrpId,
+        group: Option<GrpId>,
         members: &[UavId; 10],
         leader: Option<UavId>,
         state: MemberState,
