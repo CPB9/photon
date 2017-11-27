@@ -69,7 +69,7 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self)
         },
         [](const NumberedSub& sub, const bmcl::SharedBytes& value) {
             bmcl::MemReader reader(value.view());
-            photongen::test::Msg0 msg;
+            photongen::test::MsgP1to4 msg;
             photon::CoderState state;
             if (photongenDeserialize(&msg, &reader, &state)) {
                 //BMCL_DEBUG() << "test msg 0 part 0: " << msg.part0;
@@ -161,7 +161,7 @@ caf::behavior UiActor::make_behavior()
             _validator = new photongen::Validator(update->project(), update->device());
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, NumberedSub{photongen::test::Msg0::COMP_NUM, photongen::test::Msg0::MSG_NUM}, _testSub);
+            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, NumberedSub{photongen::test::MsgP1to4::COMP_NUM, photongen::test::MsgP1to4::MSG_NUM}, _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());
