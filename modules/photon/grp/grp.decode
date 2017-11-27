@@ -70,9 +70,9 @@ component {
     }
 
     statuses {
-        [all, 0, true]: {group, leader, members, state, term, commit, lastLogIdx, lastLogTerm, votedFor},
-        [leader, 1, true]: {group, leader},
-        [members, 2, true]: {group, leader, members},
+        [all, 0, true]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members},
+        [leader, 1, true]: {group, leader, term},
+        [members, 2, true]: {group, leader, term, members},
         [elect, 3, true]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
     }
 
