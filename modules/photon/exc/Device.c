@@ -77,9 +77,9 @@ static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
 {
     while (begin < end) {
         if (*begin == value) return begin; begin++;
-        if (*begin == value) return begin; begin++;
-        if (*begin == value) return begin; begin++;
-        if (*begin == value) return begin; begin++;
+        //if (*begin == value) return begin; begin++;
+        //if (*begin == value) return begin; begin++;
+        //if (*begin == value) return begin; begin++;
     }
     return end;
 }
