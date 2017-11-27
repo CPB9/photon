@@ -30,17 +30,19 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NodeView::Pointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NodeViewUpdater::Pointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::TmParamUpdate);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 namespace photon {
 
-TmState::Sub::Sub(const BuiltinValueNode* node, const std::string& path,const caf::actor& dest)
+TmState::NamedSub::NamedSub(const BuiltinValueNode* node, const std::string& path,const caf::actor& dest)
     : node(node)
     , path(path)
     , actor(dest)
 {
 }
 
-TmState::Sub::~Sub()
+TmState::NamedSub::~NamedSub()
 {
 }
 
@@ -79,7 +81,10 @@ caf::behavior TmState::make_behavior()
             }
             pushTmUpdates();
         },
-        [this](SubscribeTmAtom, const std::string& path, const caf::actor& dest) {
+        [this](SubscribeNumberedTmAtom, const NumberedSub& sub, const caf::actor& dest) {
+            return subscribeTm(sub, dest);
+        },
+        [this](SubscribeNamedTmAtom, const std::string& path, const caf::actor& dest) {
             return subscribeTm(path, dest);
         },
         [this](StartAtom) {
@@ -106,7 +111,14 @@ bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
     if (!builtinNode) {
         return false;
     }
-    _subscriptions.emplace_back(builtinNode, path, dest);
+    _namedSubs.emplace_back(builtinNode, path, dest);
+    return true;
+}
+
+bool TmState::subscribeTm(const NumberedSub& sub, const caf::actor& dest)
+{
+    auto pair = _numberedSubs.emplace(sub, std::vector<caf::actor>());
+    pair.first->second.emplace_back(dest);
     return true;
 }
 
@@ -136,7 +148,7 @@ void TmState::pushTmUpdates()
         send(_handler, UpdateTmParams::value, TmParamUpdate(orientation));
     }
     send(_handler, UpdateTmViewAtom::value, updater);
-    for (const Sub& sub : _subscriptions) {
+    for (const NamedSub& sub : _namedSubs) {
         send(sub.actor, sub.node->value(), sub.path);
     }
     _updateCount++;
@@ -214,8 +226,16 @@ void TmState::acceptData(bmcl::Bytes packet)
             //TODO: report error
             return;
         }
-
-        _model->acceptTmMsg(compNum, msgNum, bmcl::Bytes(msg.current(), msg.sizeLeft()));
+        bmcl::Bytes view(msg.current(), msg.sizeLeft());
+        NumberedSub sub{compNum, msgNum};
+        auto it = _numberedSubs.find(sub);
+        if (it != _numberedSubs.end()) {
+            bmcl::SharedBytes data = bmcl::SharedBytes::create(view);
+            for (const caf::actor& actor : it->second) {
+                send(actor, sub, data);
+            }
+        }
+        _model->acceptTmMsg(compNum, msgNum, view);
     }
 }
 }

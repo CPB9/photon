@@ -24,18 +24,41 @@ class BuiltinValueNode;
 template <typename T>
 class NumericValueNode;
 
+struct NumberedSub {
+    uint64_t compNum;
+    uint64_t msgNum;
+
+    bool operator==(const NumberedSub& other) const
+    {
+        return compNum == other.compNum && msgNum == other.msgNum;
+    }
+};
+
+struct NumberedSubHash
+{
+    std::size_t operator()(const NumberedSub& sub) const noexcept
+    {
+        std::size_t h1 = std::hash<uint64_t>{}(sub.compNum);
+        std::size_t h2 = std::hash<uint64_t>{}(sub.msgNum);
+        return h1 ^ (h2 << 1); // or use boost::hash_combine (see Discussion)
+    }
+};
+
 class TmState : public caf::event_based_actor {
 public:
+
     TmState(caf::actor_config& cfg, const caf::actor& handler);
     ~TmState();
 
     caf::behavior make_behavior() override;
     void on_exit() override;
 
+    static std::size_t hash(const NumberedSub& sub);
+
 private:
-    struct Sub {
-        Sub(const BuiltinValueNode* node, const std::string& path, const caf::actor& dest);
-        ~Sub();
+    struct NamedSub {
+        NamedSub(const BuiltinValueNode* node, const std::string& path, const caf::actor& dest);
+        ~NamedSub();
 
         Rc<const BuiltinValueNode> node;
         std::string path;
@@ -50,6 +73,7 @@ private:
     template <typename T>
     void updateParam(const Rc<NumericValueNode<T>>& src, T* dest, T defaultValue = 0);
     bool subscribeTm(const std::string& path, const caf::actor& dest);
+    bool subscribeTm(const NumberedSub& sub, const caf::actor& dest);
 
     Rc<TmModel> _model;
     Rc<NumericValueNode<double>> _latNode;
@@ -63,7 +87,8 @@ private:
     Rc<NumericValueNode<double>> _velZNode;
     caf::actor _handler;
     TmFeatures _features;
-    std::vector<Sub> _subscriptions;
+    std::vector<NamedSub> _namedSubs;
+    std::unordered_map<NumberedSub, std::vector<caf::actor>, NumberedSubHash> _numberedSubs;
     uint64_t _updateCount;
 };
 }
