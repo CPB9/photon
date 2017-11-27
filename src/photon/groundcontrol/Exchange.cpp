@@ -76,7 +76,7 @@ caf::behavior Exchange::make_behavior()
             _dataReceived = true;
             handlePayload(data.view());
         },
-        [this](CheckQueueAtom, StreamType type, std::size_t id) {
+        [this](CheckQueueAtom, StreamType type, uint16_t id) {
             StreamState* state;
             switch (type) {
             case StreamType::Firmware:
@@ -92,7 +92,11 @@ caf::behavior Exchange::make_behavior()
                 state = &_userStream;
                 break;
             }
-            if (id != state->checkId) {
+            if (state->queue.empty()) {
+                return;
+            }
+            QueuedPacket& queuedPacket = state->queue[0];
+            if (queuedPacket.counter != id) {
                 return;
             }
             checkQueue(state);
@@ -401,8 +405,7 @@ void Exchange::checkQueue(StreamState* state)
     queuedPacket.counter = state->currentReliableUplinkCounter;
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter);
     send(_sink, SendDataAtom::value, packet);
-    state->checkId++;
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->checkId);
+    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->currentReliableUplinkCounter);
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state)
@@ -420,8 +423,7 @@ caf::response_promise Exchange::queueReliablePacket(const PacketRequest& packet,
     if (state->queue.size() == 1) {
         packAndSendFirstQueued(state);
     }
-    state->checkId++;
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->checkId);
+    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->currentReliableUplinkCounter);
     return promise;
 }
 

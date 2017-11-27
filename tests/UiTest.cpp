@@ -72,7 +72,7 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self)
             photongen::test::Msg0 msg;
             photon::CoderState state;
             if (photongenDeserialize(&msg, &reader, &state)) {
-                BMCL_DEBUG() << "test msg 0 part 0: " << msg.part0;
+                //BMCL_DEBUG() << "test msg 0 part 0: " << msg.part0;
             }
         }
     };

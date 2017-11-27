@@ -50,7 +50,6 @@ struct StreamState {
         , currentUnreliableUplinkCounter(0)
         , expectedReliableDownlinkCounter(0)
         , expectedUnreliableDownlinkCounter(0)
-        , checkId(0)
         , type(type)
     {
     }

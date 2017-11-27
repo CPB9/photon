@@ -104,6 +104,11 @@ void PhotonExcDevice_AcceptInput(PhotonExcDevice* self, const void* src, size_t 
         }
         canContinue = findSep(self);
     } while (canContinue);
+
+    //HACK
+    if (self->inRingBuf.size == self->inRingBuf.freeSpace) {
+        PhotonRingBuf_Clear(&self->inRingBuf);
+    }
 }
 
 static bool findSep(PhotonExcDevice* self)
