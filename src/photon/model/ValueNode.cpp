@@ -21,6 +21,7 @@
 
 #include <bmcl/MemWriter.h>
 #include <bmcl/MemReader.h>
+#include <bmcl/Logging.h>
 
 namespace bmcl {
 #ifdef BMCL_LITTLE_ENDIAN
@@ -492,7 +493,6 @@ bmcl::OptionPtr<ValueNode> StructValueNode::nodeWithName(bmcl::StringView name)
 VariantValueNode::VariantValueNode(const decode::VariantType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : ContainerValueNode(cache, parent)
     , _type(type)
-    , _currentId(0)
 {
 }
 
@@ -515,9 +515,11 @@ void VariantValueNode::collectUpdates(NodeViewUpdater* dest)
     }
 
     if (!_currentId.unwrap().hasChanged()) {
+        ContainerValueNode::collectUpdates(dest);
         return;
     }
 
+    dest->addValueUpdate(value(), this);
     dest->addShrinkUpdate(std::size_t(0), this);
     if (!_values.empty()) {
         NodeViewVec vec;
