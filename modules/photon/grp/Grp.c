@@ -8,27 +8,19 @@
 void clearState()
 {
     _photonGrp.commit = 0;
-    _photonGrp.group.type = PhotonOptionGrpGrpIdType_None;
     _photonGrp.lastLogIdx = 0;
     _photonGrp.lastLogTerm = 0;
-    _photonGrp.leader.type = PhotonOptionGrpUavIdType_None;
-    _photonGrp.members.size = 0;
-    _photonGrp.state = 0;
     _photonGrp.term = 0;
+    _photonGrp.members.size = 0;
+    _photonGrp.group.type = PhotonOptionGrpGrpIdType_None;
+    _photonGrp.leader.type = PhotonOptionGrpUavIdType_None;
+    _photonGrp.state = PhotonGrpMemberState_Follower;
     _photonGrp.votedFor.type = PhotonOptionGrpUavIdType_None;
 }
 
 void PhotonGrp_Init()
 {
-    _photonGrp.commit = 0;
-    _photonGrp.group.type = PhotonOptionGrpGrpIdType_None;
-    _photonGrp.lastLogIdx = 0;
-    _photonGrp.lastLogTerm = 0;
-    _photonGrp.leader.type = PhotonOptionGrpUavIdType_None;
-    _photonGrp.members.size = 0;
-    _photonGrp.state = PhotonGrpMemberState_Follower;
-    _photonGrp.term = 0;
-    _photonGrp.votedFor.type = PhotonOptionGrpUavIdType_None;
+    clearState();
 }
 
 void PhotonGrp_Tick()
