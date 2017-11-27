@@ -31,6 +31,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::StreamState*);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 
 namespace photon {
 
@@ -114,7 +115,10 @@ caf::behavior Exchange::make_behavior()
             _dataReceived = false;
             delayed_send(this, std::chrono::seconds(1), PingAtom::value);
         },
-        [this](SubscribeTmAtom atom, const std::string& path, const caf::actor& dest) {
+        [this](SubscribeNumberedTmAtom atom, const NumberedSub& sub, const caf::actor& dest) {
+            return delegate(_tmStream.client, atom, sub, dest);
+        },
+        [this](SubscribeNamedTmAtom atom, const std::string& path, const caf::actor& dest) {
             return delegate(_tmStream.client, atom, path, dest);
         },
         [this](StartAtom) {

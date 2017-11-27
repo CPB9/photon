@@ -17,6 +17,7 @@
 #include <photon/groundcontrol/TmParamUpdate.h>
 #include <photon/groundcontrol/Packet.h>
 #include <photon/groundcontrol/ProjectUpdate.h>
+#include <photon/groundcontrol/TmState.h>
 #include <photon/Interface.hpp>
 
 #include <bmcl/Logging.h>
@@ -35,6 +36,7 @@
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<photon::Value>);
 
 using namespace photon;
@@ -59,12 +61,26 @@ UiActor::~UiActor()
     }
 }
 
-caf::behavior testSubActor(caf::event_based_actor* self)
+caf::behavior testNamedSubActor(caf::event_based_actor* self)
 {
     return caf::behavior{
         [](const Value& value, const std::string& path) {
             BMCL_DEBUG() << path << ": " << value.asUnsigned();
+        },
+        [](const NumberedSub& sub, const bmcl::SharedBytes& value) {
+            bmcl::MemReader reader(value.view());
+            photongen::test::Msg0 msg;
+            photon::CoderState state;
+            if (photongenDeserialize(&msg, &reader, &state)) {
+                BMCL_DEBUG() << "test msg 0 part 0: " << msg.part0;
+            }
         }
+    };
+}
+
+caf::behavior testNumberedSubActor(caf::event_based_actor* self)
+{
+    return caf::behavior{
     };
 }
 
@@ -138,13 +154,14 @@ caf::behavior UiActor::make_behavior()
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(update->device(), update->cache(), bmcl::None);
             _widget->setRootCmdNode(update->cache(), cmdNode.get());
-            _testSub = spawn(testSubActor);
+            _testSub = spawn(testNamedSubActor);
             if (_validator) {
                 delete _validator;
             }
             _validator = new photongen::Validator(update->project(), update->device());
-            request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param2"), _testSub);
-            request(_gc, caf::infinite, SubscribeTmAtom::value, std::string("test.param3"), _testSub);
+            request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
+            request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
+            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, NumberedSub{photongen::test::Msg0::COMP_NUM, photongen::test::Msg0::MSG_NUM}, _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());

@@ -17,6 +17,7 @@
 #include "photon/groundcontrol/CmdState.h"
 #include "photon/groundcontrol/GcCmd.h"
 #include "photon/groundcontrol/ProjectUpdate.h"
+#include "photon/groundcontrol/TmState.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/Bytes.h>
@@ -32,6 +33,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::GcCmd);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<photon::Value>);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 
 namespace photon {
 
@@ -65,7 +67,10 @@ caf::behavior GroundControl::make_behavior()
         [this](SendGcCommandAtom atom, const GcCmd& cmd) {
             return delegate(_cmd, atom, cmd);
         },
-        [this](SubscribeTmAtom atom, const std::string& path, const caf::actor& dest) {
+        [this](SubscribeNumberedTmAtom atom, const NumberedSub& sub, const caf::actor& dest) {
+            return delegate(_exc, atom, sub, dest);
+        },
+        [this](SubscribeNamedTmAtom atom, const std::string& path, const caf::actor& dest) {
             return delegate(_exc, atom, path, dest);
         },
         [this](SendCustomCommandAtom atom, const std::string& compName, const std::string& cmdName, const std::vector<Value>& args) {

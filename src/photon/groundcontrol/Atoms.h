@@ -24,7 +24,8 @@ using SetTmViewAtom                       = caf::atom_constant<caf::atom("settmv
 using UpdateTmViewAtom                    = caf::atom_constant<caf::atom("updtmviw")>;
 using UpdateTmParams                      = caf::atom_constant<caf::atom("updtmprm")>;
 using PushTmUpdatesAtom                   = caf::atom_constant<caf::atom("pshtmupd")>;
-using SubscribeTmAtom                     = caf::atom_constant<caf::atom("subscrtm")>;
+using SubscribeNamedTmAtom                = caf::atom_constant<caf::atom("subsnatm")>;
+using SubscribeNumberedTmAtom             = caf::atom_constant<caf::atom("subsnutm")>;
 using SendCustomCommandAtom               = caf::atom_constant<caf::atom("sendccmd")>;
 using PingAtom                            = caf::atom_constant<caf::atom("pingatom")>;
 
