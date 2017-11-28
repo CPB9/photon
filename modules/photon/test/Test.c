@@ -16,6 +16,8 @@ void PhotonTest_Init()
     _photonTest.param11 = 11;
     _photonTest.param12 = 'a';
     _photonTest.dynArrayParam.size = 10;
+    _photonTest.optionParam.type = PhotonOptionTestParamStructType_Some;
+    _photonTest.optionVaruintParam.type = PhotonOptionVaruintType_Some;
     for (size_t i = 0; i < 10; i++) {
         _photonTest.dynArrayParam.data[i].parama = i;
         _photonTest.dynArrayParam.data[i].paramb = i;

@@ -61,6 +61,8 @@ UiActor::~UiActor()
     }
 }
 
+using TestMsg = photongen::test::MsgOpParam;
+
 caf::behavior testNamedSubActor(caf::event_based_actor* self)
 {
     return caf::behavior{
@@ -69,11 +71,13 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self)
         },
         [](const NumberedSub& sub, const bmcl::SharedBytes& value) {
             bmcl::MemReader reader(value.view());
-            photongen::test::MsgP1to4 msg;
+            TestMsg msg;
             photon::CoderState state;
-            if (sub.id() == photongen::test::MsgP1to4::id()) {
+            if (sub.id() == TestMsg::id()) {
                 if (photongenDeserialize(&msg, &reader, &state)) {
-                    BMCL_DEBUG() << "test msg 0 part 0: " << msg.param1;
+                    BMCL_DEBUG() << "test msg param1: " << msg.param1;
+                    BMCL_DEBUG() << "test msg optionParam.isSome(): " << msg.optionParam.isSome();
+                    BMCL_DEBUG() << "test msg optionVaruintParam.isSome(): " << msg.optionVaruintParam.isSome();
                 }
             }
         }
@@ -163,7 +167,7 @@ caf::behavior UiActor::make_behavior()
             _validator = new photongen::Validator(update->project(), update->device());
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, photongen::test::MsgP1to4::sub(), _testSub);
+            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, TestMsg::sub(), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             _widget->setRootTmNode(tmView.get());

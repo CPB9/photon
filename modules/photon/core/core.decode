@@ -1,8 +1,8 @@
 module core
 
 variant Option<T> {
-    Some(T),
     None,
+    Some(T),
 }
 
 enum Error {

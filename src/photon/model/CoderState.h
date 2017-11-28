@@ -23,7 +23,42 @@ public:
 private:
     std::string _error;
 };
+
+template <typename T>
+class VarBase {
+public:
+    VarBase(T value)
+        : _value(value)
+    {
+    }
+
+    VarBase()
+    {
+    }
+
+    T value() const
+    {
+        return _value;
+    }
+
+    T& value()
+    {
+        return _value;
+    }
+
+    operator T() const
+    {
+        return _value;
+    }
+
+private:
+    T _value;
+};
+
+using VarUint = VarBase<uint64_t>;
+using VarInt = VarBase<int64_t>;
 }
+
 
 template <typename T>
 bool photongenSerialize(const T& self, bmcl::Buffer* dest, photon::CoderState* state);
@@ -31,73 +66,111 @@ bool photongenSerialize(const T& self, bmcl::Buffer* dest, photon::CoderState* s
 template <typename T>
 bool photongenDeserialize(T* self, bmcl::MemReader* src, photon::CoderState* state);
 
-inline bool photongenSerialize(bool self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const photon::VarUint& self, bmcl::Buffer* dest, photon::CoderState* state)
+{
+    dest->writeVarUint(self);
+    return true;
+}
+
+template <>
+inline bool photongenDeserialize(photon::VarUint* self, bmcl::MemReader* src, photon::CoderState* state)
+{
+    return src->readVarUint(&self->value());
+}
+
+template <>
+inline bool photongenSerialize(const photon::VarInt& self, bmcl::Buffer* dest, photon::CoderState* state)
+{
+    dest->writeVarInt(self);
+    return true;
+}
+
+template <>
+inline bool photongenDeserialize(photon::VarInt* self, bmcl::MemReader* src, photon::CoderState* state)
+{
+    return src->readVarInt(&self->value());
+}
+
+template <>
+inline bool photongenSerialize(const bool& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeUint8(self);
     return true;
 }
 
-inline bool photongenSerialize(uint8_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const uint8_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeUint8(self);
     return true;
 }
 
-inline bool photongenSerialize(uint16_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const uint16_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeUint16Le(self);
     return true;
 }
 
-inline bool photongenSerialize(uint32_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const uint32_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeUint32Le(self);
     return true;
 }
 
-inline bool photongenSerialize(uint64_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const uint64_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeUint64Le(self);
     return true;
 }
 
-inline bool photongenSerialize(int8_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const int8_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeInt8(self);
     return true;
 }
 
-inline bool photongenSerialize(int16_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const int16_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeInt16Le(self);
     return true;
 }
 
-inline bool photongenSerialize(int32_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const int32_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeInt32Le(self);
     return true;
 }
 
-inline bool photongenSerialize(int64_t self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const int64_t& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeInt16Le(self);
     return true;
 }
 
-inline bool photongenSerialize(float self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const float& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeFloat32Le(self);
     return true;
 }
 
-inline bool photongenSerialize(double self, bmcl::Buffer* dest, photon::CoderState* state)
+template <>
+inline bool photongenSerialize(const double& self, bmcl::Buffer* dest, photon::CoderState* state)
 {
     dest->writeFloat64Le(self);
     return true;
 }
 
 
+template <>
 inline bool photongenDeserialize(bool* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 1) {
@@ -107,6 +180,7 @@ inline bool photongenDeserialize(bool* self, bmcl::MemReader* src, photon::Coder
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(uint8_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 1) {
@@ -116,6 +190,7 @@ inline bool photongenDeserialize(uint8_t* self, bmcl::MemReader* src, photon::Co
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(uint16_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 2) {
@@ -125,6 +200,7 @@ inline bool photongenDeserialize(uint16_t* self, bmcl::MemReader* src, photon::C
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(uint32_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 4) {
@@ -134,6 +210,7 @@ inline bool photongenDeserialize(uint32_t* self, bmcl::MemReader* src, photon::C
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(uint64_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 8) {
@@ -143,6 +220,7 @@ inline bool photongenDeserialize(uint64_t* self, bmcl::MemReader* src, photon::C
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(int8_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 1) {
@@ -152,6 +230,7 @@ inline bool photongenDeserialize(int8_t* self, bmcl::MemReader* src, photon::Cod
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(int16_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 2) {
@@ -161,6 +240,7 @@ inline bool photongenDeserialize(int16_t* self, bmcl::MemReader* src, photon::Co
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(int32_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 4) {
@@ -170,6 +250,7 @@ inline bool photongenDeserialize(int32_t* self, bmcl::MemReader* src, photon::Co
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(int64_t* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 8) {
@@ -179,6 +260,7 @@ inline bool photongenDeserialize(int64_t* self, bmcl::MemReader* src, photon::Co
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(float* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 4) {
@@ -188,6 +270,7 @@ inline bool photongenDeserialize(float* self, bmcl::MemReader* src, photon::Code
     return true;
 }
 
+template <>
 inline bool photongenDeserialize(double* self, bmcl::MemReader* src, photon::CoderState* state)
 {
     if (src->sizeLeft() < 8) {

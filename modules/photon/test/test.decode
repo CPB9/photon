@@ -132,6 +132,7 @@ component {
         #[ranges(default=12, min=0, max=20)]
         param12: char,
         optionParam: Option<Option<Option<ParamStruct>>>,
+        optionVaruintParam: Option<varuint>,
         genericParam: TestGeneric<u64, u16, Option<u32>, u8>,
         dynArrayParam: &[ParamStruct; 10],
         arrayParam: [[u16; 4]; 5],
@@ -144,7 +145,7 @@ component {
         [p5_8, 0, true]: {param5, param6, param7, param8},
         [p9_12, 0, true]: {param9, param10, param11, param12},
         [darr, 0, true]: {dynArrayParam},
-        [opParam, 0, true]: {optionParam},
+        [opParam, 0, true]: {param1, optionParam, optionVaruintParam},
         [arr_test, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
     }
 
