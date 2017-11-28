@@ -11,6 +11,7 @@
 #include "photon/Config.h"
 #include "photon/core/Rc.h"
 #include "photon/groundcontrol/TmFeatures.h"
+#include "photon/groundcontrol/NumberedSub.h"
 
 #include <bmcl/Fwd.h>
 
@@ -23,26 +24,6 @@ class BuiltinValueNode;
 
 template <typename T>
 class NumericValueNode;
-
-struct NumberedSub {
-    uint64_t compNum;
-    uint64_t msgNum;
-
-    bool operator==(const NumberedSub& other) const
-    {
-        return compNum == other.compNum && msgNum == other.msgNum;
-    }
-};
-
-struct NumberedSubHash
-{
-    std::size_t operator()(const NumberedSub& sub) const noexcept
-    {
-        std::size_t h1 = std::hash<uint64_t>{}(sub.compNum);
-        std::size_t h2 = std::hash<uint64_t>{}(sub.msgNum);
-        return h1 ^ (h2 << 1); // or use boost::hash_combine (see Discussion)
-    }
-};
 
 class TmState : public caf::event_based_actor {
 public:

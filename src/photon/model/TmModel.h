@@ -37,7 +37,7 @@ public:
     TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent = bmcl::None);
     ~TmModel();
 
-    void acceptTmMsg(uint64_t compNum, uint64_t msgNum, bmcl::Bytes payload);
+    void acceptTmMsg(uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
 
     bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override;
 
@@ -48,7 +48,7 @@ public:
     bmcl::StringView fieldName() const override;
 
 private:
-    decode::HashMap<uint64_t, Rc<StatusDecoder>> _decoders;
+    decode::HashMap<uint32_t, Rc<StatusDecoder>> _decoders;
     std::vector<Rc<ComponentParamsNode>> _nodes;
 };
 }

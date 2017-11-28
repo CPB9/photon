@@ -220,14 +220,23 @@ void TmState::acceptData(bmcl::Bytes packet)
             //TODO: report error
             return;
         }
+        if (compNum > std::numeric_limits<uint32_t>::max()) {
+            //TODO: report error
+            return;
+        }
 
         uint64_t msgNum;
         if (!msg.readVarUint(&msgNum)) {
             //TODO: report error
             return;
         }
+        if (msgNum > std::numeric_limits<uint32_t>::max()) {
+            //TODO: report error
+            return;
+        }
+
         bmcl::Bytes view(msg.current(), msg.sizeLeft());
-        NumberedSub sub{compNum, msgNum};
+        NumberedSub sub(compNum, msgNum);
         auto it = _numberedSubs.find(sub);
         if (it != _numberedSubs.end()) {
             bmcl::SharedBytes data = bmcl::SharedBytes::create(view);

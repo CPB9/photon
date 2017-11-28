@@ -88,7 +88,7 @@ void TmModel::collectUpdates(NodeViewUpdater* dest)
     collectUpdatesGeneric(_nodes, dest);
 }
 
-void  TmModel::acceptTmMsg(uint64_t compNum, uint64_t msgNum, bmcl::Bytes payload)
+void  TmModel::acceptTmMsg(uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload)
 {
     auto it = _decoders.find(compNum);
     if (it == _decoders.end()) {

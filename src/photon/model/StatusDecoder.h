@@ -68,9 +68,9 @@ public:
 
     ~StatusDecoder();
 
-    bool decode(uint64_t msgId, bmcl::Bytes payload);
+    bool decode(uint32_t msgId, bmcl::Bytes payload);
 
 private:
-    decode::HashMap<uint64_t, StatusMsgDecoder> _decoders;
+    decode::HashMap<uint32_t, StatusMsgDecoder> _decoders;
 };
 }

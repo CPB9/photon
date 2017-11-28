@@ -207,7 +207,7 @@ StatusDecoder::~StatusDecoder()
 {
 }
 
-bool StatusDecoder::decode(uint64_t msgId, bmcl::Bytes payload)
+bool StatusDecoder::decode(uint32_t msgId, bmcl::Bytes payload)
 {
     auto it = _decoders.find(msgId);
     if (it == _decoders.end()) {
