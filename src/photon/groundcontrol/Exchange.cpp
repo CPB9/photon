@@ -76,7 +76,7 @@ caf::behavior Exchange::make_behavior()
             _dataReceived = true;
             handlePayload(data.view());
         },
-        [this](CheckQueueAtom, StreamType type, uint16_t id) {
+        [this](CheckQueueAtom, StreamType type, std::size_t id) {
             StreamState* state;
             switch (type) {
             case StreamType::Firmware:
@@ -96,7 +96,7 @@ caf::behavior Exchange::make_behavior()
                 return;
             }
             QueuedPacket& queuedPacket = state->queue[0];
-            if (queuedPacket.counter != id) {
+            if (queuedPacket.checkId != id) {
                 return;
             }
             checkQueue(state);
@@ -334,8 +334,11 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
             reportError("recieved invalid counter correction");
             return false;
         }
-        reportError("recieved counter correction");
         uint16_t newCounter = reader.readUint16Le();
+        reportError("recieved counter correction: new(" + std::to_string(newCounter) + "), old(" + std::to_string(state->currentReliableUplinkCounter) + ")");
+        if (newCounter == state->currentReliableUplinkCounter) {
+            return true;
+        }
         state->currentReliableUplinkCounter = newCounter;
         checkQueue(state);
         return true;
@@ -371,6 +374,7 @@ bool Exchange::acceptPacket(const PacketHeader& header, bmcl::Bytes payload, Str
 
 bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType packetType, uint16_t counter)
 {
+    BMCL_DEBUG() << counter;
     uint8_t header[8 + 8 + 8 + 8 + 8 + 2 + 8];
     bmcl::MemWriter headerWriter(header, sizeof(header));
     headerWriter.writeVarUint(_selfAddress);
@@ -405,7 +409,7 @@ void Exchange::checkQueue(StreamState* state)
     queuedPacket.counter = state->currentReliableUplinkCounter;
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter);
     send(_sink, SendDataAtom::value, packet);
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->currentReliableUplinkCounter);
+    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, queuedPacket.checkId);
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state)
@@ -419,11 +423,13 @@ caf::response_promise Exchange::queueReliablePacket(const PacketRequest& packet,
 {
     auto time = std::chrono::steady_clock::now();
     auto promise = make_response_promise();
+    state->checkId++;
     state->queue.emplace_back(packet, state->currentReliableUplinkCounter, time, promise);
+    state->queue.back().checkId = state->checkId;
     if (state->queue.size() == 1) {
         packAndSendFirstQueued(state);
     }
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->currentReliableUplinkCounter);
+    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->queue.back().checkId);
     return promise;
 }
 
@@ -434,7 +440,7 @@ void Exchange::packAndSendFirstQueued(StreamState* state)
     }
 
     const QueuedPacket& queuedPacket = state->queue[0];
-    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter);
+    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, state->currentReliableUplinkCounter);
     send(_sink, SendDataAtom::value, packet);
 }
 

@@ -35,6 +35,7 @@ struct QueuedPacket {
         , counter(counter)
         , queueTime(time)
         , promise(promise)
+        , checkId(0)
     {
     }
 
@@ -42,6 +43,7 @@ struct QueuedPacket {
     uint16_t counter;
     TimePoint queueTime;
     caf::response_promise promise;
+    std::size_t checkId;
 };
 
 struct StreamState {
@@ -51,6 +53,7 @@ struct StreamState {
         , expectedReliableDownlinkCounter(0)
         , expectedUnreliableDownlinkCounter(0)
         , type(type)
+        , checkId(0)
     {
     }
 
@@ -59,9 +62,9 @@ struct StreamState {
     uint16_t currentUnreliableUplinkCounter;
     uint16_t expectedReliableDownlinkCounter;
     uint16_t expectedUnreliableDownlinkCounter;
-    std::size_t checkId;
     caf::actor client;
     StreamType type;
+    std::size_t checkId;
 };
 
 class Exchange : public caf::event_based_actor {

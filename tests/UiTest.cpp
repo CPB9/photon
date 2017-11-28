@@ -75,9 +75,9 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self)
             photon::CoderState state;
             if (sub.id() == TestMsg::id()) {
                 if (photongenDeserialize(&msg, &reader, &state)) {
-                    BMCL_DEBUG() << "test msg param1: " << msg.param1;
-                    BMCL_DEBUG() << "test msg optionParam.isSome(): " << msg.optionParam.isSome();
-                    BMCL_DEBUG() << "test msg optionVaruintParam.isSome(): " << msg.optionVaruintParam.isSome();
+                    //BMCL_DEBUG() << "test msg param1: " << msg.param1;
+                    //BMCL_DEBUG() << "test msg optionParam.isSome(): " << msg.optionParam.isSome();
+                    //BMCL_DEBUG() << "test msg optionVaruintParam.isSome(): " << msg.optionVaruintParam.isSome();
                 }
             }
         }

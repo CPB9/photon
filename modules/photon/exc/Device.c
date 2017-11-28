@@ -288,7 +288,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     case PhotonExcPacketType_Reliable:
         if (self->incomingHeader.counter != state->expectedReliableUplinkCounter) {
             queueReceipt(self, &self->incomingHeader, state, genCounterCorrectionReceiptPayload);
-            HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter");
+            HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter: expected(%" PRIu16 "), got(%" PRIu16 ")", state->expectedReliableUplinkCounter, self->incomingHeader.counter);
             return false;
         }
         if (handler(&self->incomingHeader, &payload, &results) != PhotonError_Ok) {
