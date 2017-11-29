@@ -904,7 +904,7 @@ void EnumValueNode::collectUpdates(NodeViewUpdater* dest)
         return;
     }
 
-    dest->addValueUpdate(Value::makeSigned(_currentId.unwrap().value()), this);
+    dest->addValueUpdate(value(), this);
 
     _currentId.unwrap().updateState();
 }
