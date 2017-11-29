@@ -13,8 +13,7 @@ photon_init_project(
     PHOTON_ROOT ${CMAKE_CURRENT_SOURCE_DIR}
     MODULE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/modules
     PROJECT ${CMAKE_CURRENT_SOURCE_DIR}/project.toml
-    DEVICES model1 model2
+    DEVICES master slave1
     ENABLE_STUB
 )
 
-#photon_link_device_test(model1 lib1 lib2 lib3...)

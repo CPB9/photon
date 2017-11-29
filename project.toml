@@ -1,6 +1,6 @@
 [project]
 name = "default"
-master = "model1"
+master = "master"
 common_modules = ["core", "tm", "fwt", "exc", "clk", "nav", "pvu", "grp"]
 mcc_id = 0
 module_dirs = [
@@ -17,13 +17,14 @@ module_dirs = [
 ]
 
 [[devices]]
-name = "model1"
+name = "master"
 id = 1
-cmd_targets = ["model2"]
-tm_sources = ["model2"]
+cmd_targets = ["slave1", "master"]
+tm_sources = ["slave1"]
 modules = ["test", "fl"]
 
 [[devices]]
-name = "model2"
+name = "slave1"
+tm_sources = ["master"]
 id = 2
 
