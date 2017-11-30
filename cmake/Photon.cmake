@@ -81,15 +81,10 @@ macro(photon_init dir)
     bmcl_add_dep_gtest(${_PHOTON_DIR}/thirdparty/gtest)
     bmcl_add_dep_tclap(${_PHOTON_DIR}/thirdparty/decode/thirdparty/tclap)
     bmcl_add_dep_caf(${_PHOTON_DIR}/thirdparty/caf)
+    bmcl_add_dep_asio(${_PHOTON_DIR}/thirdparty/asio)
 
     add_subdirectory(${_PHOTON_DIR}/thirdparty/decode EXCLUDE_FROM_ALL)
     add_subdirectory(${_PHOTON_DIR}/thirdparty/dtacan EXCLUDE_FROM_ALL)
-
-    if (NOT ASIO_INCLUDED)
-        add_subdirectory(${_PHOTON_DIR}/thirdparty/asio EXCLUDE_FROM_ALL)
-        target_compile_options(asio PRIVATE -w)
-    endif()
-
 
     set(PHOTON_GROUNDCONTROL_SRC
         ${_PHOTON_DIR}/src/photon/groundcontrol/AllowUnsafeMessageType.h
