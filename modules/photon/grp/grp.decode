@@ -7,6 +7,7 @@ type TermId = varuint;
 type GrpId = varuint;
 type EntryId = varuint;
 type Index = varuint;
+type Time = varuint;
 
 struct ReqVoteRep {
     term: TermId,
@@ -55,6 +56,11 @@ enum MemberState {
     Follower = 2,
 }
 
+struct Timeouts {
+    ping: Time,
+    election: Time,
+    election_rand: Time,
+}
 
 component {
     parameters {
@@ -65,12 +71,14 @@ component {
         term: TermId,
         commit: Index,
         lastLogIdx: Index,
-        lastLogTerm: TermId
+        lastLogTerm: TermId,
         votedFor: Option<UavId>,
+        timeouts: Timeouts,
+        timeout_elapsed: Time
     }
 
     statuses {
-        [all, 0, true]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members},
+        [all, 0, true]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members, timeout_elapsed, timeouts},
         [leader, 1, true]: {group, leader, term},
         [members, 2, true]: {group, leader, term, members},
         [elect, 3, true]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
