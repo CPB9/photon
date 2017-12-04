@@ -16,6 +16,10 @@ void clearState()
     _photonGrp.leader.type = PhotonOptionGrpUavIdType_None;
     _photonGrp.state = PhotonGrpMemberState_Follower;
     _photonGrp.votedFor.type = PhotonOptionGrpUavIdType_None;
+    _photonGrp.timeouts.ping = 0;
+    _photonGrp.timeouts.election = 0;
+    _photonGrp.timeouts.election_rand = 0;
+    _photonGrp.timeout_elapsed = 0;
 }
 
 void PhotonGrp_Init()
