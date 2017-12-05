@@ -91,7 +91,6 @@ component {
     }
 
     commands {
-        fn setGroupAddress(address: varuint)
         fn setTimeouts(group: GrpId, ping: Time, lost: varuint)
         fn createGroup(group: GrpId, members: &[UavId; 10])
         fn deleteGroup(group: GrpId)

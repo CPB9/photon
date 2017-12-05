@@ -31,12 +31,6 @@ void PhotonGrp_Tick()
 {
 }
 
-PhotonError PhotonGrp_SetGroupAddress(uint64_t address)
-{
-    PHOTON_INFO("SetGroupAddress (%" PRIu64 ")", address);
-    return PhotonError_Ok;
-}
-
 PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 {
     if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None || _photonGrp.group.data.someOptionGrpGrpId._1 != group)
