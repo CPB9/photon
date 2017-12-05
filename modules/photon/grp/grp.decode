@@ -97,7 +97,7 @@ component {
         fn addMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn removeMember(group: GrpId, member: UavId) -> ReqCfgRep
 
-        fn reqVote(term: TermId, lastLogIdx: Index, lastLogTerm: TermId) -> ReqVoteRep
-        fn reqAppendEntry(term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10]) -> ReqAppendEntryRep
+        fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId) -> ReqVoteRep
+        fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10]) -> ReqAppendEntryRep
     }
 }
