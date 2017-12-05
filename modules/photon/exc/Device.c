@@ -17,6 +17,7 @@
 #include "photon/clk/Clk.Component.h"
 #include "photon/exc/Exc.Constants.h"
 #include "photon/exc/Exc.Component.h"
+#include "photon/grp/Grp.Component.h"
 
 #include <string.h>
 
@@ -241,13 +242,22 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid stream direction");
         return true;
     }
+
     if (self->incomingHeader.srcAddress != self->address) {
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid src address");
         return true;
     }
+
     if (self->incomingHeader.destAddress != PhotonExc_SelfAddress()) {
+#ifdef PHOTON_HAS_MODULE_GRP
+        if (!(_photonGrp.group.type == PhotonOptionGrpGrpIdType_Some && _photonGrp.group.data.someOptionGrpGrpId._1 == PhotonExc_SelfAddress())) {
+           HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address");
+           return true;
+        }
+#else
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address");
         return true;
+#endif
     }
     PhotonExcStreamState* state;
     PhotonExcStreamHandler handler;
