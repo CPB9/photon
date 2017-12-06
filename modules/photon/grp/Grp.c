@@ -43,7 +43,7 @@ PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 
     _photonGrp.timeouts.ping = ping;
     _photonGrp.timeouts.election = ping*lost;
-    PHOTON_INFO("PhotonGrp_SetTimeouts ping(%" PRIu64 "), lost(" PRIu64 ")", ping, lost);
+    PHOTON_INFO("SetTimeouts: group(%" PRIu64 "), ping(%" PRIu64 "), lost(" PRIu64 ")", group, ping, lost);
     return PhotonError_Ok;
 }
 
@@ -101,24 +101,42 @@ PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReq
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm, PhotonGrpReqVoteRep* rv)
+PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
-    PHOTON_INFO("ReqVote: term(%" PRIu64 "), lastLogIdx(%" PRIu64 "), lastLogTerm(%" PRIu64 ")", term, lastLogIdx, lastLogTerm);
+    PHOTON_INFO("ReqVote: group(%" PRIu64 "), term(%" PRIu64 "), lastLogIdx(%" PRIu64 "), lastLogTerm(%" PRIu64 ")", group, term, lastLogIdx, lastLogTerm);
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries, PhotonGrpReqAppendEntryRep* rv)
+PhotonError PhotonGrp_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
-    PHOTON_INFO("ReqAppendEntry: term(%" PRIu64 "), prevLogIdx(%" PRIu64 "), prevLogTerm(%" PRIu64 "), leaderCommit(%" PRIu64 ")", term, prevLogIdx, prevLogTerm, leaderCommit);
+    PHOTON_INFO("ReqAppendEntry: group(%" PRIu64 "), term(%" PRIu64 "), prevLogIdx(%" PRIu64 "), prevLogTerm(%" PRIu64 "), leaderCommit(%" PRIu64 ")", group, term, prevLogIdx, prevLogTerm, leaderCommit);
     return PhotonError_Ok;
 }
 
+
+PhotonError PhotonGrp_ReqVoteRep(uint64_t group, uint64_t term, bool vote)
+{
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+
+    PHOTON_INFO("ReqVoteRep: group(%" PRIu64 "), term(%" PRIu64 "), lastLogIdx(%" PRIu64 "), lastLogTerm(%" PRIu64 ")", group, term, vote);
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonGrp_ReqAppendEntryRep(uint64_t group, uint64_t term, bool success, uint64_t currentIdx, uint64_t firstIdx)
+{
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+
+    PHOTON_INFO("ReqAppendEntryRep: group(%" PRIu64 "), term(%" PRIu64 "), success(%" PRIu64 "), currentIdx(%" PRIu64 "), firstIdx(%" PRIu64 ")", group, term, success, currentIdx, firstIdx);
+    return PhotonError_Ok;
+}
 
 #endif
 

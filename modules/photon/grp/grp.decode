@@ -9,11 +9,6 @@ type EntryId = varuint;
 type Index = varuint;
 type Time = varuint;
 
-struct ReqVoteRep {
-    term: TermId,
-    vote: Option<bool>
-}
-
 enum EntryKind {
     Normal = 1,
     AddNonVotingNode = 2,
@@ -27,13 +22,6 @@ struct LogEntry {
     entryId: EntryId,
     kind: EntryKind,
     node: UavId,
-}
-
-struct ReqAppendEntryRep {
-    term: TermId,
-    success: bool,
-    currentIdx: Index,
-    firstIdx: Index
 }
 
 enum ReqErr {
@@ -97,7 +85,9 @@ component {
         fn addMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn removeMember(group: GrpId, member: UavId) -> ReqCfgRep
 
-        fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId) -> ReqVoteRep
-        fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10]) -> ReqAppendEntryRep
+        fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
+        fn reqVoteRep(group: GrpId, term: TermId, vote: bool)
+        fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10])
+        fn reqAppendEntryRep(group: GrpId, term: TermId, success: bool, currentIdx: Index, firstIdx: Index)
     }
 }
