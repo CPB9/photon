@@ -5,6 +5,11 @@
 
 #ifdef PHOTON_STUB
 
+bool isSameGroup(uint64_t group)
+{
+    return (_photonGrp.group.type != PhotonOptionGrpGrpIdType_None && _photonGrp.group.data.someOptionGrpGrpId._1 == group);
+}
+
 void clearState()
 {
     _photonGrp.commit = 0;
@@ -33,8 +38,9 @@ void PhotonGrp_Tick()
 
 PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 {
-    if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None || _photonGrp.group.data.someOptionGrpGrpId._1 != group)
+    if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
+
     _photonGrp.timeouts.ping = ping;
     _photonGrp.timeouts.election = ping*lost;
     PHOTON_INFO("PhotonGrp_SetTimeouts ping(%" PRIu64 "), lost(" PRIu64 ")", ping, lost);
@@ -43,6 +49,9 @@ PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 
 PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members)
 {
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+ 
     clearState();
     _photonGrp.group.type = PhotonOptionGrpGrpIdType_Some;
     _photonGrp.group.data.someOptionGrpGrpId._1 = group;
@@ -59,6 +68,9 @@ PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSiz
 
 PhotonError PhotonGrp_DeleteGroup(uint64_t group)
 {
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+
     PHOTON_INFO("DeleteGroup: group(%" PRIu64 ")", group);
     clearState();
     return PhotonError_Ok;
@@ -66,8 +78,9 @@ PhotonError PhotonGrp_DeleteGroup(uint64_t group)
 
 PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
-    if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None || _photonGrp.group.data.someOptionGrpGrpId._1 != group)
+    if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
+
     if (_photonGrp.members.size >= sizeof(_photonGrp.members.data)/sizeof(_photonGrp.members.data[0]))
         return PhotonError_InvalidSize;
     _photonGrp.members.data[_photonGrp.members.size] = member;
@@ -78,8 +91,9 @@ PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfg
 
 PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
-    if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None || _photonGrp.group.data.someOptionGrpGrpId._1 != group)
+    if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
+
     if (_photonGrp.members.size == 0)
         return PhotonError_InvalidSize;
     _photonGrp.members.size--;
@@ -87,14 +101,20 @@ PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReq
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqVote(uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm, PhotonGrpReqVoteRep* rv)
+PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm, PhotonGrpReqVoteRep* rv)
 {
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+
     PHOTON_INFO("ReqVote: term(%" PRIu64 "), lastLogIdx(%" PRIu64 "), lastLogTerm(%" PRIu64 ")", term, lastLogIdx, lastLogTerm);
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqAppendEntry(uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries, PhotonGrpReqAppendEntryRep* rv)
+PhotonError PhotonGrp_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries, PhotonGrpReqAppendEntryRep* rv)
 {
+    if (!isSameGroup(group))
+        return PhotonError_InvalidDeviceId;
+
     PHOTON_INFO("ReqAppendEntry: term(%" PRIu64 "), prevLogIdx(%" PRIu64 "), prevLogTerm(%" PRIu64 "), leaderCommit(%" PRIu64 ")", term, prevLogIdx, prevLogTerm, leaderCommit);
     return PhotonError_Ok;
 }
