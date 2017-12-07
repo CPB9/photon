@@ -21,7 +21,7 @@ public:
     using Pointer = Rc<NodeViewUpdater>;
     using ConstPointer = Rc<const NodeViewUpdater>;
 
-    NodeViewUpdater();
+    NodeViewUpdater(const Node* owner);
     ~NodeViewUpdater();
 
     void addValueUpdate(Value&& value, Node* parent);
@@ -33,5 +33,6 @@ public:
 
 private:
     std::vector<NodeViewUpdate> _updates;
+    Rc<const Node> _owner;
 };
 }

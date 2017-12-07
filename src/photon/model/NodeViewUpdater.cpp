@@ -12,7 +12,8 @@
 
 namespace photon {
 
-NodeViewUpdater::NodeViewUpdater()
+NodeViewUpdater::NodeViewUpdater(const Node* owner)
+    : _owner(owner)
 {
 }
 

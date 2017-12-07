@@ -50,5 +50,6 @@ public:
 private:
     decode::HashMap<uint32_t, Rc<StatusDecoder>> _decoders;
     std::vector<Rc<ComponentParamsNode>> _nodes;
+    Rc<const decode::Device> _device;
 };
 }

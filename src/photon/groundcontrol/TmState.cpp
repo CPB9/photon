@@ -65,7 +65,7 @@ caf::behavior TmState::make_behavior()
 {
     return caf::behavior{
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
-            _model = new TmModel(update->device(), update->cache()); //TODO: reuse valueinfocache
+            _model = new TmModel(update->device(), update->cache());
             initTmNodes();
             Rc<NodeView> view = new NodeView(_model.get());
             send(_handler, SetTmViewAtom::value, view);
@@ -124,7 +124,7 @@ bool TmState::subscribeTm(const NumberedSub& sub, const caf::actor& dest)
 
 void TmState::pushTmUpdates()
 {
-    Rc<NodeViewUpdater> updater = new NodeViewUpdater;
+    Rc<NodeViewUpdater> updater = new NodeViewUpdater(_model.get());
     _model->collectUpdates(updater.get());
     if (_features.hasPosition) {
         Position pos;
