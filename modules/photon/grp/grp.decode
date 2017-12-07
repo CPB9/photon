@@ -66,10 +66,11 @@ component {
     }
 
     statuses {
-        [all, 0, true]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members, timeout_elapsed, timeouts},
-        [leader, 1, true]: {group, leader, term},
-        [members, 2, true]: {group, leader, term, members},
-        [elect, 3, true]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
+        [all, 0, false]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members, timeout_elapsed, timeouts},
+        [leader, 1, false]: {group, leader, term},
+        [members, 2, false]: {group, leader, term, members},
+        [elect, 3, false]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
+        [nogroup, 4, true]: {group}
     }
 
     impl {
