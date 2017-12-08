@@ -70,7 +70,6 @@ component {
         [leader, 1, false]: {group, leader, term},
         [members, 2, false]: {group, leader, term, members},
         [elect, 3, false]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
-        [nogroup, 4, true]: {group}
     }
 
     impl {

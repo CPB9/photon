@@ -68,7 +68,6 @@ PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSiz
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_LEADER_ID, true);
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_MEMBERS_ID, true);
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_ELECT_ID, true);
-    PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_NOGROUP_ID, true);
 
     return PhotonError_Ok;
 }
@@ -82,10 +81,9 @@ PhotonError PhotonGrp_DeleteGroup(uint64_t group)
     clearState();
 
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_ALL_ID, false);
-    PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_LEADER_ID, false);
+    PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_LEADER_ID, true);
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_MEMBERS_ID, false);
     PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_ELECT_ID, false);
-    PhotonTm_SetStatusEnabled(PHOTON_GRP_COMPONENT_ID, PHOTON_GRP_STATUS_NOGROUP_ID, true);
 
     return PhotonError_Ok;
 }
