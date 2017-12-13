@@ -43,7 +43,7 @@ void Value::construct(const Value& other)
         *as<double>() = other.asDouble();
         return;
     case ValueKind::String:
-        *as<std::string>() = other.asString();
+        new (as<std::string>()) std::string(other.asString());
         return;
     case ValueKind::StringView:
         *as<bmcl::StringView>() = other.asStringView();
@@ -68,7 +68,7 @@ void Value::construct(Value&& other)
         *as<double>() = other.asDouble();
         return;
     case ValueKind::String:
-        *as<std::string>() = std::move(other.asString());
+        new (as<std::string>()) std::string(std::move(other.asString()));
         return;
     case ValueKind::StringView:
         *as<bmcl::StringView>() = other.asStringView();

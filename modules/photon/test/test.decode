@@ -136,8 +136,8 @@ component {
         genericParam: TestGeneric<u64, u16, Option<u32>, u8>,
         dynArrayParam: &[ParamStruct; 10],
         arrayParam: [[u16; 4]; 5],
-        fnParam: &Fn(&Fn(u32, u16) -> ParamStruct, [u16; 5], *mut *mut *const u8) -> u64
-
+        fnParam: &Fn(&Fn(u32, u16) -> ParamStruct, [u16; 5], *mut *mut *const u8) -> u64,
+        longString: &[char; 512],
     }
 
     statuses {
@@ -147,6 +147,7 @@ component {
         [darr, 0, true]: {dynArrayParam},
         [opParam, 0, true]: {param1, optionParam, optionVaruintParam},
         [arr_test, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
+        [str_test, 0, true]: {longString},
     }
 
     impl {
