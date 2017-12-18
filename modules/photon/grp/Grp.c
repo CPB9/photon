@@ -10,6 +10,54 @@ bool isSameGroup(uint64_t group)
     return (_photonGrp.group.type != PhotonOptionGrpGrpIdType_None && _photonGrp.group.data.someOptionGrpGrpId._1 == group);
 }
 
+bool hasGroup()
+{
+    return (_photonGrp.group.type != PhotonOptionGrpGrpIdType_None);
+}
+
+bool isMe(uint64_t member)
+{
+    return ;
+}
+
+bool isLeader()
+{
+    return (_photonGrp.group.type != PhotonOptionGrpGrpIdType_None
+         && _photonGrp.leader.type == PhotonOptionGrpUavIdType_Some
+         && isMe(_photonGrp.leader.data.someOptionGrpUavId._1));
+}
+
+void addMember(uint64_t member)
+{
+    for (uint64_t i = 0; i < _photonGrp.members.size; ++i)
+    {
+        if (_photonGrp.members.data[i] == member)
+            return;
+    }
+    _photonGrp.members.data[_photonGrp.members.size] = member;
+    ++_photonGrp.members.size;
+}
+
+void removeMember(uint64_t member)
+{
+    bool deleted = false;
+    for (uint64_t i = 0; i < _photonGrp.members.size; ++i)
+    {
+        if (deleted)
+        {
+            _photonGrp.members.data[i - 1] = _photonGrp.members.data[i];
+            continue;
+        }
+        if (_photonGrp.members.data[i] == member)
+        {
+            deleted = true;
+        }
+    }
+
+    if (deleted)
+        _photonGrp.members.size--;
+}
+
 void clearState()
 {
     _photonGrp.commit = 0;
@@ -49,7 +97,7 @@ PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 
 PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members)
 {
-    if (!isSameGroup(group))
+    if (hasGroup())
         return PhotonError_InvalidDeviceId;
  
     clearState();
@@ -93,24 +141,50 @@ PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfg
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
-    if (_photonGrp.members.size >= sizeof(_photonGrp.members.data)/sizeof(_photonGrp.members.data[0]))
-        return PhotonError_InvalidSize;
-    _photonGrp.members.data[_photonGrp.members.size] = member;
-    _photonGrp.members.size++;
+    addMember(member);
     PHOTON_INFO("AddMember: group(%" PRIu64 "), member(%" PRIu64 ")", group, member);
     return PhotonError_Ok;
 }
 
 PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
+    PHOTON_INFO("RemoveMember: group(%" PRIu64 "), member(%" PRIu64 ")", group, member);
+    
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
     if (_photonGrp.members.size == 0)
         return PhotonError_InvalidSize;
-    _photonGrp.members.size--;
-    PHOTON_INFO("RemoveMember: group(%" PRIu64 "), member(%" PRIu64 ")", group, member);
+
+    removeMember(member);
     return PhotonError_Ok;
+}
+
+PhotonError PhotonGrp_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* joinable, PhotonDynArrayOfGrpUavIdMaxSize10 const* members, PhotonGrpReqCfgRep* rv)
+{
+    PHOTON_INFO("JoinGroup: group(%" PRIu64 "), joinable(%" PRIu64 ")", group, joinable->size);
+    if (isSameGroup(group))
+    {
+        for(uint64_t i = 0; i < joinable->size; ++i)
+        {
+            addMember(joinable->data[i]);
+        }
+        return PhotonError_Ok;
+    }
+
+    clearState();
+    _photonGrp.group.type = PhotonOptionGrpGrpIdType_Some;
+    _photonGrp.group.data.someOptionGrpGrpId._1 = group;
+    _photonGrp.members.size = 0;
+
+    for (uint64_t i = 0; i < joinable->size; ++i)
+    {
+        addMember(joinable->data[i]);
+    }
+    for (uint64_t i = 0; i < members->size; ++i)
+    {
+        addMember(members->data[i]);
+    }
 }
 
 PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
