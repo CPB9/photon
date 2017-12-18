@@ -27,10 +27,15 @@ uint64_t PhotonExc_SelfAddress()
     return _photonExc.address;
 }
 
-PhotonError PhotonExc_SetAddress(uint64_t address)
+PhotonError PhotonExc_ExecCmd_SetAddress(uint64_t address)
 {
     _photonExc.address = address;
     return PhotonError_Ok;
+}
+
+void PhotonExc_SetAddress(uint64_t address)
+{
+    _photonExc.address = address;
 }
 
 PhotonExcClientError PhotonExc_RegisterGroundControl(uint64_t id, PhotonExcDevice** device)

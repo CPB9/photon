@@ -36,7 +36,7 @@ void PhotonGrp_Tick()
 {
 }
 
-PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
+PhotonError PhotonGrp_ExecCmd_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -47,11 +47,11 @@ PhotonError PhotonGrp_SetTimeouts(uint64_t group, uint64_t ping, uint64_t lost)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members)
+PhotonError PhotonGrp_ExecCmd_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
- 
+
     clearState();
     _photonGrp.group.type = PhotonOptionGrpGrpIdType_Some;
     _photonGrp.group.data.someOptionGrpGrpId._1 = group;
@@ -72,7 +72,7 @@ PhotonError PhotonGrp_CreateGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSiz
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_DeleteGroup(uint64_t group)
+PhotonError PhotonGrp_ExecCmd_DeleteGroup(uint64_t group)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -88,7 +88,7 @@ PhotonError PhotonGrp_DeleteGroup(uint64_t group)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
+PhotonError PhotonGrp_ExecCmd_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -101,7 +101,7 @@ PhotonError PhotonGrp_AddMember(uint64_t group, uint64_t member, PhotonGrpReqCfg
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
+PhotonError PhotonGrp_ExecCmd_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -113,7 +113,7 @@ PhotonError PhotonGrp_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReq
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
+PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -122,7 +122,7 @@ PhotonError PhotonGrp_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries)
+PhotonError PhotonGrp_ExecCmd_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -132,7 +132,7 @@ PhotonError PhotonGrp_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t pre
 }
 
 
-PhotonError PhotonGrp_ReqVoteRep(uint64_t group, uint64_t term, bool vote)
+PhotonError PhotonGrp_ExecCmd_ReqVoteRep(uint64_t group, uint64_t term, bool vote)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -141,7 +141,7 @@ PhotonError PhotonGrp_ReqVoteRep(uint64_t group, uint64_t term, bool vote)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ReqAppendEntryRep(uint64_t group, uint64_t term, bool success, uint64_t currentIdx, uint64_t firstIdx)
+PhotonError PhotonGrp_ExecCmd_ReqAppendEntryRep(uint64_t group, uint64_t term, bool success, uint64_t currentIdx, uint64_t firstIdx)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;

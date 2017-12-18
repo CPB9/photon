@@ -146,8 +146,12 @@ component {
         [p9_12, 0, true]: {param9, param10, param11, param12},
         [darr, 0, true]: {dynArrayParam},
         [opParam, 0, true]: {param1, optionParam, optionVaruintParam},
-        [arr_test, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
-        [str_test, 0, true]: {longString},
+        [arrTest, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
+        [strTest, 0, true]: {longString},
+    }
+
+    events {
+        [event1, true]: {param1: u8, param2: ParamStruct},
     }
 
     impl {

@@ -3,11 +3,13 @@
 #include "photon/core/Error.h"
 #include "photon/core/Reader.h"
 #include "photon/core/Writer.h"
+#include "photon/core/Logging.h"
 #include "photon/tm/MessageDesc.h"
 #include "photon/tm/StatusMessage.h"
 
-#include "photon/StatusEncoder.Private.h"
-#include "photon/Tm.Private.inc.c"
+#include "photon/StatusTable.inc.c"
+
+#define _PHOTON_FNAME "tm/Tm.c"
 
 #define TM_MSG_BEGIN &_messageDesc[0]
 #define TM_MSG_END &_messageDesc[_PHOTON_TM_MSG_COUNT]
@@ -15,6 +17,8 @@
 #define TM_MAX_ONCE_REQUESTS 16 // TODO: generate
 
 static uint16_t _onceRequests[TM_MAX_ONCE_REQUESTS];
+static uint8_t eventTmp[512];
+static PhotonWriter eventWriter;
 
 void PhotonTm_Init()
 {
@@ -27,10 +31,25 @@ void PhotonTm_Init()
     }
     _photonTm.allowedMsgCount = allowedMsgCount;
     _photonTm.onceRequestsNum = 0;
+    PhotonWriter_Init(&eventWriter, eventTmp, sizeof(eventTmp));
 }
 
 void PhotonTm_Tick()
 {
+}
+
+PhotonWriter* PhotonTm_BeginEventMsg(uint8_t compNum, uint8_t msgNum)
+{
+    eventWriter.current = eventWriter.start;
+    PhotonWriter_WriteU8(&eventWriter, compNum);
+    PhotonWriter_WriteU8(&eventWriter, msgNum);
+    return &eventWriter;
+}
+
+void PhotonTm_EndEventMsg()
+{
+    //TODO: implement
+    PHOTON_WARNING("Event messages not implemented");
 }
 
 static void selectNextMessage()
@@ -92,8 +111,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 
 bool PhotonTm_HasMessages() { return _photonTm.allowedMsgCount != 0; }
 
-PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum,
-    bool isEnabled)
+PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
 {
     for (PhotonTmMessageDesc* it = TM_MSG_BEGIN; it < TM_MSG_END; it++) {
         if (it->compNum == compNum && it->msgNum == msgNum) {
@@ -124,6 +142,16 @@ PhotonError PhotonTm_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
         }
     }
     return PhotonError_NoSuchStatusMsg;
+}
+
+PhotonError PhotonTm_ExecCmd_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
+{
+    return PhotonTm_RequestStatusOnce(compNum, msgNum);
+}
+
+PhotonError PhotonTm_ExecCmd_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
+{
+    return PhotonTm_SetStatusEnabled(compNum, msgNum, isEnabled);
 }
 
 /*
@@ -221,3 +249,4 @@ PhotonGtB8 PhotonGcMain_IsEventAllowed(PhotonBer messageId, PhotonBer eventId)
 }
 */
 
+#undef _PHOTON_FNAME

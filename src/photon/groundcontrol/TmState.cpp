@@ -35,7 +35,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 namespace photon {
 
-TmState::NamedSub::NamedSub(const BuiltinValueNode* node, const std::string& path,const caf::actor& dest)
+TmState::NamedSub::NamedSub(const ValueNode* node, const std::string& path,const caf::actor& dest)
     : node(node)
     , path(path)
     , actor(dest)
@@ -107,11 +107,11 @@ bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
         return false;
     }
     Node* node = rv.unwrap().get();
-    BuiltinValueNode* builtinNode = dynamic_cast<BuiltinValueNode*>(node);
-    if (!builtinNode) {
+    ValueNode* valueNode = dynamic_cast<ValueNode*>(node);
+    if (!valueNode) {
         return false;
     }
-    _namedSubs.emplace_back(builtinNode, path, dest);
+    _namedSubs.emplace_back(valueNode, path, dest);
     return true;
 }
 

@@ -37,13 +37,13 @@ void PhotonTest_Tick()
     }
 }
 
-PhotonError PhotonTest_SetParam1(uint8_t p)
+PhotonError PhotonTest_ExecCmd_SetParam1(uint8_t p)
 {
     _photonTest.param1 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam1AndReturn(uint8_t p, PhotonTestReturnStruct* rv)
+PhotonError PhotonTest_ExecCmd_SetParam1AndReturn(uint8_t p, PhotonTestReturnStruct* rv)
 {
     _photonTest.param1 = p;
     rv->param1 = p;
@@ -54,73 +54,73 @@ PhotonError PhotonTest_SetParam1AndReturn(uint8_t p, PhotonTestReturnStruct* rv)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam2(uint16_t p)
+PhotonError PhotonTest_ExecCmd_SetParam2(uint16_t p)
 {
     _photonTest.param2 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam3(uint32_t p)
+PhotonError PhotonTest_ExecCmd_SetParam3(uint32_t p)
 {
     _photonTest.param3 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam4(uint64_t p)
+PhotonError PhotonTest_ExecCmd_SetParam4(uint64_t p)
 {
     _photonTest.param4 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam5(int8_t p)
+PhotonError PhotonTest_ExecCmd_SetParam5(int8_t p)
 {
     _photonTest.param5 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam6(int16_t p)
+PhotonError PhotonTest_ExecCmd_SetParam6(int16_t p)
 {
     _photonTest.param6 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam7(int32_t p)
+PhotonError PhotonTest_ExecCmd_SetParam7(int32_t p)
 {
     _photonTest.param7 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam8(int64_t p)
+PhotonError PhotonTest_ExecCmd_SetParam8(int64_t p)
 {
     _photonTest.param8 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam9(const PhotonTestParamStruct* p)
+PhotonError PhotonTest_ExecCmd_SetParam9(const PhotonTestParamStruct* p)
 {
     _photonTest.param9 = *p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam10(float p)
+PhotonError PhotonTest_ExecCmd_SetParam10(float p)
 {
     _photonTest.param10 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam11(double p)
+PhotonError PhotonTest_ExecCmd_SetParam11(double p)
 {
     _photonTest.param11 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetParam12(char p)
+PhotonError PhotonTest_ExecCmd_SetParam12(char p)
 {
     _photonTest.param12 = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8, const PhotonTestParamStruct* p9, float p10, double p11, char p12)
+PhotonError PhotonTest_ExecCmd_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64_t p4, int8_t p5, int16_t p6, int32_t p7, int64_t p8, const PhotonTestParamStruct* p9, float p10, double p11, char p12)
 {
     _photonTest.param1 = p1;
     _photonTest.param2 = p2;
@@ -137,7 +137,7 @@ PhotonError PhotonTest_SetAllParams(uint8_t p1, uint16_t p2, uint32_t p3, uint64
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestCmdStruct* s)
+PhotonError PhotonTest_ExecCmd_SetAllParamsStruct(const PhotonTestCmdStruct* s)
 {
     _photonTest.param1 = s->param1;
     _photonTest.param2 = s->param2;
@@ -154,7 +154,7 @@ PhotonError PhotonTest_SetAllParamsStruct(const PhotonTestCmdStruct* s)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_IncAllParams()
+PhotonError PhotonTest_ExecCmd_IncAllParams()
 {
     _photonTest.param1++;
     _photonTest.param2++;
@@ -172,7 +172,7 @@ PhotonError PhotonTest_IncAllParams()
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_DecAllParams()
+PhotonError PhotonTest_ExecCmd_DecAllParams()
 {
     _photonTest.param1--;
     _photonTest.param2--;
@@ -190,37 +190,37 @@ PhotonError PhotonTest_DecAllParams()
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestU8(uint8_t p, uint8_t* rv)
+PhotonError PhotonTest_ExecCmd_TestU8(uint8_t p, uint8_t* rv)
 {
     *rv = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestI8(int8_t p, int8_t* rv)
+PhotonError PhotonTest_ExecCmd_TestI8(int8_t p, int8_t* rv)
 {
     *rv = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestStruct(const PhotonTestParamStruct* p, PhotonTestParamStruct* rv)
+PhotonError PhotonTest_ExecCmd_TestStruct(const PhotonTestParamStruct* p, PhotonTestParamStruct* rv)
 {
     *rv = *p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestVariant(const PhotonTestVariantParam* p, PhotonTestVariantParam* rv)
+PhotonError PhotonTest_ExecCmd_TestVariant(const PhotonTestVariantParam* p, PhotonTestVariantParam* rv)
 {
     *rv = *p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestEnum(PhotonTestEnumParam p, PhotonTestEnumParam* rv)
+PhotonError PhotonTest_ExecCmd_TestEnum(PhotonTestEnumParam p, PhotonTestEnumParam* rv)
 {
     *rv = p;
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestArray(uint16_t p[4], uint16_t rv[4])
+PhotonError PhotonTest_ExecCmd_TestArray(uint16_t p[4], uint16_t rv[4])
 {
     rv[0] = p[0];
     rv[1] = p[1];
@@ -229,7 +229,7 @@ PhotonError PhotonTest_TestArray(uint16_t p[4], uint16_t rv[4])
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestDynArray(const PhotonDynArrayOfU32MaxSize4* p, PhotonDynArrayOfU32MaxSize4* rv)
+PhotonError PhotonTest_ExecCmd_TestDynArray(const PhotonDynArrayOfU32MaxSize4* p, PhotonDynArrayOfU32MaxSize4* rv)
 {
     rv->data[0] = p->data[0];
     rv->data[1] = p->data[1];
@@ -239,7 +239,7 @@ PhotonError PhotonTest_TestDynArray(const PhotonDynArrayOfU32MaxSize4* p, Photon
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestString(const PhotonDynArrayOfCharMaxSize4* p, PhotonDynArrayOfCharMaxSize4* rv)
+PhotonError PhotonTest_ExecCmd_TestString(const PhotonDynArrayOfCharMaxSize4* p, PhotonDynArrayOfCharMaxSize4* rv)
 {
     rv->data[0] = p->data[0];
     rv->data[1] = p->data[1];
@@ -249,7 +249,7 @@ PhotonError PhotonTest_TestString(const PhotonDynArrayOfCharMaxSize4* p, PhotonD
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_TestOptionU64(const PhotonOptionU64* p, PhotonOptionU64* rv)
+PhotonError PhotonTest_ExecCmd_TestOptionU64(const PhotonOptionU64* p, PhotonOptionU64* rv)
 {
     *rv = *p;
     return PhotonError_Ok;

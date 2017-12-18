@@ -5,19 +5,19 @@
 
 //#ifdef PHOTON_STUB
 
-PhotonError PhotonFl_BeginFile(uint64_t id, uint64_t size)
+PhotonError PhotonFl_ExecCmd_BeginFile(uint64_t id, uint64_t size)
 {
     PHOTON_INFO("Begin file id(%" PRIu64 "), size(%" PRIu64 ")", id, size);
     return PhotonError_Ok;
 }
 
-PhotonError PhotonFl_WriteFile(uint64_t id, uint64_t offset, const PhotonDynArrayOfU8MaxSize128* chunk)
+PhotonError PhotonFl_ExecCmd_WriteFile(uint64_t id, uint64_t offset, const PhotonDynArrayOfU8MaxSize128* chunk)
 {
     PHOTON_INFO("Begin file id(%" PRIu64 "), offset(%" PRIu64 "), size(%" PRIu64 ")", id, offset, chunk->size);
     return PhotonError_Ok;
 }
 
-PhotonError PhotonFl_EndFile(uint64_t id, uint64_t size, PhotonFlChecksum* rv)
+PhotonError PhotonFl_ExecCmd_EndFile(uint64_t id, uint64_t size, PhotonFlChecksum* rv)
 {
     PHOTON_INFO("End file id(%" PRIu64 "), size(%" PRIu64 ")", id, size);
     return PhotonError_Ok;

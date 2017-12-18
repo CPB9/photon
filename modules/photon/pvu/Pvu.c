@@ -5,7 +5,6 @@
 #include "photon/core/Logging.h"
 #include "photon/pvu/Script.h"
 #include "photon/core/Assert.h"
-#include "photon/CmdDecoder.Private.h"
 
 #include <string.h>
 
@@ -26,7 +25,7 @@ PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReade
         uint8_t compNum = PhotonReader_ReadU8(src);
         uint8_t cmdNum = PhotonReader_ReadU8(src);
 
-        PHOTON_TRY(Photon_ExecCmd(compNum, cmdNum, src, results));
+        PHOTON_TRY(Photon_DeserializeAndExecCmd(compNum, cmdNum, src, results));
     }
 
     return PhotonError_Ok;
@@ -87,7 +86,7 @@ static void execCurrent()
         PhotonWriter writer;
         PhotonWriter_Init(&writer, _temp, sizeof(_temp));
 
-        PhotonError rv = Photon_ExecCmd(compNum, cmdNum, &current->data, &writer);
+        PhotonError rv = Photon_DeserializeAndExecCmd(compNum, cmdNum, &current->data, &writer);
         if (rv == PhotonError_WouldBlock) {
             return;
         }
@@ -157,7 +156,7 @@ PhotonError PhotonPvu_AddScript(PhotonReader* src)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonPvu_SleepFor(uint64_t delta)
+PhotonError PhotonPvu_ExecCmd_SleepFor(uint64_t delta)
 {
     if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
@@ -170,7 +169,7 @@ PhotonError PhotonPvu_SleepFor(uint64_t delta)
     return PhotonError_WouldBlock;
 }
 
-PhotonError PhotonPvu_SleepUntil(uint64_t time)
+PhotonError PhotonPvu_ExecCmd_SleepUntil(uint64_t time)
 {
     if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
