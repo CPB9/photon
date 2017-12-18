@@ -20,7 +20,7 @@
 namespace photon {
 
 class TmModel;
-class BuiltinValueNode;
+class ValueNode;
 
 template <typename T>
 class NumericValueNode;
@@ -38,10 +38,10 @@ public:
 
 private:
     struct NamedSub {
-        NamedSub(const BuiltinValueNode* node, const std::string& path, const caf::actor& dest);
+        NamedSub(const ValueNode* node, const std::string& path, const caf::actor& dest);
         ~NamedSub();
 
-        Rc<const BuiltinValueNode> node;
+        Rc<const ValueNode> node;
         std::string path;
         caf::actor actor;
     };

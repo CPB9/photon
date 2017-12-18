@@ -119,6 +119,7 @@ component {
         fn tick()
 
         fn selfAddress() -> varuint
+        fn setAddress(address: varuint)
         fn registerGroundControl(id: varuint, device: *mut *mut Device) -> ClientError
         fn registerUav(id: varuint, device: *mut *mut Device) -> ClientError
         fn removeClient(id: varuint) -> ClientError

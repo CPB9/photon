@@ -37,6 +37,10 @@ component {
         fn tick()
         fn collectMessages(dest: *mut Writer) -> Error
         fn hasMessages() -> bool
+        fn beginEventMsg(compNum: u8, msgNum: u8) -> *mut Writer
+        fn endEventMsg()
+        fn setStatusEnabled(compNum: u8, msgNum: u8, isEnabled: bool) -> Error
+        fn requestStatusOnce(compNum: u8, msgNum: u8) -> Error
     }
 
     commands {

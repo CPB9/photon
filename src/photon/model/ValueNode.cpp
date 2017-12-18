@@ -694,7 +694,7 @@ const decode::Type* StringValueNode::type() const
 
 void StringValueNode::collectUpdates(NodeViewUpdater* dest)
 {
-    if (_hasChanged) {
+    if ( _value.isSome() && _hasChanged) {
         dest->addValueUpdate(value(), this);
         _hasChanged = false;
     }
@@ -732,6 +732,7 @@ bool StringValueNode::decode(bmcl::MemReader* src)
     if (_value.isNone()) {
         _value.emplace();
     }
+    _hasChanged = true;
     _value->assign((const char*)src->current(), size);
     src->skip(size);
     return true;
@@ -758,19 +759,19 @@ ValueKind StringValueNode::valueKind() const
 bool StringValueNode::setValue(const Value& value)
 {
     if (value.kind() == ValueKind::String) {
-        _hasChanged = true;
         if (value.asString().size() > _type->maxSize()) {
             //TODO: report error
             return false;
         }
+        _hasChanged = true;
         _value.emplace(value.asString());
         return true;
     } else if (value.kind() == ValueKind::StringView) {
-        _hasChanged = true;
         if (value.asStringView().size() > _type->maxSize()) {
             //TODO: report error
             return false;
         }
+        _hasChanged = true;
         _value.emplace(value.asStringView().toStdString());
         return true;
     }

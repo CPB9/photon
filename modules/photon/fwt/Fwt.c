@@ -6,7 +6,7 @@
 #include "photon/core/Logging.h"
 #include "photon/fwt/AnswerType.h"
 #include "photon/fwt/CmdType.h"
-#include "photon/Package.Private.inc.c"
+#include "photon/Package.inc.c"
 
 #include <inttypes.h>
 
