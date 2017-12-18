@@ -11,7 +11,7 @@
 #include "decode/parser/Package.h"
 #include "decode/ast/AstVisitor.h"
 #include "decode/ast/Component.h"
-#include "decode/generator/StringBuilder.h"
+#include "decode/core/StringBuilder.h"
 #include "decode/core/Foreach.h"
 
 #include <bmcl/Logging.h>
@@ -232,7 +232,7 @@ public:
         if (pair.second) {
             decode::StringBuilder b;
             rv = buildTypeName(type, &b);
-            pair.first->second = std::move(b.result());
+            pair.first->second = b.view().toStdString();
             if (type->isGenericInstantiation()) {
                 _typeNameMap->emplace(type->asGenericInstantiation()->instantiatedType(), pair.first->second);
             }
