@@ -29,6 +29,7 @@ enum ReqErr {
     NodeUnknown = 2,
     OneVotingChangeOnly = 3,
     Unknown = 4,
+    GroupIncorrect = 5,
 }
 
 struct ReqCfgRep {
