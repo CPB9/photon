@@ -17,7 +17,7 @@ bool hasGroup()
 
 bool isMe(uint64_t member)
 {
-    return ;
+    return PhotonExc_SelfAddress() == member;
 }
 
 bool isLeader()
@@ -160,31 +160,24 @@ PhotonError PhotonGrp_ExecCmd_RemoveMember(uint64_t group, uint64_t member, Phot
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ExecCmd_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* joinable, PhotonDynArrayOfGrpUavIdMaxSize10 const* members, PhotonGrpReqCfgRep* rv)
+PhotonError PhotonGrp_ExecCmd_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members, PhotonGrpReqCfgRep* rv)
 {
-    PHOTON_INFO("JoinGroup: group(%" PRIu64 "), joinable(%" PRIu64 ")", group, joinable->size);
+    PHOTON_INFO("JoinGroup: group(%" PRIu64 "), members(%" PRIu64 ")", group, members->size);
+        
     if (isSameGroup(group))
-    {
-        for(uint64_t i = 0; i < joinable->size; ++i)
-        {
-            addMember(joinable->data[i]);
-        }
-        return PhotonError_Ok;
-    }
+        return PhotonError_InvalidDeviceId;
 
     clearState();
     _photonGrp.group.type = PhotonOptionGrpGrpIdType_Some;
     _photonGrp.group.data.someOptionGrpGrpId._1 = group;
     _photonGrp.members.size = 0;
-
-    for (uint64_t i = 0; i < joinable->size; ++i)
-    {
-        addMember(joinable->data[i]);
-    }
-    for (uint64_t i = 0; i < members->size; ++i)
+    
+    for(uint64_t i = 0; i < members->size; ++i)
     {
         addMember(members->data[i]);
     }
+    addMember(PhotonExc_SelfAddress());
+    return PhotonError_Ok;
 }
 
 PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
