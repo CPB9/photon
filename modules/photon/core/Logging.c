@@ -23,6 +23,9 @@
 #include <alloca.h>
 #endif
 
+static const char* deviceName = "";
+static size_t deviceNameSize = 0;
+
 static inline bool supportsColor()
 {
 #ifdef __unix__
@@ -30,6 +33,19 @@ static inline bool supportsColor()
 #endif
     return false;
 }
+
+void Photon_SetLogDeviceName(const char* name)
+{
+    if (name) {
+        deviceName = name;
+        deviceNameSize = strlen(name);
+    } else {
+        deviceName = 0;
+        deviceNameSize = 0;
+    }
+}
+
+//TODO: refact
 
 void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...)
 {
@@ -77,14 +93,22 @@ void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt,
     time_t t = time(NULL);
     strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", localtime(&t));
 
-    size_t alignSize = 30;
-    size_t sLen = strlen(fname);
-    size_t modLen = PHOTON_MAX(alignSize + 1, sLen + 1 + sizeof(lineNum) * 4 + 1);
+    size_t alignSize = 40;
+    size_t fnameLen = strlen(fname);
+    size_t devSize = 0;
+    if (deviceNameSize) {
+        devSize = deviceNameSize + 1;
+    }
+    size_t modLen = PHOTON_MAX(alignSize + 1, devSize + fnameLen + 1 + sizeof(lineNum) * 4 + 1);
     char* modStr = (char*)alloca(modLen);
-    char* fillEnd = modStr + alignSize;
-    memcpy(modStr, fname, sLen);
-    modStr[sLen] = ':';
-    char* numBegin = modStr + sLen + 1;
+    char* fillEnd = modStr + modLen;
+    memcpy(modStr, deviceName, deviceNameSize);
+    memcpy(modStr + devSize, fname, fnameLen);
+    modStr[devSize + fnameLen] = ':';
+    if (deviceNameSize) {
+        modStr[deviceNameSize] = ':';
+    }
+    char* numBegin = modStr + devSize + fnameLen + 1;
     numBegin += sprintf(numBegin, "%u", lineNum);
     while (numBegin < fillEnd) {
         *numBegin = ' ';

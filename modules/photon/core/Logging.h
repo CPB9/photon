@@ -21,11 +21,18 @@
 # define PHOTON_LOG_LEVEL_DEBUG 5
 
 #if PHOTON_LOG_LEVEL != PHOTON_LOG_LEVEL_NONE
+
 # ifdef __cplusplus
-extern "C" void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...);
-# else
-void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...);
+extern "C" {
 # endif
+
+void Photon_SetLogDeviceName(const char* name);
+void Photon_Log(int level, const char* fname, unsigned lineNum, const char* fmt, ...);
+
+# ifdef __cplusplus
+}
+# endif
+
 #endif
 
 #if PHOTON_LOG_LEVEL >= PHOTON_LOG_LEVEL_FATAL //fatal
