@@ -446,7 +446,10 @@ static PhotonError genPacket(PhotonExcDevice* self, PhotonWriter* dest)
 PhotonError PhotonExcDevice_GenNextPacket(PhotonExcDevice* self, PhotonWriter* dest)
 {
     if (self->hasDataQueued) {
-        return genPacket(self, dest);
+        PhotonError e = genPacket(self, dest);
+        if (e == PhotonError_NoDataAvailable)
+            self->hasDataQueued = false;
+        return e;
     }
     if (self->isGroundControl) {
         if (PhotonFwt_HasAnswers()) {
