@@ -7,8 +7,8 @@ struct MessageDesc {
     priority: i16,
     interest: i16,
     isEnabled: bool,
-    compNum : u8,
-    msgNum : u8,
+    compNum: u8,
+    msgNum: u8,
 }
 
 struct StatusMessage {
@@ -29,7 +29,7 @@ component {
     }
 
     statuses {
-        [all, 0, true]: {allowedMsgCount, onceRequestsNum},
+        [all, 0, false]: {allowedMsgCount, onceRequestsNum},
     }
 
     impl {

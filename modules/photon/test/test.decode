@@ -141,13 +141,13 @@ component {
     }
 
     statuses {
-        [p1to4, 0, true]: {param1, param2, param3, param4},
-        [p5_8, 0, true]: {param5, param6, param7, param8},
-        [p9_12, 0, true]: {param9, param10, param11, param12},
-        [darr, 0, true]: {dynArrayParam},
-        [opParam, 0, true]: {param1, optionParam, optionVaruintParam},
-        [arrTest, 0, true]: {param2, dynArrayParam[..].parama, param1, arrayParam},
-        [strTest, 0, true]: {longString},
+        [p1to4, 0, false]: {param1, param2, param3, param4},
+        [p5_8, 0, false]: {param5, param6, param7, param8},
+        [p9_12, 0, false]: {param9, param10, param11, param12},
+        [darr, 0, false]: {dynArrayParam},
+        [opParam, 0, false]: {param1, optionParam, optionVaruintParam},
+        [arrTest, 0, false]: {param2, dynArrayParam[..].parama, param1, arrayParam},
+        [strTest, 0, false]: {longString},
     }
 
     events {

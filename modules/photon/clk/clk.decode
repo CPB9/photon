@@ -23,7 +23,8 @@ component {
     }
 
     statuses {
-        [all, 0, true]: {time, timeKind},
+        [time, 0, true]: {time},
+        [kind, 0, false]: {timeKind},
     }
 
     impl {
