@@ -1,5 +1,7 @@
 module nav
 
+import core::{Option}
+
 struct LatLon {
     latitude: f64,
     longitude: f64,
@@ -34,16 +36,12 @@ variant Action {
     Reynolds,
     Snake,
     Loop,
-}
-
-variant OptionalF64 {
-    None,
-    Some { value: f64 },
+    Target,
 }
 
 struct Waypoint {
     position: Position,
-    speed: OptionalF64,
+    speed: Option<f64>,
     action: Action,
 }
 
@@ -65,28 +63,14 @@ struct GpsState {
     satellitesVisible : u8
 }
 
-variant RelativeAltitude {
-    None,
-    Some(f64),
-}
-
 type RouteId = varuint;
-
-variant OptionalIndex {
-    None,
-    Some { index: varuint },
-}
-
-variant OptionalRouteId {
-    None,
-    Some { id : RouteId },
-}
+type PointId = varuint;
 
 struct RouteInfo {
     id: RouteId,
     size: varuint,
     maxSize: varuint,
-    activePoint: OptionalIndex,
+    activePoint: Option<PointId>,
     isClosed: bool,
     isInverted: bool,
     isEditing: bool,
@@ -94,20 +78,20 @@ struct RouteInfo {
 
 struct AllRoutesInfo {
     info: &[RouteInfo; 10],
-    activeRoute: OptionalRouteId,
+    activeRoute: Option<RouteId>,
 }
 
 cmdtrait Routing {
     fn beginRoute(routeId: RouteId, size: varuint)
     fn clearRoute(routeId: RouteId)
-    fn setRoutePoint(routeId: RouteId, pointIndex: varuint, waypoint: Waypoint)
+    fn setRoutePoint(routeId: RouteId, pointIndex: PointId, waypoint: Waypoint)
     fn endRoute(routeId: RouteId)
-    fn setActiveRoute(routeId: OptionalRouteId)
-    fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
+    fn setActiveRoute(routeId: Option<RouteId>)
+    fn setRouteActivePoint(routeId: RouteId, pointIndex: Option<PointId>)
     fn setRouteInverted(routeId: RouteId, isInverted: bool)
     fn setRouteClosed(routeId: RouteId, isClosed: bool)
     fn getRouteInfo(routeId: RouteId) -> RouteInfo
-    fn getRoutePoint(routeId: RouteId, pointIndex: varuint) -> Waypoint
+    fn getRoutePoint(routeId: RouteId, pointIndex: PointId) -> Waypoint
     fn getRoutesInfo() -> AllRoutesInfo
 }
 
@@ -116,14 +100,14 @@ component {
         latLon: LatLon,
         orientation: Orientation,
         altitude: f64,
-        relativeAltitude: RelativeAltitude,
+        relativeAltitude: Option<f64>,
         velocity: Vec3,
-        gpsState: GpsState
+        gpsState: GpsState,
     }
 
     statuses {
         [all, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
-        [gps, 0, true]: {gpsState}
+        [gps, 0, true]: {gpsState},
     }
 
     commands: Routing {

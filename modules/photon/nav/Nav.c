@@ -14,7 +14,7 @@ static PhotonNavWaypoint tmpRoute[ROUTE_SIZE];
 
 void PhotonNav_Init()
 {
-    _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_None;
+    _photonNav.relativeAltitude.type = PhotonOptionF64Type_None;
 #ifdef PHOTON_STUB
     info.isEditing = false;
     info.id = 0;
@@ -26,7 +26,7 @@ void PhotonNav_Init()
     info.isClosed = false;
     info.isInverted = false;
     info.maxSize = ROUTE_SIZE;
-    info.activePoint.type = PhotonNavOptionalIndexType_None;
+    info.activePoint.type = PhotonOptionNavPointIdType_None;
     isActive = false;
     _photonNav.latLon.latitude = 44.499096;
     _photonNav.latLon.longitude = 33.966287;
@@ -51,10 +51,10 @@ void PhotonNav_Init()
 void PhotonNav_Tick()
 {
 #ifdef PHOTON_STUB
-    if (_photonNav.relativeAltitude.type == PhotonNavRelativeAltitudeType_None) {
-        _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_Some;
+    if (_photonNav.relativeAltitude.type == PhotonOptionF64Type_None) {
+        _photonNav.relativeAltitude.type = PhotonOptionF64Type_Some;
     } else {
-        _photonNav.relativeAltitude.type = PhotonNavRelativeAltitudeType_None;
+        _photonNav.relativeAltitude.type = PhotonOptionF64Type_None;
     }
     _photonNav.latLon.latitude += 0.01;
     _photonNav.latLon.longitude += 0.01;
@@ -62,8 +62,8 @@ void PhotonNav_Tick()
     _photonNav.orientation.pitch += 0.1;
     _photonNav.orientation.roll += 0.1;
 
-    if(_photonNav.latLon.latitude > 90.0) {
-        _photonNav.latLon.latitude = -90.0;
+    if(_photonNav.latLon.latitude > 70.0) {
+        _photonNav.latLon.latitude = -70.0;
     }
     if(_photonNav.latLon.longitude > 180.0) {
         _photonNav.latLon.longitude = -180.0;
@@ -76,10 +76,10 @@ void PhotonNav_Tick()
 PhotonError PhotonNav_ExecCmd_GetRoutesInfo(PhotonNavAllRoutesInfo* rv)
 {
     if (isActive) {
-        rv->activeRoute.type = PhotonNavOptionalRouteIdType_Some;
-        rv->activeRoute.data.someNavOptionalRouteId.id = 0;
+        rv->activeRoute.type = PhotonOptionNavRouteIdType_Some;
+        rv->activeRoute.data.someOptionNavRouteId._1 = 0;
     } else {
-        rv->activeRoute.type = PhotonNavOptionalRouteIdType_None;
+        rv->activeRoute.type = PhotonOptionNavRouteIdType_None;
     }
     PHOTON_INFO("Sending route info");
     rv->info.size = 1;
@@ -88,13 +88,13 @@ PhotonError PhotonNav_ExecCmd_GetRoutesInfo(PhotonNavAllRoutesInfo* rv)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_SetActiveRoute(const PhotonNavOptionalRouteId* routeId)
+PhotonError PhotonNav_ExecCmd_SetActiveRoute(const PhotonOptionNavRouteId* routeId)
 {
-    if (routeId->type == PhotonNavOptionalRouteIdType_None) {
+    if (routeId->type == PhotonOptionNavRouteIdType_None) {
         isActive = false;
         return PhotonError_Ok;
     }
-    if (routeId->data.someNavOptionalRouteId.id != 0) {
+    if (routeId->data.someOptionNavRouteId._1 != 0) {
         PHOTON_CRITICAL("Invalid route id");
         return PhotonError_InvalidValue;
     }
@@ -103,7 +103,7 @@ PhotonError PhotonNav_ExecCmd_SetActiveRoute(const PhotonNavOptionalRouteId* rou
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_SetRouteActivePoint(uint64_t routeId, const PhotonNavOptionalIndex* pointIndex)
+PhotonError PhotonNav_ExecCmd_SetRouteActivePoint(PhotonNavRouteId routeId, const PhotonOptionNavPointId* pointIndex)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -114,7 +114,7 @@ PhotonError PhotonNav_ExecCmd_SetRouteActivePoint(uint64_t routeId, const Photon
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_BeginRoute(uint64_t routeId, uint64_t size)
+PhotonError PhotonNav_ExecCmd_BeginRoute(PhotonNavRouteId routeId, uint64_t size)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -130,7 +130,7 @@ PhotonError PhotonNav_ExecCmd_BeginRoute(uint64_t routeId, uint64_t size)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_ClearRoute(uint64_t routeId)
+PhotonError PhotonNav_ExecCmd_ClearRoute(PhotonNavRouteId routeId)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -145,7 +145,7 @@ PhotonError PhotonNav_ExecCmd_ClearRoute(uint64_t routeId)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_SetRoutePoint(uint64_t routeId, uint64_t pointIndex, const PhotonNavWaypoint* waypoint)
+PhotonError PhotonNav_ExecCmd_SetRoutePoint(PhotonNavRouteId routeId, uint64_t pointIndex, const PhotonNavWaypoint* waypoint)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -160,7 +160,7 @@ PhotonError PhotonNav_ExecCmd_SetRoutePoint(uint64_t routeId, uint64_t pointInde
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_EndRoute(uint64_t routeId)
+PhotonError PhotonNav_ExecCmd_EndRoute(PhotonNavRouteId routeId)
 {
     if (!info.isEditing) {
         PHOTON_CRITICAL("Can't end route while not editing");
@@ -175,7 +175,7 @@ PhotonError PhotonNav_ExecCmd_EndRoute(uint64_t routeId)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_SetRouteInverted(uint64_t routeId, bool isInverted)
+PhotonError PhotonNav_ExecCmd_SetRouteInverted(PhotonNavRouteId routeId, bool isInverted)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -186,7 +186,7 @@ PhotonError PhotonNav_ExecCmd_SetRouteInverted(uint64_t routeId, bool isInverted
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_SetRouteClosed(uint64_t routeId, bool isClosed)
+PhotonError PhotonNav_ExecCmd_SetRouteClosed(PhotonNavRouteId routeId, bool isClosed)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -197,7 +197,7 @@ PhotonError PhotonNav_ExecCmd_SetRouteClosed(uint64_t routeId, bool isClosed)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_GetRouteInfo(uint64_t routeId, PhotonNavRouteInfo* rv)
+PhotonError PhotonNav_ExecCmd_GetRouteInfo(PhotonNavRouteId routeId, PhotonNavRouteInfo* rv)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
@@ -208,7 +208,7 @@ PhotonError PhotonNav_ExecCmd_GetRouteInfo(uint64_t routeId, PhotonNavRouteInfo*
     return PhotonError_Ok;
 }
 
-PhotonError PhotonNav_ExecCmd_GetRoutePoint(uint64_t routeId, uint64_t pointIndex, PhotonNavWaypoint* rv)
+PhotonError PhotonNav_ExecCmd_GetRoutePoint(PhotonNavRouteId routeId, uint64_t pointIndex, PhotonNavWaypoint* rv)
 {
     if (routeId != 0) {
         PHOTON_CRITICAL("Invalid route id");
