@@ -2,7 +2,6 @@ include(CPack)
 include(DeployQt5)
 include(CMakeParseArguments)
 find_package(Qt5Widgets REQUIRED)
-find_package(Qt5SerialPort REQUIRED)
 find_package(Qt5Network REQUIRED)
 
 set(_PHOTON_MOD_DIRS)
@@ -51,7 +50,6 @@ function(_photon_add_ui_test target)
         tclap
         Qt5::Core
         Qt5::Widgets
-        Qt5::SerialPort
     )
 
     if(MINGW OR MSVS)
@@ -175,7 +173,7 @@ macro(photon_init dir)
     source_group("ui" FILES ${PHOTON_UI_SRC})
     source_group("ui_moc" FILES ${PHOTON_UI_MOC})
 
-    add_library(photon
+    _photon_add_library(photon
         ${PHOTON_UI_SRC}
         ${PHOTON_GROUNDCONTROL_SRC}
         ${PHOTON_MODEL_SRC}
