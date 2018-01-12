@@ -86,6 +86,7 @@ component {
         fn addMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn removeMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn joinGroup(group: GrpId, members: &[UavId; 10]) -> ReqCfgRep
+        fn execute(group: GrpId, cmd: &[u8; 500]) -> ReqCfgRep
 
         fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
         fn reqVoteRep(group: GrpId, term: TermId, vote: bool)
