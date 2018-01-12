@@ -132,9 +132,10 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
     _paramViewWidget->setDragEnabled(true);
     _paramViewWidget->setDragDropMode(QAbstractItemView::DragDrop);
     _paramViewWidget->setDropIndicatorShown(true);
-    _paramViewWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    //_paramViewWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     _paramViewWidget->header()->setStretchLastSection(false);
     _paramViewWidget->setModel(_paramViewModel.get());
+    _paramViewWidget->header()->moveSection(2, 1);
 
     QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() { _scriptEditWidget->resizeColumnToContents(0); });
     QObject::connect(_paramViewWidget, &QTreeView::expanded, _paramViewWidget, [this]() {
