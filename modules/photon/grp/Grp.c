@@ -180,6 +180,11 @@ PhotonError PhotonGrp_ExecCmd_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavId
     return PhotonError_Ok;
 }
 
+PhotonError PhotonGrp_ExecCmd_Execute(uint64_t group, const PhotonDynArrayOfU8MaxSize500* cmd, PhotonGrpReqCfgRep* rv)
+{
+    return PhotonError_Ok;
+}
+
 PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
 {
     if (!isSameGroup(group))
