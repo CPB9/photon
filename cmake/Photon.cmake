@@ -7,8 +7,8 @@ find_package(Qt5Network REQUIRED)
 
 set(_PHOTON_MOD_DIRS)
 set(PHOTON_GEN_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/_photon_gen_src)
-set(PHOTON_GEN_SRC_ONBOARD_DIR ${PHOTON_GEN_SRC_DIR}/onboard)
-set(PHOTON_GEN_SRC_GROUNDCONTROL_DIR ${PHOTON_GEN_SRC_DIR}/groundcontrol)
+set(PHOTON_GEN_SRC_ONBOARD_DIR ${PHOTON_GEN_SRC_DIR})
+set(PHOTON_GEN_SRC_GROUNDCONTROL_DIR ${PHOTON_GEN_SRC_DIR})
 
 macro(photon_add_mod_dir dir)
     list(APPEND _PHOTON_MOD_DIRS ${dir})
@@ -246,9 +246,10 @@ endmacro()
 macro(photon_add_device target)
     string(SUBSTRING ${target} 0 1 _FIRST_LETTER)
     string(TOUPPER ${_FIRST_LETTER} _FIRST_LETTER)
+    string(TOUPPER ${target} _TARGET_UPPER)
     string(REGEX REPLACE "^.(.*)" "${_FIRST_LETTER}\\1" _SOURCE_NAME "${target}")
 
-    set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.c)
+    set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.c)
     set(_PHOTON_DEPENDS ${_PHOTON_DEPENDS} ${_SRC_FILE})
     set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.h)
 
@@ -264,7 +265,7 @@ macro(photon_add_device target)
     endif()
 
     if (PHOTON_ENABLE_STUB)
-        target_compile_options(photon-target-${target} PUBLIC -DPHOTON_STUB)
+        target_compile_options(photon-target-${target} PUBLIC -DPHOTON_STUB -DPHOTON_DEVICE_${_TARGET_UPPER})
     endif()
 
     target_include_directories(photon-target-${target}
