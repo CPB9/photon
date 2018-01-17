@@ -22,7 +22,7 @@ struct LogEntry {
     entryId: EntryId,
     kind: EntryKind,
     node: Option<UavId>,
-    members: &[u8; 500],
+    data: &[u8; 500],
 }
 
 enum ReqErr {
