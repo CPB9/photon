@@ -1,0 +1,4 @@
+[wrap-git]
+directory = actor-framework
+url = https://github.com/acsl-mipt/actor-framework.git
+revision = head

@@ -1,0 +1,5 @@
+option('log_level', type : 'combo', choices : ['0', '1', '2', '3', '4', '5'], value : '0')
+option('additional_depends', type : 'array', value : [])
+option('project', type : 'string', value : 'project.toml')
+option('project_prefix', type : 'string', value : '')
+option('abs_paths', type : 'boolean', value : false)

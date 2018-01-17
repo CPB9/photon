@@ -1,0 +1,6 @@
+[wrap-file]
+directory = asio-asio-1-11-0-mesonwrap
+
+source_url = https://github.com/CPB9/asio/archive/asio-1-11-0-mesonwrap.zip
+source_filename = asio-1-11-0-mesonwrap.zip
+source_hash = 9b3b875a03bf18dbe9e828ea88d8ffcefbb5882ede1d5847d935e1762eff72a1

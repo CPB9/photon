@@ -3,7 +3,7 @@
 #include "decode/parser/Package.h"
 #include "photon/model/ValueInfoCache.h"
 
-#include "photon/Interface.hpp"
+#include "Photon.hpp"
 
 #include <decode/core/Utils.h>
 #include <decode/parser/Project.h>
