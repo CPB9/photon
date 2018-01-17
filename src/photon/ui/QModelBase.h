@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "photon/Config.h"
+#include "photon/Config.hpp"
 #include "photon/core/Rc.h"
 #include "photon/model/Value.h"
 #include "photon/model/Node.h"

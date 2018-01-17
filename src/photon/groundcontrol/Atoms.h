@@ -1,6 +1,6 @@
 #pragma once
 
-#include "photon/Config.h"
+#include "photon/Config.hpp"
 
 #include <caf/atom.hpp>
 
