@@ -21,7 +21,8 @@ struct LogEntry {
     term: TermId,
     entryId: EntryId,
     kind: EntryKind,
-    node: UavId,
+    node: Option<UavId>,
+    members: &[u8; 500],
 }
 
 enum ReqErr {
