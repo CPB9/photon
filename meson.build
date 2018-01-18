@@ -2,7 +2,7 @@ project('photon', ['c', 'cpp'], default_options : ['cpp_std=c++11', 'c_std=c99']
 
 platform_deps = declare_dependency()
 if host_machine.system() == 'windows'
-  platform_deps = declare_dependency(link_with : meson.get_compiler('c').find_library('ws2_32'))
+  platform_deps = declare_dependency(dependencies : meson.get_compiler('c').find_library('ws2_32'))
 endif
 
 qt5 = import('qt5')
@@ -154,7 +154,7 @@ ui_src = [
 
 bmcl = subproject('bmcl', default_options: ['build_tests=false'])
 caf = subproject('caf')
-asio = subproject('asio')
+asio = subproject('asio', default_options: ['shared_lib=false'])
 tclap = subproject('tclap')
 
 thread_dep = dependency('threads')
