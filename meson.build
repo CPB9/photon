@@ -255,20 +255,32 @@ foreach name : photon_targets
   fname = gen_src[0]
   libname = 'photon-target-' + name
   flag = '-DPHOTON_DEVICE_' + name.to_upper()
+
   lib = static_library(libname,
     sources : fname,
     include_directories : onboard_inc,
     c_args : [onboard_flags, flag],
     dependencies : gen_deps,
   )
-  foreach test : model_tests
-    executable('photon-' + test[0] + '-' + name,
-      include_directories : [gc_inc, onboard_inc],
-      sources : 'tests/' + test[1],
-      dependencies : deps + gen_deps,
-      link_with : [uitest_lib, lib],
-    )
-  endforeach
+  set_variable('photon_target_' + name + '_lib', lib)
+
+  dep = declare_dependency(
+    link_with : lib,
+    include_directories : onboard_inc,
+    compile_args : onboard_flags + [flag],
+  )
+  set_variable('photon_target_' + name + '_dep', dep)
+
+  if get_option('target_tests')
+    foreach test : model_tests
+      executable('photon-' + test[0] + '-' + name,
+        include_directories : [gc_inc, onboard_inc],
+        sources : 'tests/' + test[1],
+        dependencies : deps + gen_deps,
+        link_with : [uitest_lib, lib],
+      )
+    endforeach
+  endif
 endforeach
 
 #TODO: tests
