@@ -3,7 +3,7 @@
 build*
 
 subprojects/PEGTL-2.3.3-mesonwrap/
-subprojects/actor-framework/
+subprojects/actor-framework-0.15.5-mesonwrap/
 subprojects/asio-asio-1-11-0-mesonwrap/
 subprojects/bmcl/
 subprojects/decode/
