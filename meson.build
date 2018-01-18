@@ -195,6 +195,12 @@ photon_lib = static_library('photon',
   cpp_args: '-DBUILDING_PHOTON',
 )
 
+photon_dep = declare_dependency(
+  link_with : photon_lib,
+  include_directories: gc_inc,
+  dependencies: deps + gen_deps,
+)
+
 test_moc = qt5.preprocess(
   moc_headers : 'tests/UiTest.h',
   include_directories: gc_inc,
