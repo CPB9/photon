@@ -176,7 +176,7 @@ if get_option('abs_paths')
 endif
 
 gen_src = custom_target('dummy_src',
-  input : [get_option('project')],
+  input : project_path,
   output : ['Photon.c', 'Photon.h', 'Photon.hpp'],
   depend_files : modules_src,
   command : [decode_gen, '-p', '@INPUT@', '-o', meson.current_build_dir(), '-c', '4', abs_paths_flag],
@@ -227,7 +227,10 @@ foreach test : client_tests
   )
 endforeach
 
-onboard_flags = ['-DPHOTON_STUB']
+onboard_flags = []
+if get_option('use_stubs')
+  onboard_flags += '-DPHOTON_STUB'
+endif
 
 if get_option('abs_paths')
   onboard_inc = include_directories('.', 'modules')
@@ -235,7 +238,7 @@ else
   onboard_inc = include_directories('.')
 endif
 
-photon_targets = ['master', 'slave1']
+photon_targets = get_option('targets')
 
 model_tests = [
   ['model-inproc', 'InprocTest.cpp'],
