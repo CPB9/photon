@@ -72,7 +72,11 @@ macro(photon_init dir)
     include(${dir}/thirdparty/decode/thirdparty/bmcl/cmake/Bmcl.cmake)
 
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
-    set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon/Interface.hpp)
+    set(_PHOTON_DEPENDS
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.hpp
+        ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.c
+        ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.h
+    )
     set(_PHOTON_DEPENDS_H)
     set(_PHOTON_DIR ${dir})
 
@@ -177,7 +181,7 @@ macro(photon_init dir)
         ${PHOTON_UI_SRC}
         ${PHOTON_GROUNDCONTROL_SRC}
         ${PHOTON_MODEL_SRC}
-        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon/Interface.hpp
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.hpp
     )
 
     target_link_libraries(photon
@@ -248,8 +252,7 @@ macro(photon_add_device target)
     string(REGEX REPLACE "^.(.*)" "${_FIRST_LETTER}\\1" _SOURCE_NAME "${target}")
 
     set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.c)
-    set(_PHOTON_DEPENDS ${_PHOTON_DEPENDS} ${_SRC_FILE})
-    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.h)
+    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.h)
 
     _photon_add_library(photon-target-${target}
         ${_SRC_FILE}
@@ -263,8 +266,9 @@ macro(photon_add_device target)
     endif()
 
     if (PHOTON_ENABLE_STUB)
-        target_compile_options(photon-target-${target} PUBLIC -DPHOTON_STUB -DPHOTON_DEVICE_${_TARGET_UPPER})
+        target_compile_options(photon-target-${target} PUBLIC -DPHOTON_STUB)
     endif()
+    target_compile_options(photon-target-${target} PUBLIC -DPHOTON_DEVICE_${_TARGET_UPPER})
 
     target_include_directories(photon-target-${target}
         PUBLIC
