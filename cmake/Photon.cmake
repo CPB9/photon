@@ -181,8 +181,9 @@ macro(photon_init dir)
         ${PHOTON_UI_SRC}
         ${PHOTON_GROUNDCONTROL_SRC}
         ${PHOTON_MODEL_SRC}
-        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.hpp
     )
+    
+    add_dependencies(photon photon-gen-src)
 
     target_link_libraries(photon
         decode
@@ -240,6 +241,7 @@ macro(photon_generate_sources proj)
         COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:decode-gen> -p  ${proj} -o ${PHOTON_GEN_SRC_DIR} -c 4 ${_PHOTON_ABS_FLAG}
         DEPENDS decode-gen ${proj} ${_PHOTON_MOD_SOURCES}
     )
+    add_custom_target(photon-gen-src DEPENDS ${_PHOTON_DEPENDS})
     install(DIRECTORY ${PHOTON_GEN_SRC_ONBOARD_DIR}/photon DESTINATION gen)
     install(DIRECTORY ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/photon DESTINATION gen)
     install(FILES ${_PHOTON_DEPENDS} ${_PHOTON_DEPENDS_H} DESTINATION gen)
@@ -251,12 +253,14 @@ macro(photon_add_device target)
     string(TOUPPER ${target} _TARGET_UPPER)
     string(REGEX REPLACE "^.(.*)" "${_FIRST_LETTER}\\1" _SOURCE_NAME "${target}")
 
-    set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.c)
-    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.h)
+    set(_SRC_FILE ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.c)
+    set(_PHOTON_DEPENDS_H ${_PHOTON_DEPENDS_H} ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon${_SOURCE_NAME}.h)
 
     _photon_add_library(photon-target-${target}
         ${_SRC_FILE}
     )
+    
+    add_dependencies(photon-target-${target} photon-gen-src)
 
     if(NOT MSVC)
         target_compile_options(photon-target-${target} PRIVATE
