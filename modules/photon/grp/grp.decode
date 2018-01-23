@@ -78,6 +78,9 @@ component {
         fn init()
         fn tick()
         fn genRaftData(data: *mut void, writer: *mut Writer) -> Error
+        fn addSharer(compNum: u8, generator: &Fn(*mut Writer), receiver: &Fn(UavId, *mut Reader))
+        fn removeSharer(compNum: u8)
+        fn isLeader() -> bool
     }
 
     commands {
@@ -88,6 +91,7 @@ component {
         fn removeMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn joinGroup(group: GrpId, members: &[UavId; 10]) -> ReqCfgRep
         fn execute(group: GrpId, cmd: &[u8; 500]) -> ReqCfgRep
+        fn shareMsgs(group: GrpId, from: UavId, cmd: &[u8; 500])
 
         fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
         fn reqVoteRep(group: GrpId, term: TermId, vote: bool)
