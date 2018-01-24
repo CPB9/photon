@@ -9,6 +9,8 @@ type EntryId = varuint;
 type Index = varuint;
 type Time = varuint;
 
+const MAX_GROUP_SIZE : u8 = 10;
+
 enum EntryKind {
     Normal = 1,
     AddNonVotingNode = 2,
@@ -52,6 +54,11 @@ struct Timeouts {
     election_rand: Time,
 }
 
+struct TestSharedTime {
+    device: UavId,
+    time: Time,
+}
+
 component {
     parameters {
         group: Option<GrpId>,
@@ -64,21 +71,24 @@ component {
         lastLogTerm: TermId,
         votedFor: Option<UavId>,
         timeouts: Timeouts,
-        timeout_elapsed: Time
+        timeout_elapsed: Time,
+        testSharedTime: Time,
+        testSharedTimes: &[TestSharedTime; 10]
     }
 
     statuses {
         [all, 0, false]: {group, leader, term, state, commit, lastLogIdx, lastLogTerm, votedFor, members, timeout_elapsed, timeouts},
         [leader, 1, false]: {group, leader, term},
         [members, 2, false]: {group, leader, term, members},
-        [elect, 3, false]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor}
+        [elect, 3, false]: {group, leader, state, term, commit, lastLogIdx, lastLogTerm, votedFor},
+        [testShare, 4, false]: {group, testSharedTime, testSharedTimes},
     }
 
     impl {
         fn init()
         fn tick()
         fn genRaftData(data: *mut void, writer: *mut Writer) -> Error
-        fn addSharer(compNum: u8, generator: &Fn(*mut Writer), receiver: &Fn(UavId, *mut Reader))
+        fn addSharer(compNum: u8, generator: &Fn(*mut Writer) -> Error, receiver: &Fn(UavId, *mut Reader) -> Error)
         fn removeSharer(compNum: u8)
         fn isLeader() -> bool
     }
@@ -92,6 +102,7 @@ component {
         fn joinGroup(group: GrpId, members: &[UavId; 10]) -> ReqCfgRep
         fn execute(group: GrpId, cmd: &[u8; 500]) -> ReqCfgRep
         fn shareMsgs(group: GrpId, from: UavId, cmd: &[u8; 500])
+        fn shareTest(group: GrpId, enable: bool)
 
         fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
         fn reqVoteRep(group: GrpId, term: TermId, vote: bool)
