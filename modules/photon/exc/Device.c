@@ -239,23 +239,28 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         return true;
     }
     if (self->incomingHeader.streamDirection != PhotonExcStreamDirection_Uplink) {
-        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid stream direction");
+        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid stream direction(%" PRIi64 ")", self->incomingHeader.streamDirection);
         return true;
     }
 
     if (self->incomingHeader.srcAddress != self->address) {
-        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid src address");
+        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid src address(%" PRIi64 ")", self->incomingHeader.srcAddress);
         return true;
     }
 
     if (self->incomingHeader.destAddress != PhotonExc_SelfAddress()) {
 #ifdef PHOTON_HAS_MODULE_GRP
-        if (!(_photonGrp.group.type == PhotonOptionGrpGrpIdType_Some && _photonGrp.group.data.someOptionGrpGrpId._1 == PhotonExc_SelfAddress())) {
-           HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address");
+        if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None) {
+            HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address(%" PRIi64 ")", self->incomingHeader.destAddress);
+            return true;
+        }
+
+        if (_photonGrp.group.data.someOptionGrpGrpId._1 != PhotonExc_SelfAddress()) {
+           HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest group address(%" PRIi64 ")", _photonGrp.group.data.someOptionGrpGrpId._1);
            return true;
         }
 #else
-        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address");
+        HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address(%" PRIi64 ")", self->incomingHeader.destAddress);
         return true;
 #endif
     }
