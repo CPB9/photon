@@ -1,4 +1,4 @@
-#include "photon/fl/Fl.Component.h"
+#include "photongen/onboard/fl/Fl.Component.h"
 #include "photon/core/Logging.h"
 
 #define _PHOTON_FNAME "fl/Fl.c"

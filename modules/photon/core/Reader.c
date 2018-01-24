@@ -1,4 +1,4 @@
-#include "photon/core/Reader.h"
+#include "photongen/onboard/core/Reader.h"
 #include "photon/core/Assert.h"
 #include "photon/core/Endian.h"
 #include "photon/core/Try.h"

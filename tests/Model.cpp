@@ -1,8 +1,8 @@
-#include "photon/tm/Tm.Component.h"
-#include "photon/exc/Exc.Component.h"
-#include "photon/fwt/Fwt.Component.h"
+#include "photongen/onboard/tm/Tm.Component.h"
+#include "photongen/onboard/exc/Exc.Component.h"
+#include "photongen/onboard/fwt/Fwt.Component.h"
 #include "photon/core/Logging.h"
-#include "photon/core/Core.Component.h"
+#include "photongen/onboard/core/Core.Component.h"
 
 #include <tclap/CmdLine.h>
 

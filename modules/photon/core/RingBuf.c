@@ -1,4 +1,4 @@
-#include "photon/core/RingBuf.h"
+#include "photongen/onboard/core/RingBuf.h"
 #include "photon/core/Assert.h"
 
 #include <string.h>

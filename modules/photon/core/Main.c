@@ -1,29 +1,29 @@
 #if defined(PHOTON_HAS_MODULE_CLK)
-# include "photon/clk/Clk.Component.h"
+# include "photongen/onboard/clk/Clk.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_TM)
-# include "photon/tm/Tm.Component.h"
+# include "photongen/onboard/tm/Tm.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_INT)
-# include "photon/int/Int.Component.h"
+# include "photongen/onboard/int/Int.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_FWT)
-# include "photon/fwt/Fwt.Component.h"
+# include "photongen/onboard/fwt/Fwt.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_EXC)
-# include "photon/exc/Exc.Component.h"
+# include "photongen/onboard/exc/Exc.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_TEST)
-# include "photon/test/Test.Component.h"
+# include "photongen/onboard/test/Test.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_NAV)
-# include "photon/nav/Nav.Component.h"
+# include "photongen/onboard/nav/Nav.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_USM)
-# include "photon/usm/Usm.Component.h"
+# include "photongen/onboard/usm/Usm.Component.h"
 #endif
 #if defined(PHOTON_HAS_MODULE_GRP)
-# include "photon/grp/Grp.Component.h"
+# include "photongen/onboard/grp/Grp.Component.h"
 #endif
 
 void Photon_Init()

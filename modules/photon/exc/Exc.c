@@ -1,7 +1,7 @@
-#include "photon/exc/Exc.Component.h"
-#include "photon/pvu/Pvu.Component.h"
-#include "photon/fwt/Fwt.Component.h"
-#include "photon/tm/Tm.Component.h"
+#include "photongen/onboard/exc/Exc.Component.h"
+#include "photongen/onboard/pvu/Pvu.Component.h"
+#include "photongen/onboard/fwt/Fwt.Component.h"
+#include "photongen/onboard/tm/Tm.Component.h"
 
 #include "photon/core/Logging.h"
 

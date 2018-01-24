@@ -1,4 +1,4 @@
-#include "photon/clk/Clk.Component.h"
+#include "photongen/onboard/clk/Clk.Component.h"
 #include "photon/core/Logging.h"
 
 #define _PHOTON_FNAME "clk/Clk.c"

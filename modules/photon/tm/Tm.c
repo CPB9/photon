@@ -1,13 +1,13 @@
-#include "photon/tm/Tm.Component.h"
+#include "photongen/onboard/tm/Tm.Component.h"
 
-#include "photon/core/Error.h"
-#include "photon/core/Reader.h"
-#include "photon/core/Writer.h"
+#include "photongen/onboard/core/Error.h"
+#include "photongen/onboard/core/Reader.h"
+#include "photongen/onboard/core/Writer.h"
 #include "photon/core/Logging.h"
-#include "photon/tm/MessageDesc.h"
-#include "photon/tm/StatusMessage.h"
+#include "photongen/onboard/tm/MessageDesc.h"
+#include "photongen/onboard/tm/StatusMessage.h"
 
-#include "photon/StatusTable.inc.c"
+#include "photongen/onboard/StatusTable.inc.c"
 
 #define _PHOTON_FNAME "tm/Tm.c"
 

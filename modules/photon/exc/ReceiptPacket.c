@@ -1,7 +1,7 @@
-#include "photon/exc/ReceiptPacket.h"
+#include "photongen/onboard/exc/ReceiptPacket.h"
 
-#include "photon/exc/Utils.h"
-#include "photon/exc/PacketType.h"
+#include "photon/Utils.h"
+#include "photongen/onboard/exc/PacketType.h"
 #include "photon/core/Try.h"
 
 PhotonError PhotonExcReceiptPacket_Encode(PhotonExcReceiptPacket* self, PhotonWriter* dest)

@@ -1,4 +1,4 @@
-#include "photon/test/Test.Component.h"
+#include "photongen/onboard/test/Test.Component.h"
 
 void PhotonTest_Init()
 {
