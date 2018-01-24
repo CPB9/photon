@@ -1,9 +1,9 @@
-#include "photon/pvu/Pvu.Component.h"
+#include "photongen/onboard/pvu/Pvu.Component.h"
 
-#include "photon/pvu/Pvu.Constants.h"
-#include "photon/clk/Clk.Component.h"
+#include "photongen/onboard/pvu/Pvu.Constants.h"
+#include "photongen/onboard/clk/Clk.Component.h"
 #include "photon/core/Logging.h"
-#include "photon/pvu/Script.h"
+#include "photongen/onboard/pvu/Script.h"
 #include "photon/core/Assert.h"
 
 #include <string.h>

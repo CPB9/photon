@@ -1,7 +1,7 @@
 #ifndef __PHOTON_CORE_LOGGING_H__
 #define __PHOTON_CORE_LOGGING_H__
 
-#include "photon/Config.h"
+#include "photongen/onboard/Config.h"
 
 //TODO: find a better way to set _PHOTON_FNAME
 

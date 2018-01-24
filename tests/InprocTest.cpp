@@ -6,9 +6,9 @@
 #include <photon/groundcontrol/Atoms.h>
 #include <photon/groundcontrol/AllowUnsafeMessageType.h>
 
-#include "photon/core/Core.Component.h"
-#include "photon/exc/Exc.Component.h"
-#include "photon/exc/Device.h"
+#include "photongen/onboard//core/Core.Component.h"
+#include "photongen/onboard//exc/Exc.Component.h"
+#include "photongen/onboard//exc/Device.h"
 
 #include <bmcl/Assert.h>
 #include <bmcl/Logging.h>

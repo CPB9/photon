@@ -1,4 +1,4 @@
-#include "photon/nav/Nav.Component.h"
+#include "photongen/onboard/nav/Nav.Component.h"
 #include "photon/core/Logging.h"
 
 #define _PHOTON_FNAME "nav/Nav.c"

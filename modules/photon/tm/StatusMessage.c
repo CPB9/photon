@@ -1,4 +1,4 @@
-#include "photon/tm/StatusMessage.h"
+#include "photongen/onboard/tm/StatusMessage.h"
 #include "photon/core/Assert.h"
 #include "photon/core/Try.h"
 #include "photon/core/Endian.h"

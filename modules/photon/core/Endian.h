@@ -1,7 +1,7 @@
 #ifndef __PHOTON_ENDIAN_H__
 #define __PHOTON_ENDIAN_H__
 
-#include "photon/Config.h"
+#include "photongen/onboard/Config.h"
 
 #include <stdint.h>
 

@@ -1,10 +1,10 @@
 #ifndef __PHOTON_EXC_UTILS_H__
 #define __PHOTON_EXC_UTILS_H__
 
-#include "photon/Config.h"
+#include "photongen/onboard/Config.h"
 
-#include "photon/core/Error.h"
-#include "photon/core/Writer.h"
+#include "photongen/onboard/core/Error.h"
+#include "photongen/onboard/core/Writer.h"
 #include "photon/core/Assert.h"
 #include "photon/core/Endian.h"
 #include "photon/core/Crc.h"

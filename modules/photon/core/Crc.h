@@ -1,7 +1,7 @@
 #ifndef __PHOTON_CORE_CRC_H__
 #define __PHOTON_CORE_CRC_H__
 
-#include "photon/Config.h"
+#include "photongen/onboard/Config.h"
 
 #include <stddef.h>
 #include <stdint.h>

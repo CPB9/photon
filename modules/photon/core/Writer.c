@@ -1,4 +1,4 @@
-#include "photon/core/Writer.h"
+#include "photongen/onboard/core/Writer.h"
 #include "photon/core/Assert.h"
 #include "photon/core/Try.h"
 #include "photon/core/Endian.h"

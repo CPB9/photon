@@ -1,12 +1,12 @@
-#include "photon/fwt/Fwt.Component.h"
+#include "photongen/onboard/fwt/Fwt.Component.h"
 
 #include "photon/core/Assert.h"
 #include "photon/core/Try.h"
 #include "photon/core/Util.h"
 #include "photon/core/Logging.h"
-#include "photon/fwt/AnswerType.h"
-#include "photon/fwt/CmdType.h"
-#include "photon/Package.inc.c"
+#include "photongen/onboard/fwt/AnswerType.h"
+#include "photongen/onboard/fwt/CmdType.h"
+#include "photongen/onboard/Package.inc.c"
 
 #include <inttypes.h>
 

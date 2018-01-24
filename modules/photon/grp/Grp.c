@@ -1,4 +1,4 @@
-#include "photon/grp/Grp.Component.h"
+#include "photongen/onboard/grp/Grp.Component.h"
 #include "photon/core/Logging.h"
 
 #define _PHOTON_FNAME "grp/Grp.c"
@@ -153,7 +153,7 @@ PhotonError PhotonGrp_ExecCmd_AddMember(uint64_t group, uint64_t member, PhotonG
 PhotonError PhotonGrp_ExecCmd_RemoveMember(uint64_t group, uint64_t member, PhotonGrpReqCfgRep* rv)
 {
     PHOTON_INFO("RemoveMember: group(%" PRIu64 "), member(%" PRIu64 ")", group, member);
-    
+
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
@@ -167,7 +167,7 @@ PhotonError PhotonGrp_ExecCmd_RemoveMember(uint64_t group, uint64_t member, Phot
 PhotonError PhotonGrp_ExecCmd_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavIdMaxSize10 const* members, PhotonGrpReqCfgRep* rv)
 {
     PHOTON_INFO("JoinGroup: group(%" PRIu64 "), members(%" PRIu64 ")", group, members->size);
-        
+
     if (isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
@@ -175,7 +175,7 @@ PhotonError PhotonGrp_ExecCmd_JoinGroup(uint64_t group, PhotonDynArrayOfGrpUavId
     _photonGrp.group.type = PhotonOptionGrpGrpIdType_Some;
     _photonGrp.group.data.someOptionGrpGrpId._1 = group;
     _photonGrp.members.size = 0;
-    
+
     for(uint64_t i = 0; i < members->size; ++i)
     {
         addMember(members->data[i]);

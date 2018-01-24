@@ -1,7 +1,7 @@
-#include "photon/exc/DataPacket.h"
+#include "photongen/onboard/exc/DataPacket.h"
 
-#include "photon/exc/PacketType.h"
-#include "photon/exc/Utils.h"
+#include "photongen/onboard/exc/PacketType.h"
+#include "photongen/onboard/exc/Utils.h"
 #include "photon/core/Try.h"
 
 PhotonError PhotonExcDataPacket_Encode(PhotonExcDataPacket* self, PhotonGenerator gen, void* data, PhotonWriter* dest)
