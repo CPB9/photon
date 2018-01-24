@@ -91,8 +91,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         _photonTm.currentStatusMsg.compNum = currentDesc()->compNum;
         _photonTm.currentStatusMsg.msgNum = currentDesc()->msgNum;
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
-        PhotonError rv = PhotonTmStatusMessage_Encode(&_photonTm.currentStatusMsg,
-            encodeStatusMsg, 0, dest);
+        PhotonError rv = PhotonTmStatusMessage_Encode(&_photonTm.currentStatusMsg, encodeStatusMsg, 0, dest);
         if (rv == PhotonError_Ok) {
             selectNextMessage();
             totalMessages++;

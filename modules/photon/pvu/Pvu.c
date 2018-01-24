@@ -16,19 +16,7 @@ PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReade
         return PhotonError_Ok;
     }
     _photonPvu.currentHeader = header;
-    while (PhotonReader_ReadableSize(src) != 0) {
-        if (PhotonReader_ReadableSize(src) < 2) {
-            PHOTON_CRITICAL("Unable to decode cmd header");
-            return PhotonError_NotEnoughData;
-        }
-
-        uint8_t compNum = PhotonReader_ReadU8(src);
-        uint8_t cmdNum = PhotonReader_ReadU8(src);
-
-        PHOTON_TRY(Photon_DeserializeAndExecCmd(compNum, cmdNum, src, results));
-    }
-
-    return PhotonError_Ok;
+    return Photon_ExecScript(src, results);
 }
 
 const PhotonExcDataHeader* PhotonPvu_CurrentHeader()

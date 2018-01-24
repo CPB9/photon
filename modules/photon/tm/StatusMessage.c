@@ -10,8 +10,6 @@ PhotonError PhotonTmStatusMessage_Encode(PhotonTmStatusMessage* self, PhotonGene
     }
     uint8_t* sizePtr = PhotonWriter_CurrentPtr(dest);
     PhotonWriter_Skip(dest, 2);
-    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, self->compNum));
-    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, self->msgNum));
     PHOTON_TRY(gen(data, dest));
     uint8_t* currentPtr = PhotonWriter_CurrentPtr(dest);
     PHOTON_ASSERT(currentPtr > (sizePtr + 2));
