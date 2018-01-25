@@ -360,7 +360,7 @@ DynArrayValueNode::~DynArrayValueNode()
 void DynArrayValueNode::collectUpdates(NodeViewUpdater* dest)
 {
     for (std::size_t i = 0; i < _minSizeSinceUpdate; i++) {
-        _values[0]->collectUpdates(dest);
+        _values[i]->collectUpdates(dest);
     }
     if (_minSizeSinceUpdate < _lastUpdateSize) {
         //shrink
