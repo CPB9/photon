@@ -48,7 +48,7 @@ static void endCurrent()
 
 static void execCurrent()
 {
-    PhotonClkTick currentTime = PhotonClk_GetTime();
+    PhotonClkTimePoint currentTime = PhotonClk_GetTickTime();
     PhotonPvuScript* current = _photonPvu.currentScript;
     _photonPvu.currentHeader = NULL; //HACK
     if (current->isSleeping) {
@@ -144,7 +144,7 @@ PhotonError PhotonPvu_AddScript(PhotonReader* src)
     return PhotonError_Ok;
 }
 
-PhotonError PhotonPvu_ExecCmd_SleepFor(uint64_t delta)
+PhotonError PhotonPvu_ExecCmd_SleepFor(int64_t delta)
 {
     if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
@@ -162,7 +162,7 @@ PhotonError PhotonPvu_ExecCmd_SleepUntil(uint64_t time)
     if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
     }
-    PhotonClkTick currentTime = PhotonClk_GetTime();
+    PhotonClkTimePoint currentTime = PhotonClk_GetTickTime();
     if (time >= currentTime) {
         return PhotonError_Ok;
     }

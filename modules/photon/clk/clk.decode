@@ -2,37 +2,41 @@ module clk
 
 import core::{Reader, Writer, Error}
 
-/// Time point in milliseconds since epoch.
+/// Unix time * 1000 + milliseconds.
 type TimePoint = varuint;
 
 /// Duration in milliseconds.
-type Duration = varuint;
-
-type Tick = varuint;
-
-variant TimeKind {
-    Ticks,
-    Absolute { epoch: TimePoint },
-    SizedTicks { epoch: TimePoint, tickResolution: Duration },
-}
+type Duration = varint;
 
 component {
     parameters {
-        timeKind: TimeKind,
-        time: Tick,
+        /// corrected system time at tick start
+        tickTime: TimePoint,
+        /// raw system time correction
+        correction: Duration,
     }
 
     statuses {
-        [time, 0, true]: {time},
-        [kind, 0, false]: {timeKind},
+        [time, 0, true]: {tickTime, correction},
     }
 
     impl {
         fn init()
         fn tick()
-        fn getTime() -> Tick
+
+        /// get raw system time
+        fn getRawSystemTime() -> TimePoint
+        /// get corrected system time
+        fn getTime() -> TimePoint
+        /// get corrected system time since tick start
+        fn getTickTime() -> TimePoint
     }
 
     commands {
+        fn setTimeCorrection(delta: Duration)
+    }
+
+    events {
+        [timeCorrected, true]: {oldTime: TimePoint, newTime: TimePoint},
     }
 }
