@@ -2,6 +2,7 @@
 module test
 
 import core::Option
+type UavId = varuint;
 
 type FnTypedef = &Fn(&Fn(i64) -> &Fn(i32) -> i8, i16) -> &Fn(f64) -> f32;
 
@@ -135,19 +136,21 @@ component {
         optionVaruintParam: Option<varuint>,
         genericParam: TestGeneric<u64, u16, Option<u32>, u8>,
         dynArrayParam: &[ParamStruct; 10],
-        arrayParam: [[u16; 4]; 5],
+        dynArrayParam2: &[UavId; 10],
+        arrayParam: [[u16; 10]; 5],
         fnParam: &Fn(&Fn(u32, u16) -> ParamStruct, [u16; 5], *mut *mut *const u8) -> u64,
         longString: &[char; 512],
     }
 
     statuses {
-        [p1to4, 0, false]: {param1, param2, param3, param4},
-        [p5_8, 0, false]: {param5, param6, param7, param8},
-        [p9_12, 0, false]: {param9, param10, param11, param12},
-        [darr, 0, false]: {dynArrayParam},
+        [p1to4, 0, false]: {param2, param1, param3, param4},
+        [p5to8, 0, false]: {param5, param6, param7, param8},
+        [p9to12, 0, false]: {param9, param10, param11, param12},
+        [darr, 0, false]: {dynArrayParam[..].parama, dynArrayParam[..].paramb, dynArrayParam2},
         [opParam, 0, false]: {param1, optionParam, optionVaruintParam},
-        [arrTest, 0, false]: {param2, dynArrayParam[..].parama, param1, arrayParam},
+        [arrTest, 0, false]: {arrayParam},
         [strTest, 0, false]: {longString},
+        [genTest, 0, false]: {genericParam},
     }
 
     events {

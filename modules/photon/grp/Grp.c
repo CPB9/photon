@@ -84,6 +84,11 @@ void PhotonGrp_Tick()
 {
 }
 
+PhotonError PhotonGrp_ExecCmd_ShareTest(uint64_t group, bool enable)
+{
+    return PhotonError_Ok;
+}
+
 PhotonError PhotonGrp_ExecCmd_ShareMsgs(uint64_t group, uint64_t from, const PhotonDynArrayOfU8MaxSize500* cmd)
 {
     return PhotonError_Ok;

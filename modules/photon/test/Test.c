@@ -16,6 +16,7 @@ void PhotonTest_Init()
     _photonTest.param11 = 11;
     _photonTest.param12 = 'a';
     _photonTest.dynArrayParam.size = 10;
+    _photonTest.dynArrayParam2.size = 10;
     _photonTest.optionParam.type = PhotonOptionOptionOptionTestParamStructType_Some;
     _photonTest.optionVaruintParam.type = PhotonOptionVaruintType_Some;
     _photonTest.longString.size = 3;
@@ -25,16 +26,24 @@ void PhotonTest_Init()
     _photonTest.longString.data[3] = '\0';
     for (size_t i = 0; i < 10; i++) {
         _photonTest.dynArrayParam.data[i].parama = i;
-        _photonTest.dynArrayParam.data[i].paramb = i;
+        _photonTest.dynArrayParam.data[i].paramb = i + 1;
+    }
+    for (size_t i = 0; i < 10; i++) {
+        _photonTest.dynArrayParam2.data[i] = i + 1;
+    }
+    for (size_t i = 0; i < 5; i++) {
+        for (size_t j = 0; j < 10; j++) {
+            _photonTest.arrayParam[i][j] = i + j;
+        }
     }
 }
 
 void PhotonTest_Tick()
 {
-    _photonTest.dynArrayParam.size++;
-    if (_photonTest.dynArrayParam.size > 10) {
-        _photonTest.dynArrayParam.size = 0;
-    }
+    //_photonTest.dynArrayParam.size++;
+    //if (_photonTest.dynArrayParam.size > 10) {
+    //    _photonTest.dynArrayParam.size = 0;
+    //}
 }
 
 PhotonError PhotonTest_ExecCmd_SetParam1(uint8_t p)
