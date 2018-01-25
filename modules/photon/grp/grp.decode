@@ -57,6 +57,7 @@ struct Timeouts {
 struct TestSharedTime {
     device: UavId,
     time: Time,
+    diff: varint,
 }
 
 component {
