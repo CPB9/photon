@@ -27,6 +27,11 @@ bool isLeader()
          && isMe(_photonGrp.leader.data.someOptionGrpUavId._1));
 }
 
+bool PhotonGrp_IsPacketForMe(uint64_t dest)
+{
+    return isMe(dest) || isSameGroup(dest);
+}
+
 void addMember(uint64_t member)
 {
     for (uint64_t i = 0; i < _photonGrp.members.size; ++i)

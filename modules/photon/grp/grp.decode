@@ -91,6 +91,7 @@ component {
         fn addSharer(compNum: u8, generator: &Fn(*mut Writer) -> Error, receiver: &Fn(UavId, *mut Reader) -> Error)
         fn removeSharer(compNum: u8)
         fn isLeader() -> bool
+        fn isPacketForMe(dest: varuint) -> bool
     }
 
     commands {

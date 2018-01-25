@@ -250,14 +250,9 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
 
     if (self->incomingHeader.destAddress != PhotonExc_SelfAddress()) {
 #ifdef PHOTON_HAS_MODULE_GRP
-        if (_photonGrp.group.type == PhotonOptionGrpGrpIdType_None) {
+        if (!PhotonGrp_IsPacketForMe(self->incomingHeader.destAddress)) {
             HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address(%" PRIi64 ")", self->incomingHeader.destAddress);
             return true;
-        }
-
-        if (_photonGrp.group.data.someOptionGrpGrpId._1 != PhotonExc_SelfAddress()) {
-           HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest group address(%" PRIi64 ")", _photonGrp.group.data.someOptionGrpGrpId._1);
-           return true;
         }
 #else
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address(%" PRIi64 ")", self->incomingHeader.destAddress);
