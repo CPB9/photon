@@ -728,6 +728,7 @@ bool StringValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
         _value.emplace();
     }
     _hasChanged = true;
+    _lastUpdateTime = ctx.dataTimeOfOrigin();
     _value->assign((const char*)src->current(), size);
     src->skip(size);
     return true;
