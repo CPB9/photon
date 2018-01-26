@@ -19,6 +19,7 @@
 
 namespace photon {
 
+struct PacketHeader;
 class TmModel;
 class ValueNode;
 
@@ -46,7 +47,7 @@ private:
         caf::actor actor;
     };
 
-    void acceptData(bmcl::Bytes packet);
+    void acceptData(const PacketHeader& header, bmcl::Bytes packet);
     void initTmNodes();
     template <typename T>
     void initTypedNode(const char* name, Rc<T>* dest);

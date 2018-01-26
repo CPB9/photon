@@ -10,7 +10,7 @@ type Duration = varint;
 
 component {
     parameters {
-        /// corrected system time at tick start
+        /// corrected time at tick start
         tickTime: TimePoint,
         /// raw system time correction
         correction: Duration,
@@ -25,10 +25,10 @@ component {
         fn tick()
 
         /// get raw system time
-        fn getRawSystemTime() -> TimePoint
-        /// get corrected system time
+        fn getRawSystemTime() -> Duration
+        /// get corrected time
         fn getTime() -> TimePoint
-        /// get corrected system time since tick start
+        /// get corrected time at tick start
         fn getTickTime() -> TimePoint
     }
 
@@ -37,6 +37,6 @@ component {
     }
 
     events {
-        [timeCorrected, true]: {oldTime: TimePoint, newTime: TimePoint},
+        [timeCorrected, true]: {rawTime: Duration, oldTime: TimePoint, newTime: TimePoint},
     }
 }

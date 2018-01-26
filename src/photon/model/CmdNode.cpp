@@ -150,10 +150,10 @@ Rc<ScriptResultNode> ScriptResultNode::fromScriptNode(const ScriptNode* node, co
     return resultNode;
 }
 
-bool ScriptResultNode::decode(bmcl::MemReader* src)
+bool ScriptResultNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
 {
     for (const Rc<ValueNode>& node : _nodes) {
-        if (!node->decode(src)) {
+        if (!node->decode(ctx, src)) {
             return false;
         }
     }

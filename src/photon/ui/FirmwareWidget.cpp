@@ -13,6 +13,7 @@
 #include "photon/ui/QNodeViewModel.h"
 #include "photon/model/NodeView.h"
 #include "photon/groundcontrol/Packet.h"
+#include "photon/model/DecoderCtx.h"
 
 #include <QWidget>
 
@@ -81,6 +82,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
     _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
     _scriptEditWidget->expandToDepth(1);
     _scriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    _scriptEditWidget->setColumnHidden(3, true);
     connect(_scriptEditWidget, &QWidget::customContextMenuRequested, this, &FirmwareWidget::nodeContextMenuRequested);
 
     connect(clearButton, &QPushButton::clicked, this,
@@ -102,6 +104,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
     _cmdViewWidget->header()->setStretchLastSection(false);
     _cmdViewWidget->setRootIndex(_cmdViewModel->index(0, 0));
     _cmdViewWidget->setColumnHidden(2, true);
+    _cmdViewWidget->setColumnHidden(3, true);
     _cmdViewWidget->expandToDepth(1);
 
     _scriptResultModel = bmcl::makeUnique<QNodeModel>(emptyNode.get());
@@ -115,6 +118,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
     _scriptResultWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     _scriptResultWidget->header()->setStretchLastSection(false);
     _scriptResultWidget->setRootIndex(_scriptResultModel->index(0, 0));
+    _scriptResultWidget->setColumnHidden(3, true);
 
     auto rightLayout = new QVBoxLayout;
     auto cmdLayout = new QVBoxLayout;
@@ -156,7 +160,8 @@ void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
     bmcl::MemReader reader(response.payload.view());
     _scriptResultNode = ScriptResultNode::fromScriptNode(_scriptNode.get(), _cache.get(), bmcl::None);
     //TODO: check errors
-    _scriptResultNode->decode(&reader);
+    DecoderCtx ctx(response.tickTime);
+    _scriptResultNode->decode(ctx, &reader);
     _scriptResultModel->setRoot(_scriptResultNode.get());
     _scriptResultWidget->expandAll();
     setEnabled(true);

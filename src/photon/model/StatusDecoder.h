@@ -28,6 +28,7 @@ class FieldsNode;
 class Statuses;
 class ValueNode;
 class DecoderAction;
+class DecoderCtx;
 
 struct ChainElement {
     ChainElement(std::size_t index, DecoderAction* action, ValueNode* node);
@@ -45,7 +46,7 @@ public:
     StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node);
     ~StatusMsgDecoder();
 
-    bool decode(bmcl::MemReader* src);
+    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src);
 
 private:
     std::vector<ChainElement> _chain;
@@ -68,7 +69,7 @@ public:
 
     ~StatusDecoder();
 
-    bool decode(uint32_t msgId, bmcl::Bytes payload);
+    bool decode(const DecoderCtx& ctx, uint32_t msgId, bmcl::Bytes payload);
 
 private:
     decode::HashMap<uint32_t, StatusMsgDecoder> _decoders;

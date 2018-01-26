@@ -11,6 +11,7 @@
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
 #include "photon/model/ValueKind.h"
+#include "photon/model/OnboardTime.h"
 
 #include <bmcl/Fwd.h>
 #include <bmcl/OptionPtr.h>
@@ -52,6 +53,7 @@ public:
     virtual bool setValue(const Value& value);
     virtual bool isDefault() const;
     virtual bool isInRange() const;
+    virtual bmcl::Option<OnboardTime> lastUpdateTime() const;
     virtual bmcl::Option<std::vector<Value>> possibleValues() const;
 
     bmcl::Option<std::size_t> indexInParent() const;

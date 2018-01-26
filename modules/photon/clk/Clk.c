@@ -7,7 +7,7 @@
 
 #include <sys/time.h>
 
-PhotonClkTimePoint PhotonClk_GetRawSystemTime()
+PhotonClkDuration PhotonClk_GetRawSystemTime()
 {
     struct timeval t;
     gettimeofday(&t, NULL);
@@ -26,7 +26,7 @@ PhotonClkTimePoint PhotonClk_GetRawSystemTime()
 # define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif
 
-PhotonClkTimePoint PhotonClk_GetRawSystemTime()
+PhotonClkDuration PhotonClk_GetRawSystemTime()
 {
     FILETIME ft;
     uint64_t tmpres = 0;
@@ -50,8 +50,8 @@ PhotonClkTimePoint PhotonClk_GetRawSystemTime()
 
 void PhotonClk_Init()
 {
-    _photonClk.tickTime = PhotonClk_GetRawSystemTime();
     _photonClk.correction = 0;
+    _photonClk.tickTime = PhotonClk_GetTime();
 }
 
 void PhotonClk_Tick()
@@ -71,11 +71,11 @@ PhotonClkTimePoint PhotonClk_GetTime()
 
 PhotonError PhotonClk_ExecCmd_SetTimeCorrection(int64_t delta)
 {
-    PhotonClkTimePoint rawTime = PhotonClk_GetRawSystemTime();
+    PhotonClkDuration rawTime = PhotonClk_GetRawSystemTime();
     PhotonClkTimePoint oldTime = rawTime + _photonClk.correction;
     PhotonClkTimePoint newTime = rawTime + delta;
     _photonClk.correction = delta;
-    PhotonClk_QueueEvent_TimeCorrected(oldTime, newTime); //TODO: handle error
+    PhotonClk_QueueEvent_TimeCorrected(rawTime, oldTime, newTime); //TODO: handle error
     return PhotonError_Ok;
 }
 

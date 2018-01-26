@@ -13,6 +13,7 @@
 #include "photon/model/FieldsNode.h"
 #include "decode/ast/Field.h"
 #include "photon/model/ValueNode.h"
+#include "photon/model/DecoderCtx.h"
 
 #include <bmcl/Bytes.h>
 #include <bmcl/MemReader.h>
@@ -39,7 +40,7 @@ ChainElement::~ChainElement()
 
 class DecoderAction : public RefCountable {
 public:
-    virtual bool execute(ValueNode* node, bmcl::MemReader* src) = 0;
+    virtual bool execute(const DecoderCtx& ctx, ValueNode* node, bmcl::MemReader* src) = 0;
 
     void setNext(DecoderAction* next)
     {
@@ -52,9 +53,9 @@ protected:
 
 class DecodeNodeAction : public DecoderAction {
 public:
-    bool execute(ValueNode* node, bmcl::MemReader* src) override
+    bool execute(const DecoderCtx& ctx, ValueNode* node, bmcl::MemReader* src) override
     {
-        return node->decode(src);
+        return node->decode(ctx, src);
     }
 };
 
@@ -65,13 +66,13 @@ public:
     {
     }
 
-    bool execute(ValueNode* node, bmcl::MemReader* src) override
+    bool execute(const DecoderCtx& ctx, ValueNode* node, bmcl::MemReader* src) override
     {
         (void)src;
         assert(node->type()->isStruct());
         ContainerValueNode* cnode = static_cast<ContainerValueNode*>(node);
         ValueNode* child = cnode->nodeAt(_fieldIndex);
-        return _next->execute(child, src);
+        return _next->execute(ctx, child, src);
     }
 
 private:
@@ -80,7 +81,7 @@ private:
 
 class DecodeDynArrayPartsAction : public DecoderAction {
 public:
-    bool execute(ValueNode* node, bmcl::MemReader* src) override
+    bool execute(const DecoderCtx& ctx, ValueNode* node, bmcl::MemReader* src) override
     {
         uint64_t dynArraySize;
         if (!src->readVarUint(&dynArraySize)) {
@@ -93,10 +94,10 @@ public:
             return false;
         }
         //TODO: add size check
-        cnode->resizeDynArray(dynArraySize);
+        cnode->resizeDynArray(ctx.dataTimeOfOrigin(), dynArraySize);
         const std::vector<Rc<ValueNode>>& values = cnode->values();
         for (std::size_t i = 0; i < dynArraySize; i++) {
-            TRY(_next->execute(values[i].get(), src));
+            TRY(_next->execute(ctx, values[i].get(), src));
         }
         return true;
     }
@@ -104,13 +105,13 @@ public:
 
 class DecodeArrayPartsAction : public DecoderAction {
 public:
-    bool execute(ValueNode* node, bmcl::MemReader* src) override
+    bool execute(const DecoderCtx& ctx, ValueNode* node, bmcl::MemReader* src) override
     {
         //FIXME: implement range check
         ArrayValueNode* cnode = static_cast<ArrayValueNode*>(node);
         const std::vector<Rc<ValueNode>>& values = cnode->values();
         for (std::size_t i = 0; i < values.size(); i++) {
-            TRY(_next->execute(values[i].get(), src));
+            TRY(_next->execute(ctx, values[i].get(), src));
         }
         return true;
     }
@@ -193,10 +194,10 @@ StatusMsgDecoder::~StatusMsgDecoder()
 {
 }
 
-bool StatusMsgDecoder::decode(bmcl::MemReader* src)
+bool StatusMsgDecoder::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
 {
     for (const ChainElement& elem : _chain) {
-        if (!elem.action->execute(elem.node.get(), src)) {
+        if (!elem.action->execute(ctx, elem.node.get(), src)) {
             return false;
         }
     }
@@ -207,7 +208,7 @@ StatusDecoder::~StatusDecoder()
 {
 }
 
-bool StatusDecoder::decode(uint32_t msgId, bmcl::Bytes payload)
+bool StatusDecoder::decode(const DecoderCtx& ctx, uint32_t msgId, bmcl::Bytes payload)
 {
     auto it = _decoders.find(msgId);
     if (it == _decoders.end()) {
@@ -215,7 +216,7 @@ bool StatusDecoder::decode(uint32_t msgId, bmcl::Bytes payload)
         return false;
     }
     bmcl::MemReader src(payload);
-    if (!it->second.decode(&src)) {
+    if (!it->second.decode(ctx, &src)) {
         //TODO: report error
         return false;
     }

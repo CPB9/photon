@@ -17,6 +17,8 @@
 #include "photon/model/ValueInfoCache.h"
 #include "photon/model/ValueNode.h"
 #include "photon/model/FindNode.h"
+#include "photon/model/DecoderCtx.h"
+#include "photon/groundcontrol/Packet.h"
 #include "photon/groundcontrol/AllowUnsafeMessageType.h"
 #include "photon/groundcontrol/TmParamUpdate.h"
 #include "photon/groundcontrol/ProjectUpdate.h"
@@ -72,8 +74,8 @@ caf::behavior TmState::make_behavior()
             _updateCount++;
             delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
         },
-        [this](RecvPacketPayloadAtom, const bmcl::SharedBytes& data) {
-            acceptData(data.view());
+        [this](RecvPacketPayloadAtom, const PacketHeader& header, const bmcl::SharedBytes& data) {
+            acceptData(header, data.view());
         },
         [this](PushTmUpdatesAtom, uint64_t count) {
             if (count != _updateCount) {
@@ -193,11 +195,13 @@ void TmState::initTmNodes()
     _features.hasOrientation = _headingNode || _pitchNode || _rollNode;
 }
 
-void TmState::acceptData(bmcl::Bytes packet)
+void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
 {
     if (!_model) {
         return;
     }
+
+    DecoderCtx ctx(header.tickTime);
 
     bmcl::MemReader src(packet);
     while (src.sizeLeft() != 0) {
@@ -244,7 +248,8 @@ void TmState::acceptData(bmcl::Bytes packet)
                 send(actor, sub, data);
             }
         }
-        _model->acceptTmMsg(compNum, msgNum, view);
+
+        _model->acceptTmMsg(ctx, compNum, msgNum, view);
     }
 }
 }

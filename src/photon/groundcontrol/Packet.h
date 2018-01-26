@@ -1,6 +1,7 @@
 #pragma once
 
 #include "photon/Config.hpp"
+#include "photon/model/OnboardTime.h"
 
 #include <bmcl/SharedBytes.h>
 
@@ -34,7 +35,7 @@ enum class ReceiptType : uint8_t {
 };
 
 struct PacketHeader {
-    uint64_t tickTime;
+    OnboardTime tickTime;
     uint64_t srcAddress;
     uint64_t destAddress;
     uint16_t counter;
@@ -46,7 +47,7 @@ struct PacketHeader {
 struct PacketResponse {
     ReceiptType type;
     bmcl::SharedBytes payload;
-    uint64_t tickTime;
+    OnboardTime tickTime;
     uint16_t counter;
 };
 

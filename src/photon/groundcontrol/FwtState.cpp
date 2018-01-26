@@ -84,7 +84,8 @@ FwtState::~FwtState()
 caf::behavior FwtState::make_behavior()
 {
     return caf::behavior{
-        [this](RecvPacketPayloadAtom, const bmcl::SharedBytes& packet) {
+        [this](RecvPacketPayloadAtom, const PacketHeader& header, const bmcl::SharedBytes& packet) {
+            (void)header;
             acceptData(packet.view());
         },
         [this](FwtHashAtom) {

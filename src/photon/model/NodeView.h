@@ -11,6 +11,7 @@
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
 #include "photon/model/Value.h"
+#include "photon/model/OnboardTime.h"
 
 #include <bmcl/OptionPtr.h>
 
@@ -30,7 +31,10 @@ public:
     using Pointer = Rc<NodeView>;
     using ConstPointer = Rc<const NodeView>;
 
-    NodeView(const Node* node, bmcl::OptionPtr<NodeView> parent = bmcl::None, std::size_t indexInParent = 0);
+    NodeView(const Node* node,
+             bmcl::Option<OnboardTime> time = bmcl::None,
+             bmcl::OptionPtr<NodeView> parent = bmcl::None,
+             std::size_t indexInParent = 0);
     ~NodeView();
 
     template <typename V>
@@ -43,12 +47,14 @@ public:
     }
 
     void setValueUpdate(ValueUpdate&& update);
+    void setUpdateTime(bmcl::Option<OnboardTime> time);
 
     uintptr_t id() const;
     std::size_t size() const;
     bool canSetValue() const;
     bool canHaveChildren() const;
     const Value& value() const;
+    bmcl::Option<OnboardTime> lastUpdateTime() const;
     bmcl::StringView shortDescription() const;
     bmcl::StringView typeName() const;
     bmcl::StringView fieldName() const;
@@ -70,6 +76,7 @@ private:
 
     NodeViewVec _children;
     Value _value;
+    bmcl::Option<OnboardTime> _updateTime;
     std::string _name;
     std::string _typeName;
     std::string _shortDesc;

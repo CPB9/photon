@@ -14,6 +14,7 @@
 #include "photon/groundcontrol/FwtState.h"
 #include "photon/groundcontrol/TmState.h"
 #include "photon/groundcontrol/ProjectUpdate.h"
+#include "photon/model/OnboardTime.h"
 #include "decode/parser/Project.h"
 
 #include <bmcl/Logging.h>
@@ -27,6 +28,7 @@
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketResponse);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketHeader);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
@@ -247,10 +249,13 @@ bool Exchange::handlePayload(bmcl::Bytes data)
     }
     header.counter = reader.readUint16Le();
 
-    if (!reader.readVarUint(&header.tickTime)) {
+    uint64_t tickTime;
+    if (!reader.readVarUint(&tickTime)) {
         reportError("recieved invalid time");
         return false;
     }
+
+    header.tickTime.setRawValue(tickTime);
 
     bmcl::Bytes userData(reader.current(), reader.end());
     switch (header.streamType) {
@@ -359,7 +364,7 @@ bool Exchange::acceptPacket(const PacketHeader& header, bmcl::Bytes payload, Str
     }
     switch (header.packetType) {
     case PacketType::Unreliable:
-        send(state->client, RecvPacketPayloadAtom::value, bmcl::SharedBytes::create(payload));
+        send(state->client, RecvPacketPayloadAtom::value, header, bmcl::SharedBytes::create(payload));
         break;
     case PacketType::Reliable:
         // unsupported
@@ -383,7 +388,7 @@ bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType pack
     headerWriter.writeVarInt((int64_t)packetType);
     headerWriter.writeVarInt((int64_t)req.streamType);
     headerWriter.writeUint16Le(counter);
-    headerWriter.writeVarUint(0); //time
+    headerWriter.writeVarUint(OnboardTime::now().rawValue()); //time
 
     //TODO: check overflow
     std::size_t packetSize = headerWriter.writenData().size() + req.payload.size() + 2;

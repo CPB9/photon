@@ -136,7 +136,7 @@ public:
 
     static Rc<ScriptResultNode> fromScriptNode(const ScriptNode* node, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
 
-    bool decode(bmcl::MemReader* src);
+    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src);
 
     bmcl::StringView fieldName() const override;
 };

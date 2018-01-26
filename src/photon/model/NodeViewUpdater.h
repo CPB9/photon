@@ -11,6 +11,7 @@
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
 #include "photon/model/NodeViewUpdate.h"
+#include "photon/model/OnboardTime.h"
 
 namespace photon {
 
@@ -24,9 +25,10 @@ public:
     NodeViewUpdater(const Node* owner);
     ~NodeViewUpdater();
 
-    void addValueUpdate(Value&& value, Node* parent);
-    void addShrinkUpdate(std::size_t size, Node* parent);
-    void addExtendUpdate(NodeViewVec&& vec, Node* parent);
+    void addTimeUpdate(OnboardTime time, Node* parent);
+    void addValueUpdate(Value&& value, OnboardTime time, Node* parent);
+    void addShrinkUpdate(std::size_t size, OnboardTime time, Node* parent);
+    void addExtendUpdate(NodeViewVec&& vec, OnboardTime time, Node* parent);
     void apply(NodeViewStore* dest);
 
     const std::vector<NodeViewUpdate>& updates() const;
