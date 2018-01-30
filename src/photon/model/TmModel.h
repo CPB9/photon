@@ -25,6 +25,7 @@ class DecoderCtx;
 class ValueInfoCache;
 class FieldsNode;
 class StatusDecoder;
+class StatusMsgDecoder;
 class NodeViewUpdater;
 template <typename T>
 class NumericValueNode;
@@ -49,7 +50,7 @@ public:
     bmcl::StringView fieldName() const override;
 
 private:
-    decode::HashMap<uint32_t, Rc<StatusDecoder>> _decoders;
+    decode::HashMap<uint64_t, Rc<StatusMsgDecoder>> _decoders;
     std::vector<Rc<ComponentParamsNode>> _nodes;
     Rc<const decode::Device> _device;
 };

@@ -40,38 +40,20 @@ struct ChainElement {
     Rc<ValueNode> node;
 };
 
-class StatusMsgDecoder {
+class TmDecoder : public RefCountable {
+public:
+    virtual bool decode(const DecoderCtx& ctx, bmcl::MemReader* src) = 0;
+};
+
+class StatusMsgDecoder : public TmDecoder {
 public:
 
     StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node);
     ~StatusMsgDecoder();
 
-    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src);
+    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src) override;
 
 private:
     std::vector<ChainElement> _chain;
-};
-
-class StatusDecoder : public RefCountable {
-public:
-    using Pointer = Rc<StatusDecoder>;
-    using ConstPointer = Rc<const StatusDecoder>;
-
-    template <typename R>
-    StatusDecoder(R statusRange, FieldsNode* node)
-    {
-        for (const auto& it : statusRange) {
-            _decoders.emplace(std::piecewise_construct,
-                              std::forward_as_tuple(it->number()),
-                              std::forward_as_tuple(it, node));
-        }
-    }
-
-    ~StatusDecoder();
-
-    bool decode(const DecoderCtx& ctx, uint32_t msgId, bmcl::Bytes payload);
-
-private:
-    decode::HashMap<uint32_t, StatusMsgDecoder> _decoders;
 };
 }

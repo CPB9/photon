@@ -203,23 +203,4 @@ bool StatusMsgDecoder::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
     }
     return true;
 }
-
-StatusDecoder::~StatusDecoder()
-{
-}
-
-bool StatusDecoder::decode(const DecoderCtx& ctx, uint32_t msgId, bmcl::Bytes payload)
-{
-    auto it = _decoders.find(msgId);
-    if (it == _decoders.end()) {
-        //TODO: report error
-        return false;
-    }
-    bmcl::MemReader src(payload);
-    if (!it->second.decode(ctx, &src)) {
-        //TODO: report error
-        return false;
-    }
-    return true;
-}
 }

@@ -14,6 +14,8 @@
 #include "photon/model/StatusDecoder.h"
 #include "photon/model/FieldsNode.h"
 
+#include <bmcl/MemReader.h>
+
 namespace photon {
 
 class ComponentParamsNode : public FieldsNode {
@@ -63,9 +65,12 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::O
         if (!it->hasStatuses()) {
             continue;
         }
-
-        Rc<StatusDecoder> decoder = new StatusDecoder(it->statusesRange(), node.get());
-        _decoders.emplace(it->number(), decoder);
+        std::size_t compNum = it->number();
+        for (const decode::StatusMsg* msg : it->statusesRange()) {
+            std::size_t msgNum = msg->number();
+            uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
+            _decoders.emplace(num, new StatusMsgDecoder(msg, node.get()));
+        }
     }
 }
 
@@ -91,13 +96,14 @@ void TmModel::collectUpdates(NodeViewUpdater* dest)
 
 void  TmModel::acceptTmMsg(const DecoderCtx& ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload)
 {
-    auto it = _decoders.find(compNum);
+    auto it = _decoders.find((uint64_t(compNum) << 32) | uint64_t(msgNum));
     if (it == _decoders.end()) {
         //TODO: report error
         return;
     }
 
-    if (!it->second->decode(ctx, msgNum, payload)) {
+    bmcl::MemReader src(payload);
+    if (!it->second->decode(ctx, &src)) {
         //TODO: report error
         return;
     }
