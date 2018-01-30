@@ -150,7 +150,7 @@ ui_src = [
   'src/photon/ui/QCmdModel.cpp',
   'src/photon/ui/QNodeModel.cpp',
   'src/photon/ui/QNodeViewModel.cpp',
-] + ui_headers + ui_moc
+] + ui_moc
 
 bmcl = subproject('bmcl', default_options: ['build_tests=false'])
 caf = subproject('caf')
@@ -175,30 +175,31 @@ if get_option('abs_paths')
   abs_paths_flag = '-a'
 endif
 
-gen_src = custom_target('dummy_src',
+gen_src = custom_target('photon-generated-src',
   input : project_path,
   output : ['Photon.c', 'Photon.h', 'Photon.hpp'],
   depend_files : modules_src,
   command : [decode_gen, '-p', '@INPUT@', '-o', meson.current_build_dir(), '-c', '4', abs_paths_flag],
 )
 
-gen_deps = [declare_dependency(
-    sources : gen_src,
-)]
+gen_onboard_src = []
+gen_onboard_src += gen_src[0]
+gen_onboard_src += gen_src[1]
+gen_gc_src = [gen_src[2]]
 
 gc_inc = include_directories('.', 'src')
 
 photon_lib = static_library('photon',
-  sources : ui_src + groundcontrol_src + model_src,
+  sources : ui_src + groundcontrol_src + model_src + gen_gc_src,
   include_directories: gc_inc,
-  dependencies: deps + gen_deps,
+  dependencies: deps,
   cpp_args: '-DBUILDING_PHOTON',
 )
 
 photon_dep = declare_dependency(
   link_with : photon_lib,
   include_directories: gc_inc,
-  dependencies: deps + gen_deps,
+  dependencies: deps,
 )
 
 test_moc = qt5.preprocess(
@@ -207,10 +208,10 @@ test_moc = qt5.preprocess(
 )
 
 uitest_lib = static_library('photon-uitest',
-  sources : ['tests/UiTest.cpp', 'tests/UiTest.h', test_moc],
+  sources : ['tests/UiTest.cpp', test_moc],
   include_directories: gc_inc,
   link_with: photon_lib,
-  dependencies: deps + gen_deps,
+  dependencies: deps,
 )
 
 client_tests = [
@@ -222,7 +223,7 @@ foreach test : client_tests
   executable('photon-' + test[0],
     include_directories : gc_inc,
     sources : 'tests/' + test[1],
-    dependencies : deps + gen_deps,
+    dependencies : deps,
     link_with : uitest_lib,
   )
 endforeach
@@ -252,15 +253,13 @@ if log_level > 0
 endif
 
 foreach name : photon_targets
-  fname = gen_src[0]
   libname = 'photon-target-' + name
   flag = '-DPHOTON_DEVICE_' + name.to_upper()
 
   lib = static_library(libname,
-    sources : fname,
+    sources : gen_onboard_src,
     include_directories : onboard_inc,
     c_args : [onboard_flags, flag],
-    dependencies : gen_deps,
   )
   set_variable('photon_target_' + name + '_lib', lib)
 
@@ -276,7 +275,7 @@ foreach name : photon_targets
       executable('photon-' + test[0] + '-' + name,
         include_directories : [gc_inc, onboard_inc],
         sources : 'tests/' + test[1],
-        dependencies : deps + gen_deps,
+        dependencies : deps,
         link_with : [uitest_lib, lib],
       )
     endforeach
