@@ -63,11 +63,11 @@ bmcl::OptionPtr<Node> FieldsNode::childAt(std::size_t idx)
     return childAtGeneric(_nodes, idx);
 }
 
-bool FieldsNode::encodeFields(bmcl::MemWriter* dest) const
+bool FieldsNode::encodeFields(CoderState* ctx, bmcl::Buffer* dest) const
 {
     for (std::size_t i = 0; i < _nodes.size(); i++) {
         const ValueNode* node = _nodes[i].get();
-        if (!node->encode(dest)) {
+        if (!node->encode(ctx, dest)) {
             //TODO: report error
             return false;
         }

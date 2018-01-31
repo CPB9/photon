@@ -24,6 +24,7 @@
 namespace photon {
 
 class ValueNode;
+class CoderState;
 class ValueInfoCache;
 class NodeViewUpdater;
 
@@ -38,7 +39,7 @@ public:
     bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override;
     bmcl::OptionPtr<ValueNode> valueNodeWithName(bmcl::StringView name);
 
-    bool encodeFields(bmcl::MemWriter* dest) const;
+    bool encodeFields(CoderState* ctx, bmcl::Buffer* dest) const;
 
     void collectUpdates(NodeViewUpdater* dest) override;
 

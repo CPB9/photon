@@ -28,7 +28,7 @@ class FieldsNode;
 class Statuses;
 class ValueNode;
 class DecoderAction;
-class DecoderCtx;
+class CoderState;
 
 struct ChainElement {
     ChainElement(std::size_t index, DecoderAction* action, ValueNode* node);
@@ -42,7 +42,7 @@ struct ChainElement {
 
 class TmDecoder : public RefCountable {
 public:
-    virtual bool decode(const DecoderCtx& ctx, bmcl::MemReader* src) = 0;
+    virtual bool decode(CoderState* ctx, bmcl::MemReader* src) = 0;
 };
 
 class StatusMsgDecoder : public TmDecoder {
@@ -51,7 +51,7 @@ public:
     StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node);
     ~StatusMsgDecoder();
 
-    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src) override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
 private:
     std::vector<ChainElement> _chain;

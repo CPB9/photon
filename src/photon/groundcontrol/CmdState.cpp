@@ -13,6 +13,8 @@
 #include "photon/model/Decoder.h"
 #include "photon/model/Value.h"
 #include "photon/model/CmdNode.h"
+#include "photon/model/OnboardTime.h"
+#include "photon/model/CoderState.h"
 #include "photon/groundcontrol/GcInterface.h"
 #include "photon/groundcontrol/Packet.h"
 #include "photon/groundcontrol/GcCmd.h"
@@ -20,7 +22,7 @@
 #include "photon/groundcontrol/ProjectUpdate.h"
 
 #include <bmcl/Logging.h>
-#include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 #include <bmcl/Result.h>
 
 #include <caf/sec.hpp>
@@ -733,12 +735,12 @@ caf::result<PacketResponse> CmdState::sendCustomCmd(bmcl::StringView compName, b
         return caf::error();
     }
 
-    uint8_t tmp[2048]; //TODO: temp
-    bmcl::MemWriter dest(tmp, sizeof(tmp));
-    if (cmdNode->encode(&dest)) {
+    bmcl::Buffer dest(2048);
+    CoderState ctx(OnboardTime::now());
+    if (cmdNode->encode(&ctx, &dest)) {
         PacketRequest req;
         req.streamType = StreamType::Cmd;
-        req.payload = bmcl::SharedBytes::create(dest.writenData());
+        req.payload = bmcl::SharedBytes::create(dest);
         caf::response_promise promise = make_response_promise();
         request(_exc, caf::infinite, SendReliablePacketAtom::value, req).then([promise](const PacketResponse& response) mutable {
             promise.deliver(response);

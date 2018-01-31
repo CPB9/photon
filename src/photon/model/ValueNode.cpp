@@ -18,9 +18,9 @@
 #include "photon/model/NodeViewUpdate.h"
 #include "photon/model/NodeView.h"
 #include "photon/model/NodeViewUpdater.h"
-#include "photon/model/DecoderCtx.h"
+#include "photon/model/CoderState.h"
 
-#include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
 #include <bmcl/Logging.h>
 
@@ -246,15 +246,15 @@ bool ContainerValueNode::isInitialized() const
     return true;
 }
 
-bool ContainerValueNode::encode(bmcl::MemWriter* dest) const
+bool ContainerValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     for (std::size_t i = 0; i < _values.size(); i++) {
-        TRY(_values[i]->encode(dest));
+        TRY(_values[i]->encode(ctx, dest));
     }
     return true;
 }
 
-bool ContainerValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool ContainerValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     for (std::size_t i = 0; i < _values.size(); i++) {
         TRY(_values[i]->decode(ctx, src));
@@ -318,7 +318,7 @@ void ArrayValueNode::collectUpdates(NodeViewUpdater* dest)
     _changedSinceUpdate = false;
 }
 
-bool ArrayValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool ArrayValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     _changedSinceUpdate = true;
     return ContainerValueNode::decode(ctx, src);
@@ -365,27 +365,24 @@ void DynArrayValueNode::collectUpdates(NodeViewUpdater* dest)
     _lastUpdateSize = _minSizeSinceUpdate;
 }
 
-bool DynArrayValueNode::encode(bmcl::MemWriter* dest) const
+bool DynArrayValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
-    if (!dest->writeVarUint(_values.size())) {
-        //TODO: report error
-        return false;
-    }
-    return ContainerValueNode::encode(dest);
+    dest->writeVarUint(_values.size());
+    return ContainerValueNode::encode(ctx, dest);
 }
 
-bool DynArrayValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool DynArrayValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t size;
     if (!src->readVarUint(&size)) {
-        //TODO: report error
+        ctx->setError("Error reading dynarray size");
         return false;
     }
     if (size > _type->maxSize()) {
-        //TODO: report error
+        ctx->setError("Dynarray overflow");
         return false;
     }
-    resizeDynArray(ctx.dataTimeOfOrigin(), size);
+    resizeDynArray(ctx->dataTimeOfOrigin(), size);
     return ContainerValueNode::decode(ctx, src);
 }
 
@@ -455,7 +452,7 @@ void StructValueNode::collectUpdates(NodeViewUpdater* dest)
     _changedSinceUpdate = false;
 }
 
-bool StructValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool StructValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     _changedSinceUpdate = true;
     return ContainerValueNode::decode(ctx, src);
@@ -523,14 +520,14 @@ void VariantValueNode::collectUpdates(NodeViewUpdater* dest)
     _currentId.unwrap().updateState();
 }
 
-bool VariantValueNode::encode(bmcl::MemWriter* dest) const
+bool VariantValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_currentId.isNone()) {
-        //TODO: report error
+        ctx->setError("Variant value not set");
         return false;
     }
-    TRY(dest->writeVarInt(_currentId.unwrap().value()));
-    return ContainerValueNode::encode(dest);
+    dest->writeVarInt(_currentId.unwrap().value());
+    return ContainerValueNode::encode(ctx, dest);
 }
 
 bool VariantValueNode::canSetValue() const
@@ -603,19 +600,22 @@ ValueKind VariantValueNode::valueKind() const
     return ValueKind::StringView;
 }
 
-bool VariantValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool VariantValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t id;
-    TRY(src->readVarInt(&id));
+    if (!src->readVarInt(&id)) {
+        ctx->setError("Error reading variant id");
+        return false;
+    }
     if (id < 0) {
-        //TODO: report error
+        ctx->setError("Negative variant id");
         return false;
     }
     if (uint64_t(id) >= _type->fieldsRange().size()) {
-        //TODO: report error
+        ctx->setError("Variant id overflow");
         return false;
     }
-    selectId(ctx.dataTimeOfOrigin(), id);
+    selectId(ctx->dataTimeOfOrigin(), id);
     TRY(ContainerValueNode::decode(ctx, src));
     return true;
 }
@@ -695,40 +695,33 @@ void StringValueNode::collectUpdates(NodeViewUpdater* dest)
     }
 }
 
-bool StringValueNode::encode(bmcl::MemWriter* dest) const
+bool StringValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("String value not set");
         return false;
     }
-    if (!dest->writeVarUint(_value->size())) {
-        //TODO: report error
-        return false;
-    }
-    if (dest->sizeLeft() < _value->size()) {
-        //TODO: report error
-        return false;
-    }
+    dest->writeVarUint(_value->size());
     dest->write(_value->data(), _value->size());
     return true;
 }
 
-bool StringValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool StringValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t size;
     if (!src->readVarUint(&size)) {
-        //TODO: report error
+        ctx->setError("Error reading string size");
         return false;
     }
     if (src->sizeLeft() < size) {
-        //TODO: report error
+        ctx->setError("String size overflow");
         return false;
     }
     if (_value.isNone()) {
         _value.emplace();
     }
     _hasChanged = true;
-    _lastUpdateTime = ctx.dataTimeOfOrigin();
+    _lastUpdateTime = ctx->dataTimeOfOrigin();
     _value->assign((const char*)src->current(), size);
     src->skip(size);
     return true;
@@ -804,29 +797,30 @@ void AddressValueNode::collectUpdates(NodeViewUpdater* dest)
     _address.unwrap().updateState();
 }
 
-bool AddressValueNode::encode(bmcl::MemWriter* dest) const
+bool AddressValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     //TODO: get target word size
     if (_address.isNone()) {
-        //TODO: report error
+        ctx->setError("Address value not set");
         return false;
     }
     if (dest->writableSize() < 8) {
+        ctx->setError("Not enough space to write address value");
         return false;
     }
     dest->writeUint64Le(_address.unwrap().value());
     return true;
 }
 
-bool AddressValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool AddressValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     //TODO: get target word size
     if (src->readableSize() < 8) {
-        //TODO: report error
+        ctx->setError("Not enough data to decode address");
         return false;
     }
     uint64_t value = src->readUint64Le();
-    updateOptionalValuePair(&_address, ctx.dataTimeOfOrigin(), value);
+    updateOptionalValuePair(&_address, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -916,31 +910,31 @@ void EnumValueNode::collectUpdates(NodeViewUpdater* dest)
     _currentId.unwrap().updateState();
 }
 
-bool EnumValueNode::encode(bmcl::MemWriter* dest) const
+bool EnumValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_currentId.isSome()) {
-        TRY(dest->writeVarInt(_currentId.unwrap().value()));
+        dest->writeVarInt(_currentId.unwrap().value());
         return true;
     }
-    //TODO: report error
+    ctx->setError("Enum value not set");
     return false;
 }
 
-bool EnumValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool EnumValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t value;
     if (!src->readVarInt(&value)) {
-        //TODO: report error
+        ctx->setError("Error reading enum id");
         return false;
     }
     auto it = _type->constantsRange().findIf([value](const decode::EnumConstant* c) {
         return c->value() == value;
     });
     if (it == _type->constantsEnd()) {
-        //TODO: report error
+        ctx->setError("Invalid enum id");
         return false;
     }
-    updateOptionalValuePair(&_currentId, ctx.dataTimeOfOrigin(), value);
+    updateOptionalValuePair(&_currentId, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -1071,14 +1065,14 @@ void NumericValueNode<T>::collectUpdates(NodeViewUpdater* dest)
 }
 
 template <typename T>
-bool NumericValueNode<T>::encode(bmcl::MemWriter* dest) const
+bool NumericValueNode<T>::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("Numeric value not set");
         return false;
     }
     if (dest->writableSize() < sizeof(T)) {
-        //TODO: report error
+        ctx->setError("Not enough space to write numeric value");
         return false;
     }
     dest->writeType<T>(bmcl::htole<T>(_value.unwrap().value()));
@@ -1086,14 +1080,14 @@ bool NumericValueNode<T>::encode(bmcl::MemWriter* dest) const
 }
 
 template <typename T>
-bool NumericValueNode<T>::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool NumericValueNode<T>::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     if (src->readableSize() < sizeof(T)) {
-        //TODO: report error
+        ctx->setError("Not enough data to read numeric value");
         return false;
     }
     T value = bmcl::letoh<T>(src->readType<T>());
-    updateOptionalValuePair(&_value, ctx.dataTimeOfOrigin(), value);
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -1239,21 +1233,24 @@ VarintValueNode::~VarintValueNode()
 {
 }
 
-bool VarintValueNode::encode(bmcl::MemWriter* dest) const
+bool VarintValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("Varint value not set");
         return false;
     }
-    return dest->writeVarInt(_value.unwrap().value());
+    dest->writeVarInt(_value.unwrap().value());
+    return true;
 }
 
-bool VarintValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool VarintValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t value;
-    //TODO: report error
-    TRY(src->readVarInt(&value));
-    updateOptionalValuePair(&_value, ctx.dataTimeOfOrigin(), value);
+    if (!src->readVarInt(&value)) {
+        ctx->setError("Error reading varint value");
+        return false;
+    }
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -1266,21 +1263,24 @@ VaruintValueNode::~VaruintValueNode()
 {
 }
 
-bool VaruintValueNode::encode(bmcl::MemWriter* dest) const
+bool VaruintValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("Varuint value not set");
         return false;
     }
-    return dest->writeVarUint(_value.unwrap().value());
+    dest->writeVarUint(_value.unwrap().value());
+    return true;
 }
 
-bool VaruintValueNode::decode(const DecoderCtx& ctx, bmcl::MemReader* src)
+bool VaruintValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t value;
-    //TODO: report error
-    TRY(src->readVarUint(&value));
-    updateOptionalValuePair(&_value, ctx.dataTimeOfOrigin(), value);
+    if (!src->readVarUint(&value)) {
+        ctx->setError("Error reading varuint value");
+        return false;
+    }
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 }

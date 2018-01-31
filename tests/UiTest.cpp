@@ -72,7 +72,7 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self)
         [](const NumberedSub& sub, const bmcl::SharedBytes& value) {
             bmcl::MemReader reader(value.view());
             TestMsg msg;
-            photon::CoderState state;
+            CoderState state(OnboardTime::now());
             if (sub.id() == TestMsg::MSG_ID) {
                 if (photongenDeserialize(&msg, &reader, &state)) {
                     //BMCL_DEBUG() << "test msg param1: " << msg.param1;
@@ -112,7 +112,7 @@ caf::behavior UiActor::make_behavior()
 
             if (_validator) {
                 bmcl::Buffer dest;
-                CoderState state;
+                CoderState state(OnboardTime::now());
                 if (_validator->encodeCmdTestSetParam3(_param2Value * 11, &dest, &state)) {
                     PacketRequest req;
                     req.streamType = StreamType::Cmd;

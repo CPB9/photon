@@ -32,7 +32,7 @@ public:
     CmdNode(const decode::Component* comp, const decode::Function* func, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent, bool expandArgs = true);
     ~CmdNode();
 
-    bool encode(bmcl::MemWriter* dest) const;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const;
     std::size_t numChildren() const override;
     bool canHaveChildren() const override;
 
@@ -115,7 +115,7 @@ public:
 
     void addCmdNode(CmdNode* node);
 
-    bool encode(bmcl::MemWriter* dest) const;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const;
 
     bmcl::StringView fieldName() const override;
 
@@ -136,7 +136,7 @@ public:
 
     static Rc<ScriptResultNode> fromScriptNode(const ScriptNode* node, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
 
-    bool decode(const DecoderCtx& ctx, bmcl::MemReader* src);
+    bool decode(CoderState* ctx, bmcl::MemReader* src);
 
     bmcl::StringView fieldName() const override;
 };

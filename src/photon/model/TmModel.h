@@ -21,7 +21,7 @@ class Device;
 
 namespace photon {
 
-class DecoderCtx;
+class CoderState;
 class ValueInfoCache;
 class FieldsNode;
 class StatusDecoder;
@@ -39,7 +39,7 @@ public:
     TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent = bmcl::None);
     ~TmModel();
 
-    void acceptTmMsg(const DecoderCtx& ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
+    void acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
 
     bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override;
 

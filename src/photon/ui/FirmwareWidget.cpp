@@ -13,7 +13,7 @@
 #include "photon/ui/QNodeViewModel.h"
 #include "photon/model/NodeView.h"
 #include "photon/groundcontrol/Packet.h"
-#include "photon/model/DecoderCtx.h"
+#include "photon/model/CoderState.h"
 
 #include <QWidget>
 
@@ -26,7 +26,7 @@
 #include <QMenu>
 #include <QInputDialog>
 
-#include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
@@ -50,17 +50,18 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
     QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
-        uint8_t tmp[2048]; //TODO: temp
-        bmcl::MemWriter dest(tmp, sizeof(tmp));
-        if (_scriptNode->encode(&dest)) {
+        bmcl::Buffer dest(2048);
+        CoderState ctx(OnboardTime::now());
+        if (_scriptNode->encode(&ctx, &dest)) {
             PacketRequest req;
             req.streamType = StreamType::Cmd;
-            req.payload = bmcl::SharedBytes::create(dest.writenData());
+            req.payload = bmcl::SharedBytes::create(dest);
             setEnabled(false);
             emit reliablePacketQueued(req);
         } else {
-            BMCL_DEBUG() << "error encoding";
-            QMessageBox::warning(this, "UiTest", "Error while encoding cmd. Args may be empty", QMessageBox::Ok);
+            QString err = "Error while encoding cmd: ";
+            err.append(ctx.error().c_str());
+            QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
         }
     });
 
@@ -160,8 +161,8 @@ void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
     bmcl::MemReader reader(response.payload.view());
     _scriptResultNode = ScriptResultNode::fromScriptNode(_scriptNode.get(), _cache.get(), bmcl::None);
     //TODO: check errors
-    DecoderCtx ctx(response.tickTime);
-    _scriptResultNode->decode(ctx, &reader);
+    CoderState ctx(response.tickTime);
+    _scriptResultNode->decode(&ctx, &reader);
     _scriptResultModel->setRoot(_scriptResultNode.get());
     _scriptResultWidget->expandAll();
     setEnabled(true);

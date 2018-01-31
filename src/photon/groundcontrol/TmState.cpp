@@ -17,7 +17,7 @@
 #include "photon/model/ValueInfoCache.h"
 #include "photon/model/ValueNode.h"
 #include "photon/model/FindNode.h"
-#include "photon/model/DecoderCtx.h"
+#include "photon/model/CoderState.h"
 #include "photon/groundcontrol/Packet.h"
 #include "photon/groundcontrol/AllowUnsafeMessageType.h"
 #include "photon/groundcontrol/TmParamUpdate.h"
@@ -201,7 +201,7 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
         return;
     }
 
-    DecoderCtx ctx(header.tickTime);
+    CoderState ctx(header.tickTime);
 
     bmcl::MemReader src(packet);
     while (src.sizeLeft() != 0) {
@@ -249,7 +249,7 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
             }
         }
 
-        _model->acceptTmMsg(ctx, compNum, msgNum, view);
+        _model->acceptTmMsg(&ctx, compNum, msgNum, view);
     }
 }
 }
