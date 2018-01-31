@@ -50,7 +50,8 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
     QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
-        bmcl::Buffer dest(2048);
+        bmcl::Buffer dest;
+        dest.reserve(2048);
         CoderState ctx(OnboardTime::now());
         if (_scriptNode->encode(&ctx, &dest)) {
             PacketRequest req;

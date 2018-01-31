@@ -735,7 +735,8 @@ caf::result<PacketResponse> CmdState::sendCustomCmd(bmcl::StringView compName, b
         return caf::error();
     }
 
-    bmcl::Buffer dest(2048);
+    bmcl::Buffer dest;
+    dest.reserve(1024);
     CoderState ctx(OnboardTime::now());
     if (cmdNode->encode(&ctx, &dest)) {
         PacketRequest req;

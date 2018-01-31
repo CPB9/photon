@@ -1071,10 +1071,6 @@ bool NumericValueNode<T>::encode(CoderState* ctx, bmcl::Buffer* dest) const
         ctx->setError("Numeric value not set");
         return false;
     }
-    if (dest->writableSize() < sizeof(T)) {
-        ctx->setError("Not enough space to write numeric value");
-        return false;
-    }
     dest->writeType<T>(bmcl::htole<T>(_value.unwrap().value()));
     return true;
 }
