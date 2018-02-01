@@ -39,14 +39,16 @@ public:
     bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override;
     bmcl::OptionPtr<ValueNode> valueNodeWithName(bmcl::StringView name);
 
-    bool encodeFields(CoderState* ctx, bmcl::Buffer* dest) const;
-
     void collectUpdates(NodeViewUpdater* dest) override;
 
     std::size_t numChildren() const override;
     bmcl::Option<std::size_t> childIndex(const Node* node) const override;
     bmcl::OptionPtr<Node> childAt(std::size_t idx) override;
     bool setValues(bmcl::ArrayView<Value> values);
+
+protected:
+    bool encodeFields(CoderState* ctx, bmcl::Buffer* dest) const;
+    bool decodeFields(CoderState* ctx, bmcl::MemReader* src);
 
 public:
     decode::HashMap<bmcl::StringView, Rc<ValueNode>> _nameToNodeMap; //TODO: remove

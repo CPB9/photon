@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include "photon/model/StatusDecoder.h"
+#include "photon/model/TmMsgDecoder.h"
 #include "decode/core/Try.h"
 #include "decode/ast/Component.h"
 #include "decode/ast/Type.h"
@@ -202,5 +202,39 @@ bool StatusMsgDecoder::decode(CoderState* ctx, bmcl::MemReader* src)
         }
     }
     return true;
+}
+
+EventMsgDecoder::EventMsgDecoder(const decode::EventMsg* msg, const ValueInfoCache* cache)
+    : _msg(msg)
+    , _cache(cache)
+{
+}
+
+EventMsgDecoder::~EventMsgDecoder()
+{
+}
+
+bmcl::Option<Rc<EventNode>> EventMsgDecoder::decode(CoderState* ctx, bmcl::MemReader* src)
+{
+    Rc<EventNode> node = new EventNode(_msg.get(), _cache.get());
+    if (!node->decode(ctx, src)) {
+        return bmcl::None;
+    }
+    return std::move(node);
+}
+
+EventNode::EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
+    : FieldsNode(msg->partsRange(), cache, parent)
+    , _msg(msg)
+{
+}
+
+EventNode::~EventNode()
+{
+}
+
+bool EventNode::decode(CoderState* ctx, bmcl::MemReader* src)
+{
+    return decodeFields(ctx, src);
 }
 }

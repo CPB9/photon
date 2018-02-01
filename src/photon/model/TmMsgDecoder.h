@@ -10,6 +10,7 @@
 
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
+#include "photon/model/FieldsNode.h"
 #include "decode/core/HashMap.h"
 
 #include <bmcl/Fwd.h>
@@ -18,6 +19,7 @@
 
 namespace decode {
 class StatusMsg;
+class EventMsg;
 }
 
 namespace bmcl { class MemReader; }
@@ -29,6 +31,8 @@ class Statuses;
 class ValueNode;
 class DecoderAction;
 class CoderState;
+class ValueInfoCache;
+class EventNode;
 
 struct ChainElement {
     ChainElement(std::size_t index, DecoderAction* action, ValueNode* node);
@@ -40,20 +44,39 @@ struct ChainElement {
     Rc<ValueNode> node;
 };
 
-class TmDecoder : public RefCountable {
-public:
-    virtual bool decode(CoderState* ctx, bmcl::MemReader* src) = 0;
-};
-
-class StatusMsgDecoder : public TmDecoder {
+class StatusMsgDecoder {
 public:
 
     StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node);
     ~StatusMsgDecoder();
 
-    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src);
 
 private:
     std::vector<ChainElement> _chain;
+};
+
+class EventNode : public FieldsNode {
+public:
+    EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent = bmcl::None);
+    ~EventNode();
+
+    bool decode(CoderState* ctx, bmcl::MemReader* src);
+
+private:
+    Rc<const decode::EventMsg> _msg;
+};
+
+class EventMsgDecoder {
+public:
+
+    EventMsgDecoder(const decode::EventMsg* msg, const ValueInfoCache* cache);
+    ~EventMsgDecoder();
+
+    bmcl::Option<Rc<EventNode>> decode(CoderState* ctx, bmcl::MemReader* src);
+
+private:
+    Rc<const decode::EventMsg> _msg;
+    Rc<const ValueInfoCache> _cache;
 };
 }

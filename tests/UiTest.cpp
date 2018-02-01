@@ -127,7 +127,7 @@ caf::behavior UiActor::make_behavior()
 
             delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
-        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
+        [this](UpdateStatusTmViewAtom, const Rc<NodeViewUpdater>& updater) {
             _widget->applyTmUpdates(updater.get());
         },
         [this](UpdateTmParams, const TmParamUpdate& update) {

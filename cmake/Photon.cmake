@@ -140,8 +140,8 @@ macro(photon_init dir)
         ${_PHOTON_DIR}/src/photon/model/NodeViewUpdater.h
         ${_PHOTON_DIR}/src/photon/model/OnboardTime.cpp
         ${_PHOTON_DIR}/src/photon/model/OnboardTime.h
-        ${_PHOTON_DIR}/src/photon/model/StatusDecoder.cpp
-        ${_PHOTON_DIR}/src/photon/model/StatusDecoder.h
+        ${_PHOTON_DIR}/src/photon/model/TmMsgDecoder.cpp
+        ${_PHOTON_DIR}/src/photon/model/TmMsgDecoder.h
         ${_PHOTON_DIR}/src/photon/model/TmModel.cpp
         ${_PHOTON_DIR}/src/photon/model/TmModel.h
         ${_PHOTON_DIR}/src/photon/model/Value.cpp
@@ -183,7 +183,7 @@ macro(photon_init dir)
         ${PHOTON_GROUNDCONTROL_SRC}
         ${PHOTON_MODEL_SRC}
     )
-    
+
     add_dependencies(photon photon-gen-src)
 
     target_link_libraries(photon
@@ -261,7 +261,7 @@ macro(photon_add_device target)
     _photon_add_library(photon-target-${target}
         ${_SRC_FILE}
     )
-    
+
     add_dependencies(photon-target-${target} photon-gen-src)
 
     if(NOT MSVC)
