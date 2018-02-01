@@ -12,11 +12,17 @@ type Time = varuint;
 const MAX_GROUP_SIZE : u8 = 10;
 
 enum EntryKind {
-    Normal = 1,
-    AddNonVotingNode = 2,
-    AddNode = 3,
-    DemoteNode = 4,
-    RemoveNode = 5,
+    User,
+    AddNonVotingNode,
+    AddNode,
+    DemoteNode,
+    RemoveNode,
+}
+
+enum Vote {
+    NodeUnknown,
+    NotGranted,
+    Granted,
 }
 
 struct LogEntry {
@@ -28,11 +34,11 @@ struct LogEntry {
 }
 
 enum ReqErr {
-    NotLeader = 1,
-    NodeUnknown = 2,
-    OneVotingChangeOnly = 3,
-    Unknown = 4,
-    GroupIncorrect = 5,
+    NotLeader,
+    NodeUnknown,
+    OneVotingChangeOnly,
+    Unknown,
+    GroupIncorrect,
 }
 
 struct ReqCfgRep {
@@ -43,9 +49,9 @@ struct ReqCfgRep {
 }
 
 enum MemberState {
-    Leader = 0,
-    Candidate = 1,
-    Follower = 2,
+    Leader,
+    Candidate,
+    Follower,
 }
 
 struct Timeouts {
@@ -107,7 +113,7 @@ component {
         fn shareTest(group: GrpId, enable: bool)
 
         fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
-        fn reqVoteRep(group: GrpId, term: TermId, vote: bool)
+        fn reqVoteRep(group: GrpId, term: TermId, vote: Vote)
         fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10])
         fn reqAppendEntryRep(group: GrpId, term: TermId, success: bool, currentIdx: Index, firstIdx: Index)
     }

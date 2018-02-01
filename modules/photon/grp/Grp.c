@@ -218,8 +218,7 @@ PhotonError PhotonGrp_ExecCmd_ReqAppendEntry(uint64_t group, uint64_t term, uint
     return PhotonError_Ok;
 }
 
-
-PhotonError PhotonGrp_ExecCmd_ReqVoteRep(uint64_t group, uint64_t term, bool vote)
+PhotonError PhotonGrp_ExecCmd_ReqVoteRep(uint64_t group, uint64_t term, PhotonGrpVote vote)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
