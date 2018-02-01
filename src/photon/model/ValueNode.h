@@ -12,6 +12,7 @@
 #include "photon/core/Rc.h"
 #include "photon/model/Node.h"
 #include "photon/model/ValueInfoCache.h"
+#include "photon/model/OnboardTime.h"
 
 #include <bmcl/Option.h>
 #include <bmcl/OptionPtr.h>
@@ -34,10 +35,11 @@ class Field;
 class Function;
 }
 
-namespace bmcl { class MemReader; class MemWriter; }
+namespace bmcl { class MemReader; class Buffer; }
 
 namespace photon {
 
+class CoderState;
 class ValueInfoCache;
 class NodeViewUpdater;
 
@@ -51,8 +53,8 @@ public:
     static Rc<ValueNode> fromType(const decode::Type* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
     static Rc<ValueNode> fromField(const decode::Field* field, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
 
-    virtual bool encode(bmcl::MemWriter* dest) const = 0;
-    virtual bool decode(bmcl::MemReader* src) = 0;
+    virtual bool encode(CoderState* ctx, bmcl::Buffer* dest) const = 0;
+    virtual bool decode(CoderState* ctx, bmcl::MemReader* src) = 0;
 
     virtual bool isContainerValue() const = 0;
     virtual bool isInitialized() const = 0;
@@ -88,8 +90,8 @@ public:
 
     ~ContainerValueNode();
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     bool isContainerValue() const override;
     bool isInitialized() const override;
@@ -118,7 +120,7 @@ public:
     ~ArrayValueNode();
 
     void collectUpdates(NodeViewUpdater* dest) override;
-    bool decode(bmcl::MemReader* src) override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
     const decode::Type* type() const override;
 
 private:
@@ -136,18 +138,19 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     const decode::Type* type() const override;
 
     std::size_t maxSize() const;
     bmcl::Option<std::size_t> canBeResized() const override;
     bool resizeNode(std::size_t size) override;
-    void resizeDynArray(std::size_t size);
+    void resizeDynArray(OnboardTime time, std::size_t size);
 
 private:
     Rc<const decode::DynArrayType> _type;
+    OnboardTime _lastResizeTime;
     std::size_t _minSizeSinceUpdate;
     std::size_t _lastUpdateSize;
 };
@@ -161,7 +164,7 @@ public:
     ~StructValueNode();
 
     void collectUpdates(NodeViewUpdater* dest) override;
-    bool decode(bmcl::MemReader* src) override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     const decode::Type* type() const override;
     bmcl::OptionPtr<ValueNode> nodeWithName(bmcl::StringView name);
@@ -174,27 +177,33 @@ private:
 template <typename T>
 class ValuePair {
 public:
-    ValuePair(T value)
-        : _current(value)
-        , _previous(value)
-        , _neverCollected(true)
+    ValuePair(OnboardTime time, T value)
+        : _updateTime(time)
+        , _current(value)
+        , _hasChanged(true)
     {
     }
 
     void updateState()
     {
-        _neverCollected = false;
-        _previous = _current;
+        _hasChanged = false;
     }
 
     bool hasChanged() const
     {
-        return _neverCollected || (_previous != _current);
+        return _hasChanged;
     }
 
-    void setValue(T value)
+    bool hasValueChanged() const
     {
+        return true; //HACK
+    }
+
+    void setValue(OnboardTime time, T value)
+    {
+        _updateTime = time;
         _current = value;
+        _hasChanged = true;
     }
 
     T value() const
@@ -202,10 +211,15 @@ public:
         return _current;
     }
 
+    OnboardTime lastOnboardUpdateTime() const
+    {
+        return _updateTime;
+    }
+
 private:
+    OnboardTime _updateTime;
     T _current;
-    T _previous;
-    bool _neverCollected;
+    bool _hasChanged;
 };
 
 class VariantValueNode : public ContainerValueNode {
@@ -218,8 +232,8 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     ValueKind valueKind() const override;
     bool canSetValue() const override;
@@ -229,8 +243,8 @@ public:
     bmcl::Option<std::vector<Value>> possibleValues() const override;
 
 private:
-    void selectId(std::int64_t id);
-    bool selectEnum(bmcl::StringView name);
+    void selectId(OnboardTime time, std::int64_t id);
+    bool selectEnum(OnboardTime time, bmcl::StringView name);
 
     Rc<const decode::VariantType> _type;
     bmcl::Option<ValuePair<std::int64_t>> _currentId;
@@ -257,8 +271,8 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     bool isInitialized() const override;
     Value value() const override;
@@ -271,6 +285,7 @@ public:
 private:
     Rc<const decode::DynArrayType> _type;
     bmcl::Option<std::string> _value;
+    OnboardTime _lastUpdateTime;
     bool _hasChanged;
 };
 
@@ -284,8 +299,8 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 
     bool isInitialized() const override;
     Value value() const override;
@@ -333,8 +348,8 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
     Value value() const override;
     ValueKind valueKind() const override;
 
@@ -349,7 +364,7 @@ public:
     //bool setValue(const Value& value) override;
 
 private:
-    bool selectEnum(bmcl::StringView value);
+    bool selectEnum(OnboardTime time, bmcl::StringView value);
 
     Rc<const decode::EnumType> _type;
     bmcl::Option<ValuePair<int64_t>> _currentId;
@@ -385,8 +400,8 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
     Value value() const override;
 
     bool isInitialized() const override;
@@ -401,9 +416,9 @@ public:
     void setRawValue(T value);
 
 protected:
-    bool emplace(intmax_t value);
-    bool emplace(uintmax_t value);
-    bool emplace(double value);
+    bool emplace(OnboardTime time, intmax_t value);
+    bool emplace(OnboardTime time, uintmax_t value);
+    bool emplace(OnboardTime time, double value);
 
     bmcl::Option<ValuePair<T>> _value;
 };
@@ -427,8 +442,8 @@ public:
     VarintValueNode(const decode::BuiltinType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
     ~VarintValueNode();
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 };
 
 class VaruintValueNode : public NumericValueNode<std::uint64_t> {
@@ -439,7 +454,7 @@ public:
     VaruintValueNode(const decode::BuiltinType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
     ~VaruintValueNode();
 
-    bool encode(bmcl::MemWriter* dest) const override;
-    bool decode(bmcl::MemReader* src) override;
+    bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
+    bool decode(CoderState* ctx, bmcl::MemReader* src) override;
 };
 }

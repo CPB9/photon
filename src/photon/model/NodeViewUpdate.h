@@ -11,6 +11,7 @@
 #include "photon/Config.hpp"
 #include "photon/model/Value.h"
 #include "photon/model/NodeView.h"
+#include "photon/model/OnboardTime.h"
 
 #include <bmcl/Variant.h>
 
@@ -55,14 +56,17 @@ using NodeViewUpdateBase =
 
 class NodeViewUpdate : public NodeViewUpdateBase {
 public:
-    NodeViewUpdate(Value&& value, Node* parent);
-    NodeViewUpdate(NodeViewVec&& vec, Node* parent);
-    NodeViewUpdate(std::size_t size, Node* parent);
+    NodeViewUpdate(OnboardTime time, Node* parent);
+    NodeViewUpdate(Value&& value, OnboardTime time, Node* parent);
+    NodeViewUpdate(NodeViewVec&& vec, OnboardTime time, Node* parent);
+    NodeViewUpdate(std::size_t size, OnboardTime time, Node* parent);
     ~NodeViewUpdate();
 
     uintptr_t id() const;
+    OnboardTime time() const;
 
 private:
+    OnboardTime _time;
     uintptr_t _id;
 };
 }

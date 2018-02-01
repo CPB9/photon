@@ -15,7 +15,7 @@
 #include "photon/model/ValueInfoCache.h"
 #include "photon/model/ValueNode.h"
 
-#include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 
 namespace photon {
 
@@ -32,17 +32,17 @@ CmdNode::~CmdNode()
 {
 }
 
-bool CmdNode::encode(bmcl::MemWriter* dest) const
+bool CmdNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
-    TRY(dest->writeVarUint(_comp->number()));
+    dest->writeVarUint(_comp->number());
     auto it = std::find(_comp->cmdsBegin(), _comp->cmdsEnd(), _func.get());
     if (it == _comp->cmdsEnd()) {
         //TODO: report error
         return false;
     }
 
-    TRY(dest->writeVarUint(std::distance(_comp->cmdsBegin(), it)));
-    return encodeFields(dest);
+    dest->writeVarUint(std::distance(_comp->cmdsBegin(), it));
+    return encodeFields(ctx, dest);
 }
 
 std::size_t CmdNode::numChildren() const
@@ -106,10 +106,10 @@ void ScriptNode::addCmdNode(CmdNode* node)
     _nodes.emplace_back(node);
 }
 
-bool ScriptNode::encode(bmcl::MemWriter* dest) const
+bool ScriptNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     for (const CmdNode* node : decode::RcVec<CmdNode>::ConstRange(_nodes)) {
-        TRY(node->encode(dest));
+        TRY(node->encode(ctx, dest));
     }
     return true;
 }
@@ -150,10 +150,10 @@ Rc<ScriptResultNode> ScriptResultNode::fromScriptNode(const ScriptNode* node, co
     return resultNode;
 }
 
-bool ScriptResultNode::decode(bmcl::MemReader* src)
+bool ScriptResultNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     for (const Rc<ValueNode>& node : _nodes) {
-        if (!node->decode(src)) {
+        if (!node->decode(ctx, src)) {
             return false;
         }
     }

@@ -17,6 +17,8 @@
 #include "photon/model/ValueInfoCache.h"
 #include "photon/model/ValueNode.h"
 #include "photon/model/FindNode.h"
+#include "photon/model/CoderState.h"
+#include "photon/groundcontrol/Packet.h"
 #include "photon/groundcontrol/AllowUnsafeMessageType.h"
 #include "photon/groundcontrol/TmParamUpdate.h"
 #include "photon/groundcontrol/ProjectUpdate.h"
@@ -66,14 +68,13 @@ caf::behavior TmState::make_behavior()
     return caf::behavior{
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
             _model = new TmModel(update->device(), update->cache());
-            initTmNodes();
-            Rc<NodeView> view = new NodeView(_model.get());
+            Rc<NodeView> view = new NodeView(_model->statusesNode());
             send(_handler, SetTmViewAtom::value, view);
             _updateCount++;
             delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
         },
-        [this](RecvPacketPayloadAtom, const bmcl::SharedBytes& data) {
-            acceptData(data.view());
+        [this](RecvPacketPayloadAtom, const PacketHeader& header, const bmcl::SharedBytes& data) {
+            acceptData(header, data.view());
         },
         [this](PushTmUpdatesAtom, uint64_t count) {
             if (count != _updateCount) {
@@ -102,7 +103,7 @@ caf::behavior TmState::make_behavior()
 
 bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
 {
-    auto rv = findNode(_model.get(), path);
+    auto rv = findNode(_model->statusesNode(), path);
     if (rv.isErr()) {
         return false;
     }
@@ -124,48 +125,14 @@ bool TmState::subscribeTm(const NumberedSub& sub, const caf::actor& dest)
 
 void TmState::pushTmUpdates()
 {
-    Rc<NodeViewUpdater> updater = new NodeViewUpdater(_model.get());
-    _model->collectUpdates(updater.get());
-    if (_features.hasPosition) {
-        Position pos;
-        updateParam(_latNode, &pos.latLon.latitude);
-        updateParam(_lonNode, &pos.latLon.longitude);
-        updateParam(_altNode, &pos.altitude);
-        send(_handler, UpdateTmParams::value, TmParamUpdate(pos));
-    }
-    if (_features.hasVelocity) {
-        Velocity3 vel;
-        updateParam(_velXNode, &vel.x);
-        updateParam(_velYNode, &vel.y);
-        updateParam(_velZNode, &vel.z);
-        send(_handler, UpdateTmParams::value, TmParamUpdate(vel));
-    }
-    if (_features.hasOrientation) {
-        Orientation orientation;
-        updateParam(_headingNode, &orientation.heading);
-        updateParam(_pitchNode, &orientation.pitch);
-        updateParam(_rollNode, &orientation.roll);
-        send(_handler, UpdateTmParams::value, TmParamUpdate(orientation));
-    }
-    send(_handler, UpdateTmViewAtom::value, updater);
+    Rc<NodeViewUpdater> updater = new NodeViewUpdater(_model->statusesNode());
+    _model->statusesNode()->collectUpdates(updater.get());
+    send(_handler, UpdateStatusTmViewAtom::value, updater);
     for (const NamedSub& sub : _namedSubs) {
         send(sub.actor, sub.node->value(), sub.path);
     }
     _updateCount++;
     delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
-}
-
-template <typename T>
-void TmState::updateParam(const Rc<NumericValueNode<T>>& src, T* dest, T defaultValue)
-{
-    if (src) {
-        auto value = src->rawValue();
-        if (value.isSome()) {
-            *dest = value.unwrap();
-        } else {
-            *dest = defaultValue;
-        }
-    }
 }
 
 template <typename T>
@@ -177,27 +144,13 @@ void TmState::initTypedNode(const char* name, Rc<T>* dest)
     }
 }
 
-void TmState::initTmNodes()
-{
-    initTypedNode("nav.latLon.latitude", &_latNode);
-    initTypedNode("nav.latLon.longitude", &_lonNode);
-    initTypedNode("nav.altitude", &_altNode);
-    _features.hasPosition = _latNode || _lonNode || _altNode;
-    initTypedNode("nav.velocity.x", &_velXNode);
-    initTypedNode("nav.velocity.y", &_velYNode);
-    initTypedNode("nav.velocity.z", &_velZNode);
-    _features.hasVelocity = _velXNode || _velYNode || _velZNode;
-    initTypedNode("nav.orientation.heading", &_headingNode);
-    initTypedNode("nav.orientation.pitch", &_pitchNode);
-    initTypedNode("nav.orientation.roll", &_rollNode);
-    _features.hasOrientation = _headingNode || _pitchNode || _rollNode;
-}
-
-void TmState::acceptData(bmcl::Bytes packet)
+void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
 {
     if (!_model) {
         return;
     }
+
+    CoderState ctx(header.tickTime);
 
     bmcl::MemReader src(packet);
     while (src.sizeLeft() != 0) {
@@ -244,7 +197,8 @@ void TmState::acceptData(bmcl::Bytes packet)
                 send(actor, sub, data);
             }
         }
-        _model->acceptTmMsg(compNum, msgNum, view);
+
+        _model->acceptTmMsg(&ctx, compNum, msgNum, view);
     }
 }
 }

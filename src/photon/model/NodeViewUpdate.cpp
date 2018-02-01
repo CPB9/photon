@@ -11,20 +11,30 @@
 
 namespace photon {
 
-NodeViewUpdate::NodeViewUpdate(Value&& value, Node* parent)
+NodeViewUpdate::NodeViewUpdate(OnboardTime time, Node* parent)
+    : NodeViewUpdateBase()
+    , _time(time)
+    , _id(uintptr_t(parent))
+{
+}
+
+NodeViewUpdate::NodeViewUpdate(Value&& value, OnboardTime time, Node* parent)
     : NodeViewUpdateBase(ValueUpdate(std::move(value), parent->isDefault(), parent->isInRange()))
+    , _time(time)
     , _id(uintptr_t(parent))
 {
 }
 
-NodeViewUpdate::NodeViewUpdate(NodeViewVec&& vec, Node* parent)
+NodeViewUpdate::NodeViewUpdate(NodeViewVec&& vec, OnboardTime time, Node* parent)
     : NodeViewUpdateBase(vec)
+    , _time(time)
     , _id(uintptr_t(parent))
 {
 }
 
-NodeViewUpdate::NodeViewUpdate(std::size_t size, Node* parent)
+NodeViewUpdate::NodeViewUpdate(std::size_t size, OnboardTime time, Node* parent)
     : NodeViewUpdateBase(size)
+    , _time(time)
     , _id(uintptr_t(parent))
 {
 }
@@ -36,5 +46,10 @@ NodeViewUpdate::~NodeViewUpdate()
 uintptr_t NodeViewUpdate::id() const
 {
     return _id;
+}
+
+OnboardTime NodeViewUpdate::time() const
+{
+    return _time;
 }
 }

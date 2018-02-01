@@ -31,7 +31,8 @@ enum ColumnDesc {
     ColumnName = 0,
     ColumnTypeName = 1,
     ColumnValue = 2,
-    ColumnInfo = 3,
+    ColumnTime = 3,
+    ColumnInfo = 4,
 };
 
 template <typename T>
@@ -145,6 +146,7 @@ protected:
     static QVariant fieldNameFromNode(const T* node);
     static QVariant typeNameFromNode(const T* node);
     static QVariant shortDescFromNode(const T* node);
+    static QVariant timeFromNode(const T* node);
     static QVariant backgroundFromValue(const T* node, const Value& value);
     static Value valueFromQvariant(const QVariant& variant, ValueKind kind);
 
@@ -194,6 +196,15 @@ QVariant QModelBase<T>::shortDescFromNode(const T* node)
     return QVariant();
 }
 
+template <typename T>
+QVariant QModelBase<T>::timeFromNode(const T* node)
+{
+    bmcl::Option<OnboardTime> time = node->lastUpdateTime();
+    if (time.isSome()) {
+        return QString::fromStdString(time.unwrap().toString());
+    }
+    return QVariant();
+}
 
 template <typename T>
 Value QModelBase<T>::valueFromQvariant(const QVariant& variant, ValueKind kind)
@@ -269,6 +280,10 @@ QVariant QModelBase<T>::data(const QModelIndex& index, int role) const
         if (index.column() == ColumnDesc::ColumnInfo) {
             return shortDescFromNode(node);
         }
+
+        if (index.column() == ColumnDesc::ColumnTime) {
+            return timeFromNode(node);
+        }
     }
 
     if (index.column() == ColumnDesc::ColumnValue) {
@@ -305,6 +320,8 @@ QVariant QModelBase<T>::headerData(int section, Qt::Orientation orientation, int
             return "Value";
         case ColumnDesc::ColumnInfo:
             return "Description";
+        case ColumnDesc::ColumnTime:
+            return "Update Time";
         default:
             return "UNKNOWN";
         };
@@ -397,6 +414,9 @@ QMap<int, QVariant> QModelBase<T>::itemData(const QModelIndex& index) const
     case ColumnDesc::ColumnInfo:
         roles.insert(Qt::DisplayRole, shortDescFromNode(node));
         return roles;
+    case ColumnDesc::ColumnTime:
+        roles.insert(Qt::DisplayRole, timeFromNode(node));
+        return roles;
     };
     return roles;
 }
@@ -437,7 +457,7 @@ template <typename T>
 int QModelBase<T>::columnCount(const QModelIndex& parent) const
 {
     (void)parent;
-    return 4;
+    return 5;
 }
 
 class Node;

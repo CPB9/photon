@@ -19,6 +19,7 @@
 
 namespace photon {
 
+struct PacketHeader;
 class TmModel;
 class ValueNode;
 
@@ -46,28 +47,15 @@ private:
         caf::actor actor;
     };
 
-    void acceptData(bmcl::Bytes packet);
-    void initTmNodes();
+    void acceptData(const PacketHeader& header, bmcl::Bytes packet);
     template <typename T>
     void initTypedNode(const char* name, Rc<T>* dest);
     void pushTmUpdates();
-    template <typename T>
-    void updateParam(const Rc<NumericValueNode<T>>& src, T* dest, T defaultValue = 0);
     bool subscribeTm(const std::string& path, const caf::actor& dest);
     bool subscribeTm(const NumberedSub& sub, const caf::actor& dest);
 
     Rc<TmModel> _model;
-    Rc<NumericValueNode<double>> _latNode;
-    Rc<NumericValueNode<double>> _lonNode;
-    Rc<NumericValueNode<double>> _altNode;
-    Rc<NumericValueNode<double>> _headingNode;
-    Rc<NumericValueNode<double>> _pitchNode;
-    Rc<NumericValueNode<double>> _rollNode;
-    Rc<NumericValueNode<double>> _velXNode;
-    Rc<NumericValueNode<double>> _velYNode;
-    Rc<NumericValueNode<double>> _velZNode;
     caf::actor _handler;
-    TmFeatures _features;
     std::vector<NamedSub> _namedSubs;
     std::unordered_map<NumberedSub, std::vector<caf::actor>, NumberedSubHash> _numberedSubs;
     uint64_t _updateCount;

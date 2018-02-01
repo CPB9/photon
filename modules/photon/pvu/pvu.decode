@@ -1,14 +1,14 @@
 module pvu
 
 import core::{Error, Reader, Writer}
-import clk::{Tick}
+import clk::{TimePoint, Duration}
 import exc::{DataHeader}
 
 struct Script {
     data: Reader,
     isSleeping: bool,
     isFinished: bool,
-    sleepUntil: Tick,
+    sleepUntil: TimePoint,
 }
 
 const SCRIPT_NUM: usize = 10;
@@ -37,7 +37,7 @@ component {
     }
 
     commands {
-        fn sleepFor(delta: Tick)
-        fn sleepUntil(time: Tick)
+        fn sleepFor(delta: Duration)
+        fn sleepUntil(time: TimePoint)
     }
 }

@@ -1,51 +1,39 @@
 #pragma once
 
 #include "photon/Config.hpp"
-#include "photon/core/Rc.h"
 
 #include <cstdint>
 #include <string>
 
 namespace photon {
 
-enum class OnboardTimeKind {
-    Ticks,
-    Absolute,
-    SizedTicks,
-};
-
 class OnboardTime {
 public:
-    OnboardTime(uint64_t ticks)
-        : _ticks(ticks)
+    OnboardTime()
+        : _msecs(0)
     {
     }
 
-    uint64_t ticks() const
+    explicit OnboardTime(uint64_t onboardMsecs)
+        : _msecs(onboardMsecs)
     {
-        return _ticks;
     }
 
+    void setRawValue(uint64_t rawValue)
+    {
+        _msecs = rawValue;
+    }
+
+    uint64_t rawValue() const
+    {
+        return _msecs;
+    }
+
+    static OnboardTime now();
+
+    std::string toString() const;
+
 private:
-    uint64_t _ticks;
+    uint64_t _msecs;
 };
-
-class OnboardTimeDesc : public RefCountable {
-public:
-    using Pointer = Rc<OnboardTimeDesc>;
-    using ConstPointer = Rc<const OnboardTimeDesc>;
-
-    OnboardTimeDesc(OnboardTimeKind kind = OnboardTimeKind::Ticks);
-    ~OnboardTimeDesc();
-
-    std::string onboardTimeToString(OnboardTime otime);
-
-private:
-    std::string formatTime(OnboardTime otime, uint64_t multiplier = 1);
-
-    OnboardTimeKind _kind;
-    uint64_t _epoch;
-    uint64_t _tickResolution;
-};
-
 }

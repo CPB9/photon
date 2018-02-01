@@ -21,19 +21,24 @@ NodeViewUpdater::~NodeViewUpdater()
 {
 }
 
-void NodeViewUpdater::addValueUpdate(Value&& value, Node* parent)
+void NodeViewUpdater::addTimeUpdate(OnboardTime time, Node* parent)
 {
-    _updates.emplace_back(std::move(value), parent);
+    _updates.emplace_back(time, parent);
 }
 
-void NodeViewUpdater::addShrinkUpdate(std::size_t size, Node* parent)
+void NodeViewUpdater::addValueUpdate(Value&& value, OnboardTime time, Node* parent)
 {
-    _updates.emplace_back(size, parent);
+    _updates.emplace_back(std::move(value), time, parent);
 }
 
-void NodeViewUpdater::addExtendUpdate(NodeViewVec&& vec, Node* parent)
+void NodeViewUpdater::addShrinkUpdate(std::size_t size, OnboardTime time, Node* parent)
 {
-    _updates.emplace_back(std::move(vec), parent);
+    _updates.emplace_back(size, time, parent);
+}
+
+void NodeViewUpdater::addExtendUpdate(NodeViewVec&& vec, OnboardTime time, Node* parent)
+{
+    _updates.emplace_back(std::move(vec), time, parent);
 }
 
 void NodeViewUpdater::apply(NodeViewStore* dest)

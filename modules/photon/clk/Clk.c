@@ -7,11 +7,11 @@
 
 #include <sys/time.h>
 
-static void  getTime(PhotonClkTick* dest)
+PhotonClkDuration PhotonClk_GetRawSystemTime()
 {
     struct timeval t;
     gettimeofday(&t, NULL);
-    *dest = t.tv_sec * 1000 + t.tv_usec / 1000;
+    return t.tv_sec * 1000 + t.tv_usec / 1000;
 }
 
 #elif defined(_WIN32)
@@ -26,7 +26,7 @@ static void  getTime(PhotonClkTick* dest)
 # define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
 #endif
 
-static void getTime(PhotonClkTimePoint* dest)
+PhotonClkDuration PhotonClk_GetRawSystemTime()
 {
     FILETIME ft;
     uint64_t tmpres = 0;
@@ -43,26 +43,40 @@ static void getTime(PhotonClkTimePoint* dest)
     tmpres /= 10;
     uint64_t seconds = tmpres / 1000000UL;
     uint64_t milliseconds = (tmpres % 1000000UL) / 1000;
-    *dest = seconds * 1000 + milliseconds;
+    return seconds * 1000 + milliseconds;
 }
 
 #endif
 
 void PhotonClk_Init()
 {
-    getTime(&_photonClk.time);
-    _photonClk.timeKind.type = PhotonClkTimeKindType_Absolute;
-    _photonClk.timeKind.data.absoluteClkTimeKind.epoch = 0;
+    _photonClk.correction = 0;
+    _photonClk.tickTime = PhotonClk_GetTime();
 }
 
 void PhotonClk_Tick()
 {
-    getTime(&_photonClk.time);
+    _photonClk.tickTime = PhotonClk_GetTime();
 }
 
-PhotonClkTick PhotonClk_GetTime()
+PhotonClkTimePoint PhotonClk_GetTickTime()
 {
-    return _photonClk.time;
+    return _photonClk.tickTime;
+}
+
+PhotonClkTimePoint PhotonClk_GetTime()
+{
+    return PhotonClk_GetRawSystemTime() + _photonClk.correction;
+}
+
+PhotonError PhotonClk_ExecCmd_SetTimeCorrection(int64_t delta)
+{
+    PhotonClkDuration rawTime = PhotonClk_GetRawSystemTime();
+    PhotonClkTimePoint oldTime = rawTime + _photonClk.correction;
+    PhotonClkTimePoint newTime = rawTime + delta;
+    _photonClk.correction = delta;
+    PhotonClk_QueueEvent_TimeCorrected(rawTime, oldTime, newTime); //TODO: handle error
+    return PhotonError_Ok;
 }
 
 #undef _PHOTON_FNAME

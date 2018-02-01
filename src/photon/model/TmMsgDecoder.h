@@ -10,6 +10,7 @@
 
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
+#include "photon/model/FieldsNode.h"
 #include "decode/core/HashMap.h"
 
 #include <bmcl/Fwd.h>
@@ -18,6 +19,7 @@
 
 namespace decode {
 class StatusMsg;
+class EventMsg;
 }
 
 namespace bmcl { class MemReader; }
@@ -28,6 +30,9 @@ class FieldsNode;
 class Statuses;
 class ValueNode;
 class DecoderAction;
+class CoderState;
+class ValueInfoCache;
+class EventNode;
 
 struct ChainElement {
     ChainElement(std::size_t index, DecoderAction* action, ValueNode* node);
@@ -45,32 +50,33 @@ public:
     StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node);
     ~StatusMsgDecoder();
 
-    bool decode(bmcl::MemReader* src);
+    bool decode(CoderState* ctx, bmcl::MemReader* src);
 
 private:
     std::vector<ChainElement> _chain;
 };
 
-class StatusDecoder : public RefCountable {
+class EventNode : public FieldsNode {
 public:
-    using Pointer = Rc<StatusDecoder>;
-    using ConstPointer = Rc<const StatusDecoder>;
+    EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent = bmcl::None);
+    ~EventNode();
 
-    template <typename R>
-    StatusDecoder(R statusRange, FieldsNode* node)
-    {
-        for (const auto& it : statusRange) {
-            _decoders.emplace(std::piecewise_construct,
-                              std::forward_as_tuple(it->number()),
-                              std::forward_as_tuple(it, node));
-        }
-    }
-
-    ~StatusDecoder();
-
-    bool decode(uint32_t msgId, bmcl::Bytes payload);
+    bool decode(CoderState* ctx, bmcl::MemReader* src);
 
 private:
-    decode::HashMap<uint32_t, StatusMsgDecoder> _decoders;
+    Rc<const decode::EventMsg> _msg;
+};
+
+class EventMsgDecoder {
+public:
+
+    EventMsgDecoder(const decode::EventMsg* msg, const ValueInfoCache* cache);
+    ~EventMsgDecoder();
+
+    bmcl::Option<Rc<EventNode>> decode(CoderState* ctx, bmcl::MemReader* src);
+
+private:
+    Rc<const decode::EventMsg> _msg;
+    Rc<const ValueInfoCache> _cache;
 };
 }

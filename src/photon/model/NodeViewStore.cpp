@@ -39,6 +39,7 @@ bool NodeViewStore::apply(NodeViewUpdate* update)
         return false;
     }
     NodeView* dest = it->second.get();
+    dest->setUpdateTime(update->time());
 
     switch (update->kind()) {
         case NodeViewUpdateKind::None:

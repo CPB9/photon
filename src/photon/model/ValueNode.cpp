@@ -18,8 +18,9 @@
 #include "photon/model/NodeViewUpdate.h"
 #include "photon/model/NodeView.h"
 #include "photon/model/NodeViewUpdater.h"
+#include "photon/model/CoderState.h"
 
-#include <bmcl/MemWriter.h>
+#include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
 #include <bmcl/Logging.h>
 
@@ -67,30 +68,13 @@ inline char letoh(char value)
 namespace photon {
 
 template <typename T>
-inline bool updateOptionalValue(bmcl::Option<T>* value, T newValue)
+inline bool updateOptionalValuePair(bmcl::Option<ValuePair<T>>* value, OnboardTime time, T newValue)
 {
     if (value->isSome()) {
-        if (value->unwrap() != newValue) {
-            value->unwrap() = newValue;
-            return true;
-        }
-        return false;
+        value->unwrap().setValue(time, newValue);
+        return true;
     }
-    value->emplace(newValue);
-    return true;
-}
-
-template <typename T>
-inline bool updateOptionalValuePair(bmcl::Option<ValuePair<T>>* value, T newValue)
-{
-    if (value->isSome()) {
-        if (value->unwrap().value() != newValue) {
-            value->unwrap().setValue(newValue);
-            return true;
-        }
-        return false;
-    }
-    value->emplace(newValue);
+    value->emplace(time, newValue);
     return true;
 }
 
@@ -262,18 +246,18 @@ bool ContainerValueNode::isInitialized() const
     return true;
 }
 
-bool ContainerValueNode::encode(bmcl::MemWriter* dest) const
+bool ContainerValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     for (std::size_t i = 0; i < _values.size(); i++) {
-        TRY(_values[i]->encode(dest));
+        TRY(_values[i]->encode(ctx, dest));
     }
     return true;
 }
 
-bool ContainerValueNode::decode(bmcl::MemReader* src)
+bool ContainerValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     for (std::size_t i = 0; i < _values.size(); i++) {
-        TRY(_values[i]->decode(src));
+        TRY(_values[i]->decode(ctx, src));
     }
     return true;
 }
@@ -334,10 +318,10 @@ void ArrayValueNode::collectUpdates(NodeViewUpdater* dest)
     _changedSinceUpdate = false;
 }
 
-bool ArrayValueNode::decode(bmcl::MemReader* src)
+bool ArrayValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     _changedSinceUpdate = true;
-    return ContainerValueNode::decode(src);
+    return ContainerValueNode::decode(ctx, src);
 }
 
 const decode::Type* ArrayValueNode::type() const
@@ -348,6 +332,7 @@ const decode::Type* ArrayValueNode::type() const
 DynArrayValueNode::DynArrayValueNode(const decode::DynArrayType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : ContainerValueNode(cache, parent)
     , _type(type)
+    , _lastResizeTime(OnboardTime::now())
     , _minSizeSinceUpdate(0)
     , _lastUpdateSize(0)
 {
@@ -364,44 +349,41 @@ void DynArrayValueNode::collectUpdates(NodeViewUpdater* dest)
     }
     if (_minSizeSinceUpdate < _lastUpdateSize) {
         //shrink
-        dest->addShrinkUpdate(_minSizeSinceUpdate, this);
+        dest->addShrinkUpdate(_minSizeSinceUpdate, _lastResizeTime, this);
     }
     if (_values.size() > _minSizeSinceUpdate) {
         //extend
         NodeViewVec vec;
         vec.reserve(_values.size() - _minSizeSinceUpdate);
         for (std::size_t i = _minSizeSinceUpdate; i < _values.size(); i++) {
-            vec.emplace_back(new NodeView(_values[i].get()));
+            vec.emplace_back(new NodeView(_values[i].get(), _lastResizeTime));
         }
-        dest->addExtendUpdate(std::move(vec), this);
+        dest->addExtendUpdate(std::move(vec), _lastResizeTime, this);
     }
 
     _minSizeSinceUpdate = _values.size();
     _lastUpdateSize = _minSizeSinceUpdate;
 }
 
-bool DynArrayValueNode::encode(bmcl::MemWriter* dest) const
+bool DynArrayValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
-    if (!dest->writeVarUint(_values.size())) {
-        //TODO: report error
-        return false;
-    }
-    return ContainerValueNode::encode(dest);
+    dest->writeVarUint(_values.size());
+    return ContainerValueNode::encode(ctx, dest);
 }
 
-bool DynArrayValueNode::decode(bmcl::MemReader* src)
+bool DynArrayValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t size;
     if (!src->readVarUint(&size)) {
-        //TODO: report error
+        ctx->setError("Error reading dynarray size");
         return false;
     }
     if (size > _type->maxSize()) {
-        //TODO: report error
+        ctx->setError("Dynarray overflow");
         return false;
     }
-    resizeDynArray(size);
-    return ContainerValueNode::decode(src);
+    resizeDynArray(ctx->dataTimeOfOrigin(), size);
+    return ContainerValueNode::decode(ctx, src);
 }
 
 const decode::Type* DynArrayValueNode::type() const
@@ -424,12 +406,13 @@ bool DynArrayValueNode::resizeNode(std::size_t size)
     if (size > _type->maxSize()) {
         return false;
     }
-    resizeDynArray(size);
+    resizeDynArray(OnboardTime::now(), size);
     return true;
 }
 
-void DynArrayValueNode::resizeDynArray(std::size_t size)
+void DynArrayValueNode::resizeDynArray(OnboardTime time, std::size_t size)
 {
+    _lastResizeTime = time;
     _minSizeSinceUpdate = std::min(_minSizeSinceUpdate, size);
     std::size_t currentSize = _values.size();
     if (size > currentSize) {
@@ -469,10 +452,10 @@ void StructValueNode::collectUpdates(NodeViewUpdater* dest)
     _changedSinceUpdate = false;
 }
 
-bool StructValueNode::decode(bmcl::MemReader* src)
+bool StructValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     _changedSinceUpdate = true;
-    return ContainerValueNode::decode(src);
+    return ContainerValueNode::decode(ctx, src);
 }
 
 const decode::Type* StructValueNode::type() const
@@ -519,27 +502,32 @@ void VariantValueNode::collectUpdates(NodeViewUpdater* dest)
         return;
     }
 
-    dest->addValueUpdate(value(), this);
-    dest->addShrinkUpdate(std::size_t(0), this);
+    OnboardTime t = _currentId.unwrap().lastOnboardUpdateTime();
+    if (_currentId.unwrap().hasValueChanged()) {
+        dest->addValueUpdate(value(), t, this);
+    } else {
+        dest->addTimeUpdate(t, this);
+    }
+    dest->addShrinkUpdate(std::size_t(0), t, this);
     if (!_values.empty()) {
         NodeViewVec vec;
         vec.reserve(_values.size());
         for (const Rc<ValueNode>& node : _values) {
-            vec.emplace_back(new NodeView(node.get()));
+            vec.emplace_back(new NodeView(node.get(), t));
         }
-        dest->addExtendUpdate(std::move(vec), this);
+        dest->addExtendUpdate(std::move(vec), t, this);
     }
     _currentId.unwrap().updateState();
 }
 
-bool VariantValueNode::encode(bmcl::MemWriter* dest) const
+bool VariantValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_currentId.isNone()) {
-        //TODO: report error
+        ctx->setError("Variant value not set");
         return false;
     }
-    TRY(dest->writeVarInt(_currentId.unwrap().value()));
-    return ContainerValueNode::encode(dest);
+    dest->writeVarInt(_currentId.unwrap().value());
+    return ContainerValueNode::encode(ctx, dest);
 }
 
 bool VariantValueNode::canSetValue() const
@@ -547,9 +535,12 @@ bool VariantValueNode::canSetValue() const
     return true;
 }
 
-void VariantValueNode::selectId(std::int64_t id)
+void VariantValueNode::selectId(OnboardTime time, std::int64_t id)
 {
-    updateOptionalValuePair(&_currentId, id);
+    updateOptionalValuePair(&_currentId, time, id);
+    if (!_currentId.unwrap().hasValueChanged()) {
+        return;
+    }
     //TODO: do not resize if type doesn't change
     const decode::VariantField* field = _type->fieldsBegin()[id];
     switch (field->variantFieldKind()) {
@@ -591,12 +582,12 @@ void VariantValueNode::selectId(std::int64_t id)
     }
 }
 
-bool VariantValueNode::selectEnum(bmcl::StringView name)
+bool VariantValueNode::selectEnum(OnboardTime time, bmcl::StringView name)
 {
     std::size_t i = 0;
     for (const decode::VariantField* field : _type->fieldsRange()) {
         if (field->name() == name) {
-            selectId(i);
+            selectId(time, i);
             return true;
         }
         i++;
@@ -609,20 +600,23 @@ ValueKind VariantValueNode::valueKind() const
     return ValueKind::StringView;
 }
 
-bool VariantValueNode::decode(bmcl::MemReader* src)
+bool VariantValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t id;
-    TRY(src->readVarInt(&id));
+    if (!src->readVarInt(&id)) {
+        ctx->setError("Error reading variant id");
+        return false;
+    }
     if (id < 0) {
-        //TODO: report error
+        ctx->setError("Negative variant id");
         return false;
     }
     if (uint64_t(id) >= _type->fieldsRange().size()) {
-        //TODO: report error
+        ctx->setError("Variant id overflow");
         return false;
     }
-    selectId(id);
-    TRY(ContainerValueNode::decode(src));
+    selectId(ctx->dataTimeOfOrigin(), id);
+    TRY(ContainerValueNode::decode(ctx, src));
     return true;
 }
 
@@ -630,9 +624,9 @@ bool VariantValueNode::setValue(const Value& value)
 {
     switch (value.kind()) {
     case ValueKind::String:
-        return selectEnum(value.asString());
+        return selectEnum(OnboardTime::now(), value.asString());
     case ValueKind::StringView:
-        return selectEnum(value.asStringView());
+        return selectEnum(OnboardTime::now(), value.asStringView());
     default:
         return false;
     }
@@ -677,6 +671,7 @@ bool NonContainerValueNode::canSetValue() const
 StringValueNode::StringValueNode(const decode::DynArrayType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : NonContainerValueNode(cache, parent)
     , _type(type)
+    , _lastUpdateTime(OnboardTime::now())
     , _hasChanged(false)
 {
     assert(type->elementType()->isBuiltin());
@@ -695,44 +690,38 @@ const decode::Type* StringValueNode::type() const
 void StringValueNode::collectUpdates(NodeViewUpdater* dest)
 {
     if ( _value.isSome() && _hasChanged) {
-        dest->addValueUpdate(value(), this);
+        dest->addValueUpdate(value(), _lastUpdateTime, this);
         _hasChanged = false;
     }
 }
 
-bool StringValueNode::encode(bmcl::MemWriter* dest) const
+bool StringValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("String value not set");
         return false;
     }
-    if (!dest->writeVarUint(_value->size())) {
-        //TODO: report error
-        return false;
-    }
-    if (dest->sizeLeft() < _value->size()) {
-        //TODO: report error
-        return false;
-    }
+    dest->writeVarUint(_value->size());
     dest->write(_value->data(), _value->size());
     return true;
 }
 
-bool StringValueNode::decode(bmcl::MemReader* src)
+bool StringValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t size;
     if (!src->readVarUint(&size)) {
-        //TODO: report error
+        ctx->setError("Error reading string size");
         return false;
     }
     if (src->sizeLeft() < size) {
-        //TODO: report error
+        ctx->setError("String size overflow");
         return false;
     }
     if (_value.isNone()) {
         _value.emplace();
     }
     _hasChanged = true;
+    _lastUpdateTime = ctx->dataTimeOfOrigin();
     _value->assign((const char*)src->current(), size);
     src->skip(size);
     return true;
@@ -763,6 +752,7 @@ bool StringValueNode::setValue(const Value& value)
             //TODO: report error
             return false;
         }
+        _lastUpdateTime = OnboardTime::now();
         _hasChanged = true;
         _value.emplace(value.asString());
         return true;
@@ -771,6 +761,7 @@ bool StringValueNode::setValue(const Value& value)
             //TODO: report error
             return false;
         }
+        _lastUpdateTime = OnboardTime::now();
         _hasChanged = true;
         _value.emplace(value.asStringView().toStdString());
         return true;
@@ -797,34 +788,39 @@ void AddressValueNode::collectUpdates(NodeViewUpdater* dest)
         return;
     }
 
-    dest->addValueUpdate(Value::makeUnsigned(_address.unwrap().value()), this);
+    if (_address.unwrap().hasValueChanged()) {
+        dest->addValueUpdate(Value::makeUnsigned(_address.unwrap().value()), _address.unwrap().lastOnboardUpdateTime(), this);
+    } else {
+        dest->addTimeUpdate(_address.unwrap().lastOnboardUpdateTime(), this);
+    }
 
     _address.unwrap().updateState();
 }
 
-bool AddressValueNode::encode(bmcl::MemWriter* dest) const
+bool AddressValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     //TODO: get target word size
     if (_address.isNone()) {
-        //TODO: report error
+        ctx->setError("Address value not set");
         return false;
     }
     if (dest->writableSize() < 8) {
+        ctx->setError("Not enough space to write address value");
         return false;
     }
     dest->writeUint64Le(_address.unwrap().value());
     return true;
 }
 
-bool AddressValueNode::decode(bmcl::MemReader* src)
+bool AddressValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     //TODO: get target word size
     if (src->readableSize() < 8) {
-        //TODO: report error
+        ctx->setError("Not enough data to decode address");
         return false;
     }
     uint64_t value = src->readUint64Le();
-    updateOptionalValuePair(&_address, value);
+    updateOptionalValuePair(&_address, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -850,7 +846,7 @@ bool AddressValueNode::setValue(const Value& value)
 {
     if (value.isA(ValueKind::Unsigned)) {
         //TODO: check word size
-        _address.emplace(value.asUnsigned());
+        _address.emplace(OnboardTime::now(), value.asUnsigned());
         return true;
     }
     return false;
@@ -905,36 +901,40 @@ void EnumValueNode::collectUpdates(NodeViewUpdater* dest)
         return;
     }
 
-    dest->addValueUpdate(value(), this);
+    if (_currentId.unwrap().hasValueChanged()) {
+        dest->addValueUpdate(value(), _currentId.unwrap().lastOnboardUpdateTime(), this);
+    } else {
+        dest->addTimeUpdate(_currentId.unwrap().lastOnboardUpdateTime(), this);
+    }
 
     _currentId.unwrap().updateState();
 }
 
-bool EnumValueNode::encode(bmcl::MemWriter* dest) const
+bool EnumValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_currentId.isSome()) {
-        TRY(dest->writeVarInt(_currentId.unwrap().value()));
+        dest->writeVarInt(_currentId.unwrap().value());
         return true;
     }
-    //TODO: report error
+    ctx->setError("Enum value not set");
     return false;
 }
 
-bool EnumValueNode::decode(bmcl::MemReader* src)
+bool EnumValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t value;
     if (!src->readVarInt(&value)) {
-        //TODO: report error
+        ctx->setError("Error reading enum id");
         return false;
     }
     auto it = _type->constantsRange().findIf([value](const decode::EnumConstant* c) {
         return c->value() == value;
     });
     if (it == _type->constantsEnd()) {
-        //TODO: report error
+        ctx->setError("Invalid enum id");
         return false;
     }
-    updateOptionalValuePair(&_currentId, value);
+    updateOptionalValuePair(&_currentId, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -965,11 +965,11 @@ ValueKind EnumValueNode::valueKind() const
     return ValueKind::StringView;
 }
 
-bool EnumValueNode::selectEnum(bmcl::StringView value)
+bool EnumValueNode::selectEnum(OnboardTime time, bmcl::StringView value)
 {
     for (const decode::EnumConstant* c : _type->constantsRange()) {
         if (c->name() == value) {
-            _currentId.emplace(c->value());
+            _currentId.emplace(time, c->value());
             return true;
         }
     }
@@ -980,9 +980,9 @@ bool EnumValueNode::setValue(const Value& value)
 {
     switch (value.kind()) {
     case ValueKind::String:
-        return selectEnum(value.asString());
+        return selectEnum(OnboardTime::now(), value.asString());
     case ValueKind::StringView:
-        return selectEnum(value.asStringView());
+        return selectEnum(OnboardTime::now(), value.asStringView());
     default:
         return false;
     }
@@ -1047,26 +1047,28 @@ void NumericValueNode<T>::collectUpdates(NodeViewUpdater* dest)
         return;
     }
 
-    if (std::is_floating_point<T>::value) {
-        dest->addValueUpdate(Value::makeDouble(_value.unwrap().value()), this);
-    } else if (std::is_signed<T>::value) {
-        dest->addValueUpdate(Value::makeSigned(_value.unwrap().value()), this);
+    OnboardTime t = _value.unwrap().lastOnboardUpdateTime();
+
+    if (_value.unwrap().hasValueChanged()) {
+        if (std::is_floating_point<T>::value) {
+            dest->addValueUpdate(Value::makeDouble(_value.unwrap().value()), t, this);
+        } else if (std::is_signed<T>::value) {
+            dest->addValueUpdate(Value::makeSigned(_value.unwrap().value()), t, this);
+        } else {
+            dest->addValueUpdate(Value::makeUnsigned(_value.unwrap().value()), t, this);
+        }
     } else {
-        dest->addValueUpdate(Value::makeUnsigned(_value.unwrap().value()), this);
+        dest->addTimeUpdate(t, this);
     }
 
     _value.unwrap().updateState();
 }
 
 template <typename T>
-bool NumericValueNode<T>::encode(bmcl::MemWriter* dest) const
+bool NumericValueNode<T>::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
-        return false;
-    }
-    if (dest->writableSize() < sizeof(T)) {
-        //TODO: report error
+        ctx->setError("Numeric value not set");
         return false;
     }
     dest->writeType<T>(bmcl::htole<T>(_value.unwrap().value()));
@@ -1074,14 +1076,14 @@ bool NumericValueNode<T>::encode(bmcl::MemWriter* dest) const
 }
 
 template <typename T>
-bool NumericValueNode<T>::decode(bmcl::MemReader* src)
+bool NumericValueNode<T>::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     if (src->readableSize() < sizeof(T)) {
-        //TODO: report error
+        ctx->setError("Not enough data to read numeric value");
         return false;
     }
     T value = bmcl::letoh<T>(src->readType<T>());
-    updateOptionalValuePair(&_value, value);
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -1118,20 +1120,20 @@ ValueKind NumericValueNode<T>::valueKind() const
 }
 
 template <typename T>
-bool NumericValueNode<T>::emplace(intmax_t value)
+bool NumericValueNode<T>::emplace(OnboardTime time, intmax_t value)
 {
     if (std::is_unsigned<T>()) {
         if (value < 0) {
             return false;
         }
         if (uintmax_t(value) >= std::numeric_limits<T>::min() && uintmax_t(value) <= std::numeric_limits<T>::max()) {
-            _value.emplace(value);
+            _value.emplace(time, value);
             return true;
         }
         return false;
     } else {
         if (value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max()) {
-            _value.emplace(value);
+            _value.emplace(time, value);
             return true;
         }
         return false;
@@ -1139,20 +1141,20 @@ bool NumericValueNode<T>::emplace(intmax_t value)
 }
 
 template <typename T>
-bool NumericValueNode<T>::emplace(uintmax_t value)
+bool NumericValueNode<T>::emplace(OnboardTime time, uintmax_t value)
 {
     if (value <= std::numeric_limits<T>::max()) {
-        _value.emplace(value);
+        _value.emplace(time, value);
         return true;
     }
     return false;
 }
 
 template <typename T>
-bool NumericValueNode<T>::emplace(double value)
+bool NumericValueNode<T>::emplace(OnboardTime time, double value)
 {
     if (value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max()) {
-        _value.emplace(value);
+        _value.emplace(time, value);
         return true;
     }
     return false;
@@ -1162,11 +1164,11 @@ template <typename T>
 bool NumericValueNode<T>::setValue(const Value& value)
 {
     if (value.isA(ValueKind::Double)) {
-        return emplace(value.asDouble());
+        return emplace(OnboardTime::now(), value.asDouble());
     } else if (value.isA(ValueKind::Signed)) {
-        return emplace(value.asSigned());
+        return emplace(OnboardTime::now(), value.asSigned());
     } else if (value.isA(ValueKind::Unsigned)) {
-        return emplace(value.asUnsigned());
+        return emplace(OnboardTime::now(), value.asUnsigned());
     }
     return false;
 }
@@ -1183,7 +1185,7 @@ bmcl::Option<T> NumericValueNode<T>::rawValue() const
 template <typename T>
 void NumericValueNode<T>::setRawValue(T value)
 {
-    updateOptionalValuePair(&_value, value);
+    updateOptionalValuePair(&_value, OnboardTime::now(), value);
 }
 
 template <typename T>
@@ -1227,21 +1229,24 @@ VarintValueNode::~VarintValueNode()
 {
 }
 
-bool VarintValueNode::encode(bmcl::MemWriter* dest) const
+bool VarintValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("Varint value not set");
         return false;
     }
-    return dest->writeVarInt(_value.unwrap().value());
+    dest->writeVarInt(_value.unwrap().value());
+    return true;
 }
 
-bool VarintValueNode::decode(bmcl::MemReader* src)
+bool VarintValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     int64_t value;
-    //TODO: report error
-    TRY(src->readVarInt(&value));
-    updateOptionalValuePair(&_value, value);
+    if (!src->readVarInt(&value)) {
+        ctx->setError("Error reading varint value");
+        return false;
+    }
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 
@@ -1254,21 +1259,24 @@ VaruintValueNode::~VaruintValueNode()
 {
 }
 
-bool VaruintValueNode::encode(bmcl::MemWriter* dest) const
+bool VaruintValueNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
     if (_value.isNone()) {
-        //TODO: report error
+        ctx->setError("Varuint value not set");
         return false;
     }
-    return dest->writeVarUint(_value.unwrap().value());
+    dest->writeVarUint(_value.unwrap().value());
+    return true;
 }
 
-bool VaruintValueNode::decode(bmcl::MemReader* src)
+bool VaruintValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     uint64_t value;
-    //TODO: report error
-    TRY(src->readVarUint(&value));
-    updateOptionalValuePair(&_value, value);
+    if (!src->readVarUint(&value)) {
+        ctx->setError("Error reading varuint value");
+        return false;
+    }
+    updateOptionalValuePair(&_value, ctx->dataTimeOfOrigin(), value);
     return true;
 }
 }

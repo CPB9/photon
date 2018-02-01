@@ -12,8 +12,9 @@
 
 namespace photon {
 
-NodeView::NodeView(const Node* node, bmcl::OptionPtr<NodeView> parent, std::size_t indexInParent)
+NodeView::NodeView(const Node* node, bmcl::Option<OnboardTime> time, bmcl::OptionPtr<NodeView> parent, std::size_t indexInParent)
     : _value(node->value())
+    , _updateTime(time)
     , _name(node->fieldName().toStdString())
     , _typeName(node->typeName().toStdString())
     , _shortDesc(node->shortDescription().toStdString())
@@ -39,6 +40,11 @@ void NodeView::setValueUpdate(ValueUpdate&& update)
     _value = std::move(update.value);
     _isDefault = update.isDefault;
     _isInRange = update.isInRange;
+}
+
+void NodeView::setUpdateTime(bmcl::Option<OnboardTime> time)
+{
+    _updateTime = time;
 }
 
 uintptr_t NodeView::id() const
@@ -124,7 +130,7 @@ void NodeView::initChildren(const Node* node)
     for (std::size_t i = 0; i < size; i++) {
         auto child = const_cast<Node*>(node)->childAt(i); //HACK
         assert(child.isSome());
-        Rc<NodeView> view = new NodeView(child.unwrap(), this, i);
+        Rc<NodeView> view = new NodeView(child.unwrap(), _updateTime, this, i);
         _children.push_back(view);
     }
 }
@@ -147,5 +153,10 @@ bool NodeView::isInRange() const
 bmcl::Option<std::vector<Value>> NodeView::possibleValues() const
 {
     return bmcl::None;
+}
+
+bmcl::Option<OnboardTime> NodeView::lastUpdateTime() const
+{
+    return _updateTime;
 }
 }

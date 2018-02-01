@@ -11,8 +11,15 @@
 #include "decode/parser/Project.h"
 #include "decode/ast/Component.h"
 #include "decode/ast/Ast.h"
-#include "photon/model/StatusDecoder.h"
+#include "photon/model/TmMsgDecoder.h"
 #include "photon/model/FieldsNode.h"
+#include "photon/model/CoderState.h"
+#include "photon/model/Node.h"
+#include "photon/model/NodeViewUpdater.h"
+
+#include <bmcl/MemReader.h>
+
+#include <deque>
 
 namespace photon {
 
@@ -42,30 +49,157 @@ private:
     Rc<const decode::Component> _comp;
 };
 
-TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
-    : NodeWithNamedChildren(parent)
-    , _device(dev)
+class StatusesNode : public Node {
+public:
+    StatusesNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+        : Node(parent)
+    {
+    }
+
+    void collectUpdates(NodeViewUpdater* dest) override
+    {
+        collectUpdatesGeneric(_nodes, dest);
+    }
+
+    std::size_t numChildren() const override
+    {
+        return _nodes.size();
+    }
+
+    bmcl::Option<std::size_t> childIndex(const Node* node) const override
+    {
+        return childIndexGeneric(_nodes, node);
+    }
+
+    bmcl::OptionPtr<Node> childAt(std::size_t idx) override
+    {
+        return childAtGeneric(_nodes, idx);
+    }
+
+    bmcl::StringView fieldName() const override
+    {
+        return "~";
+    }
+
+    void addParamNode(ComponentParamsNode* node)
+    {
+        _nodes.emplace_back(node);
+    }
+
+private:
+    std::vector<Rc<ComponentParamsNode>> _nodes;
+};
+
+class EventsNode : public Node {
+public:
+    EventsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+        : Node(parent)
+        , _lastUpdateSize(0)
+    {
+    }
+
+    void collectUpdates(NodeViewUpdater* dest) override
+    {
+        if (_lastUpdateSize < _nodes.size()) {
+            std::size_t delta = _nodes.size() - _lastUpdateSize;
+            NodeViewVec vec;
+            vec.reserve(delta);
+            for (std::size_t i = _lastUpdateSize; i < _nodes.size(); i++) {
+                EventNode* n = _nodes[i].get();
+                vec.emplace_back(new NodeView(n, n->lastUpdateTime()));
+            }
+            dest->addExtendUpdate(std::move(vec), OnboardTime::now(), this); //FIXME: time
+        }
+        _lastUpdateSize = _nodes.size();
+    }
+
+    std::size_t numChildren() const override
+    {
+        return _nodes.size();
+    }
+
+    bmcl::Option<std::size_t> childIndex(const Node* node) const override
+    {
+        return childIndexGeneric(_nodes, node);
+    }
+
+    bmcl::OptionPtr<Node> childAt(std::size_t idx) override
+    {
+        return childAtGeneric(_nodes, idx);
+    }
+
+    bmcl::StringView fieldName() const override
+    {
+        return "~";
+    }
+
+    void addEvent(EventNode* node)
+    {
+        node->setParent(this);
+        _nodes.emplace_back(node);
+    }
+
+    void addEvent(Rc<EventNode>&& node)
+    {
+        node->setParent(this);
+        _nodes.push_back(std::move(node));
+    }
+
+private:
+    std::size_t _lastUpdateSize;
+    std::vector<Rc<EventNode>> _nodes;
+};
+
+TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
+    : _device(dev)
+    , _statuses(new StatusesNode)
 {
     for (const decode::Ast* ast : dev->modules()) {
         if (ast->component().isNone()) {
             continue;
         }
 
-        const decode::Component* it = ast->component().unwrap();
+        const decode::Component* comp = ast->component().unwrap();
 
-        if (!it->hasParams()) {
+        if (!comp->hasParams()) {
             continue;
         }
 
-        Rc<ComponentParamsNode> node = new ComponentParamsNode(it, cache, this);
-        _nodes.emplace_back(node);
+        Rc<ComponentParamsNode> node = new ComponentParamsNode(comp, cache, _statuses.get());
+        _statuses->addParamNode(node.get());
 
-        if (!it->hasStatuses()) {
+        if (!comp->hasStatuses()) {
             continue;
         }
+        std::size_t compNum = comp->number();
+        for (const decode::StatusMsg* msg : comp->statusesRange()) {
+            std::size_t msgNum = msg->number();
+            uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
+            _decoders.emplace(num, StatusMsgDecoder(msg, node.get()));
+        }
+    }
+}
 
-        Rc<StatusDecoder> decoder = new StatusDecoder(it->statusesRange(), node.get());
-        _decoders.emplace(it->number(), decoder);
+void TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload)
+{
+    auto it = _decoders.find((uint64_t(compNum) << 32) | uint64_t(msgNum));
+    if (it == _decoders.end()) {
+        ctx->setError("Invalid component id or tm msg id");
+        return;
+    }
+
+    bmcl::MemReader src(payload);
+
+    if (it->second.isFirst()) {
+        if (!it->second.unwrapFirst().decode(ctx, &src)) {
+            return;
+        }
+    } else {
+        bmcl::Option<Rc<EventNode>> eventNode = it->second.unwrapSecond().decode(ctx, &src);
+        if (eventNode.isNone()) {
+            return;
+        }
+        _events->addEvent(std::move(eventNode.unwrap()));
     }
 }
 
@@ -73,53 +207,8 @@ TmModel::~TmModel()
 {
 }
 
-bmcl::OptionPtr<Node> TmModel::nodeWithName(bmcl::StringView name)
+Node* TmModel::statusesNode()
 {
-    auto it = std::find_if(_nodes.begin(), _nodes.end(), [name](const Rc<ComponentParamsNode>& node) {
-        return node->fieldName() == name;
-    });
-    if (it == _nodes.end()) {
-        return bmcl::None;
-    }
-    return it->get();
-}
-
-void TmModel::collectUpdates(NodeViewUpdater* dest)
-{
-    collectUpdatesGeneric(_nodes, dest);
-}
-
-void  TmModel::acceptTmMsg(uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload)
-{
-    auto it = _decoders.find(compNum);
-    if (it == _decoders.end()) {
-        //TODO: report error
-        return;
-    }
-
-    if (!it->second->decode(msgNum, payload)) {
-        //TODO: report error
-        return;
-    }
-}
-
-std::size_t TmModel::numChildren() const
-{
-    return _nodes.size();
-}
-
-bmcl::Option<std::size_t> TmModel::childIndex(const Node* node) const
-{
-    return childIndexGeneric(_nodes, node);
-}
-
-bmcl::OptionPtr<Node> TmModel::childAt(std::size_t idx)
-{
-    return childAtGeneric(_nodes, idx);
-}
-
-bmcl::StringView TmModel::fieldName() const
-{
-    return "~";
+    return _statuses.get();
 }
 }

@@ -1,7 +1,7 @@
 module exc
 
 import core::{Reader, Writer, Error, Address, Time, Generator, RingBuf}
-import clk::{Tick}
+import clk::{TimePoint}
 
 /// 0x9c3e
 const STREAM_SEPARATOR : u16 = 39998;
@@ -48,7 +48,7 @@ struct DataHeader {
     packetType: PacketType,
     streamType: StreamType,
     counter: u16,
-    time: Tick,
+    time: TimePoint,
 }
 
 struct Msg {

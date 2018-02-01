@@ -137,4 +137,9 @@ bmcl::Option<std::vector<Value>> Node::possibleValues() const
 {
     return bmcl::None;
 }
+
+bmcl::Option<OnboardTime> Node::lastUpdateTime() const
+{
+    return bmcl::None;
+}
 }

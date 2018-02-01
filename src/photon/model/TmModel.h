@@ -11,7 +11,9 @@
 #include "photon/Config.hpp"
 #include "photon/model/Node.h"
 #include "decode/core/HashMap.h"
-#include "photon/model/NodeWithNamedChildren.h"
+#include "photon/model/TmMsgDecoder.h"
+
+#include <bmcl/Either.h>
 
 #include <vector>
 
@@ -21,35 +23,34 @@ class Device;
 
 namespace photon {
 
+class CoderState;
 class ValueInfoCache;
 class FieldsNode;
-class StatusDecoder;
+class StatusMsgDecoder;
 class NodeViewUpdater;
 template <typename T>
 class NumericValueNode;
 class ComponentParamsNode;
+class StatusesNode;
+class EventsNode;
 
-class TmModel : public NodeWithNamedChildren {
+class TmModel : public RefCountable {
 public:
     using Pointer = Rc<TmModel>;
     using ConstPointer = Rc<const TmModel>;
 
-    TmModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent = bmcl::None);
+    TmModel(const decode::Device* dev, const ValueInfoCache* cache);
     ~TmModel();
 
-    void acceptTmMsg(uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
+    void acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
 
-    bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override;
-
-    void collectUpdates(NodeViewUpdater* dest) override;
-    std::size_t numChildren() const override;
-    bmcl::Option<std::size_t> childIndex(const Node* node) const override;
-    bmcl::OptionPtr<Node> childAt(std::size_t idx) override;
-    bmcl::StringView fieldName() const override;
+    Node* statusesNode();
+    Node* eventsNode();
 
 private:
-    decode::HashMap<uint32_t, Rc<StatusDecoder>> _decoders;
-    std::vector<Rc<ComponentParamsNode>> _nodes;
+    decode::HashMap<uint64_t, bmcl::Either<StatusMsgDecoder, EventMsgDecoder>> _decoders;
     Rc<const decode::Device> _device;
+    Rc<StatusesNode> _statuses;
+    Rc<EventsNode> _events;
 };
 }
