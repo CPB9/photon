@@ -38,8 +38,19 @@ void PhotonTest_Init()
     }
 }
 
+static int eventCounter = 0;
+
 void PhotonTest_Tick()
 {
+    PhotonTestParamStruct s;
+    s.parama = 1;
+    s.paramb = 5;
+    if (eventCounter >= 10) {
+        PhotonTest_QueueEvent_Event1(3, &s);
+        eventCounter = 0;
+    } else {
+        eventCounter++;
+    }
     //_photonTest.dynArrayParam.size++;
     //if (_photonTest.dynArrayParam.size > 10) {
     //    _photonTest.dynArrayParam.size = 0;

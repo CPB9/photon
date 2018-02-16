@@ -3,6 +3,7 @@
 #include "photongen/onboard/core/Error.h"
 #include "photongen/onboard/core/Reader.h"
 #include "photongen/onboard/core/Writer.h"
+#include "photongen/onboard/core/RingBuf.h"
 #include "photon/core/Logging.h"
 #include "photongen/onboard/tm/MessageDesc.h"
 #include "photongen/onboard/tm/StatusMessage.h"
@@ -19,9 +20,13 @@
 static uint16_t _onceRequests[TM_MAX_ONCE_REQUESTS];
 static uint8_t eventTmp[512];
 static PhotonWriter eventWriter;
+static uint8_t _eventData[2048];
+static PhotonRingBuf _eventRingBuf;
 
 void PhotonTm_Init()
 {
+    _photonTm.lostEvents = 0;
+    _photonTm.generatedEvents = 0;
     _photonTm.currentDesc = 0;
     size_t allowedMsgCount = 0;
     for (PhotonTmMessageDesc* it = TM_MSG_BEGIN; it < TM_MSG_END; it++) {
@@ -32,6 +37,7 @@ void PhotonTm_Init()
     _photonTm.allowedMsgCount = allowedMsgCount;
     _photonTm.onceRequestsNum = 0;
     PhotonWriter_Init(&eventWriter, eventTmp, sizeof(eventTmp));
+    PhotonRingBuf_Init(&_eventRingBuf, _eventData, sizeof(_eventData));
 }
 
 void PhotonTm_Tick()
@@ -48,8 +54,22 @@ PhotonWriter* PhotonTm_BeginEventMsg(uint8_t compNum, uint8_t msgNum)
 
 void PhotonTm_EndEventMsg()
 {
-    //TODO: implement
-    PHOTON_WARNING("Event messages not implemented");
+    //TODO: check overflow
+    uint16_t msgSize = eventWriter.current - eventWriter.start;
+    size_t writableSize = PhotonRingBuf_WritableSize(&_eventRingBuf);
+    while ((msgSize + 2) > writableSize) {
+        _photonTm.lostEvents++;
+        _photonTm.storedEvents--;
+        uint16_t currentSize;
+        PhotonRingBuf_Read(&_eventRingBuf, &currentSize, 2);
+        //TODO: check available size before erase
+        PhotonRingBuf_Erase(&_eventRingBuf, currentSize);
+        writableSize -= currentSize + 2;
+    }
+    PhotonRingBuf_Write(&_eventRingBuf, &msgSize, 2);
+    PhotonRingBuf_Write(&_eventRingBuf, eventWriter.start, msgSize);
+    _photonTm.storedEvents++;
+    _photonTm.generatedEvents++;
 }
 
 static void selectNextMessage()
@@ -65,12 +85,6 @@ static inline PhotonTmMessageDesc* currentDesc()
     return &_messageDesc[_photonTm.currentDesc];
 }
 
-static PhotonError encodeStatusMsg(void* data, PhotonWriter* dest)
-{
-    (void)data;
-    return currentDesc()->func(dest);
-}
-
 PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 {
     if (_photonTm.allowedMsgCount == 0) {
@@ -78,20 +92,26 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
     }
     unsigned totalMessages = 0;
 
-    //while (true) {
-    //}
+    while (true) {
+        if (PhotonRingBuf_ReadableSize(&_eventRingBuf) == 0) {
+            break;
+        }
+        uint16_t currentSize;
+        PhotonRingBuf_Peek(&_eventRingBuf, &currentSize, 2, 0);
+        //TODO: check available size before peak
+        if (currentSize > PhotonWriter_WritableSize(dest)) {
+            break;
+        }
+        uint8_t* current = PhotonWriter_CurrentPtr(dest);
+        PhotonRingBuf_Peek(&_eventRingBuf, current, currentSize, 2);
+        PhotonWriter_SetCurrentPtr(dest, current + currentSize);
+        PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
+        _photonTm.storedEvents--;
+    }
 
     while (true) {
-        if (PhotonWriter_WritableSize(dest) < 2) {
-            if (totalMessages == 0) {
-                return PhotonError_NotEnoughSpace;
-            }
-            return PhotonError_Ok;
-        }
-        _photonTm.currentStatusMsg.compNum = currentDesc()->compNum;
-        _photonTm.currentStatusMsg.msgNum = currentDesc()->msgNum;
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
-        PhotonError rv = PhotonTmStatusMessage_Encode(&_photonTm.currentStatusMsg, encodeStatusMsg, 0, dest);
+        PhotonError rv = currentDesc()->func(dest);
         if (rv == PhotonError_Ok) {
             selectNextMessage();
             totalMessages++;
@@ -152,100 +172,5 @@ PhotonError PhotonTm_ExecCmd_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, b
 {
     return PhotonTm_SetStatusEnabled(compNum, msgNum, isEnabled);
 }
-
-/*
-PhotonError PhotonTm_CollectEventMessages(PhotonWriter* dest)
-{
-    (void)dest;
-    // TODO
-    return PhotonError_Ok;
-}
-
-// commands
-
-PhotonGtTmCmdError PhotonGcMain_photonTmSendStatusMessage(PhotonGtCompMsg
-componentMessage)
-{
-    (void)componentMessage;
-    // TODO
-    return PHOTON_GT_photonTm_CMD_ERROR_OK;
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmSetMessageRequest(PhotonGtCompMsg
-componentMessage, PhotonBer priority)
-{
-    if (componentMessage.messageNum >= _MSG_COUNT) {
-        return PHOTON_GT_photonTm_CMD_ERROR_INVALID_MESSAGE_NUM;
-    }
-    _photonTm.descriptors[componentMessage.messageNum].priority = priority;
-    return PHOTON_GT_photonTm_CMD_ERROR_OK;
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmClearMessageRequest(PhotonGtCompMsg
-componentMessage)
-{
-    return PhotonGcMain_photonTmSetMessageRequest(componentMessage, 0);
-}
-
-static PhotonGtTmCmdError allowMessage(PhotonGtCompMsg componentMessage, bool
-isAllowed)
-{
-    if (componentMessage.messageNum >= _MSG_COUNT) {
-        return PHOTON_GT_photonTm_CMD_ERROR_INVALID_MESSAGE_NUM;
-    }
-    _photonTm.descriptors[componentMessage.messageNum].isAllowed = isAllowed;
-    if (isAllowed) {
-        _photonTm.allowedMessages++;
-    } else {
-        _photonTm.allowedMessages--;
-    }
-    return PHOTON_GT_photonTm_CMD_ERROR_OK;
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmDenyMessage(PhotonGtCompMsg
-componentMessage)
-{
-    return allowMessage(componentMessage, false);
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmAllowMessage(PhotonGtCompMsg
-componentMessage)
-{
-    return allowMessage(componentMessage, true);
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmDenyEvent(const PhotonGtEventInfo*
-eventInfo)
-{
-    (void)eventInfo;
-    // TODO
-    return PHOTON_GT_photonTm_CMD_ERROR_OK;
-}
-
-PhotonGtTmCmdError PhotonGcMain_photonTmAllowEvent(const PhotonGtEventInfo*
-eventInfo)
-{
-    (void)eventInfo;
-    // TODO
-    return PHOTON_GT_photonTm_CMD_ERROR_OK;
-}
-
-// params
-
-PhotonBer PhotonGcMain_photonTmAllowedMessages()
-{
-    return _photonTm.allowedMessages;
-}
-
-// other
-
-PhotonGtB8 PhotonGcMain_IsEventAllowed(PhotonBer messageId, PhotonBer eventId)
-{
-    (void)messageId;
-    (void)eventId;
-    // TODO
-    return 0;
-}
-*/
 
 #undef _PHOTON_FNAME

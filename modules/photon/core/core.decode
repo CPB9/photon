@@ -178,6 +178,7 @@ impl RingBuf {
     fn read(&mut self, dest: *mut void, size: usize)
     fn currentReadPtr(&self) -> *const u8
     fn readableSize(&self) -> usize
+    fn writableSize(&self) -> usize
     fn linearReadableSize(&self) -> usize
     fn erase(&mut self, size: usize)
     fn clear(&mut self)

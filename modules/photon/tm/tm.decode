@@ -22,14 +22,16 @@ impl StatusMessage {
 
 component {
     parameters {
-        currentStatusMsg: StatusMessage,
+        lostEvents: varuint,
+        storedEvents: varuint,
+        generatedEvents: varuint,
         currentDesc: u32,
         allowedMsgCount: u32,
         onceRequestsNum: u16,
     }
 
     statuses {
-        [all, 0, false]: {allowedMsgCount, onceRequestsNum},
+        [all, 0, false]: {lostEvents, storedEvents, generatedEvents, currentDesc, allowedMsgCount, onceRequestsNum},
     }
 
     impl {

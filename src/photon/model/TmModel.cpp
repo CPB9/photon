@@ -180,27 +180,26 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
     }
 }
 
-void TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload)
+bool TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::MemReader* src)
 {
     auto it = _decoders.find((uint64_t(compNum) << 32) | uint64_t(msgNum));
     if (it == _decoders.end()) {
         ctx->setError("Invalid component id or tm msg id");
-        return;
+        return false;
     }
 
-    bmcl::MemReader src(payload);
-
     if (it->second.isFirst()) {
-        if (!it->second.unwrapFirst().decode(ctx, &src)) {
-            return;
+        if (!it->second.unwrapFirst().decode(ctx, src)) {
+            return false;
         }
     } else {
-        bmcl::Option<Rc<EventNode>> eventNode = it->second.unwrapSecond().decode(ctx, &src);
+        bmcl::Option<Rc<EventNode>> eventNode = it->second.unwrapSecond().decode(ctx, src);
         if (eventNode.isNone()) {
-            return;
+            return false;
         }
         _events->addEvent(std::move(eventNode.unwrap()));
     }
+    return true;
 }
 
 TmModel::~TmModel()

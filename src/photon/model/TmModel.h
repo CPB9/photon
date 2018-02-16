@@ -14,6 +14,7 @@
 #include "photon/model/TmMsgDecoder.h"
 
 #include <bmcl/Either.h>
+#include <bmcl/Fwd.h>
 
 #include <vector>
 
@@ -42,7 +43,7 @@ public:
     TmModel(const decode::Device* dev, const ValueInfoCache* cache);
     ~TmModel();
 
-    void acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::Bytes payload);
+    bool acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::MemReader* payload);
 
     Node* statusesNode();
     Node* eventsNode();

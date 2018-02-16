@@ -159,17 +159,8 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
             return;
         }
 
-        uint16_t msgSize = src.readUint16Le();
-        if (src.sizeLeft() < msgSize) {
-            //TODO: report error
-            return;
-        }
-
-        bmcl::MemReader msg(src.current(), msgSize);
-        src.skip(msgSize);
-
         uint64_t compNum;
-        if (!msg.readVarUint(&compNum)) {
+        if (!src.readVarUint(&compNum)) {
             //TODO: report error
             return;
         }
@@ -179,7 +170,7 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
         }
 
         uint64_t msgNum;
-        if (!msg.readVarUint(&msgNum)) {
+        if (!src.readVarUint(&msgNum)) {
             //TODO: report error
             return;
         }
@@ -188,7 +179,13 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
             return;
         }
 
-        bmcl::Bytes view(msg.current(), msg.sizeLeft());
+        const uint8_t* begin = src.current();
+
+        if (!_model->acceptTmMsg(&ctx, compNum, msgNum, &src)) {
+            return;
+        }
+
+        bmcl::Bytes view(begin, src.current());
         NumberedSub sub(compNum, msgNum);
         auto it = _numberedSubs.find(sub);
         if (it != _numberedSubs.end()) {
@@ -198,7 +195,6 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
             }
         }
 
-        _model->acceptTmMsg(&ctx, compNum, msgNum, view);
     }
 }
 }
