@@ -90,7 +90,7 @@ public:
             },
             [this](FirmwareHashDownloadedEventAtom, const std::string& name, const bmcl::SharedBytes& hash) {
             },
-            [this](UpdateStatusTmViewAtom, const Rc<NodeViewUpdater>& updater) {
+            [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& updater) {
             },
             [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
             },

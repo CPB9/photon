@@ -196,13 +196,29 @@ static bool buildTypeName(const decode::Type* type, decode::StringBuilder* dest)
 
 class CacheCollector : public decode::ConstAstVisitor<CacheCollector> {
 public:
-    void collectNames(const decode::Package* package, ValueInfoCache::MapType* typeNameMap, ValueInfoCache::StringVecType* strIndexes)
+    void collectNames(const decode::Package* package,
+                      ValueInfoCache::TypeMapType* typeNameMap,
+                      ValueInfoCache::EventMapType* eventNameMap,
+                      ValueInfoCache::StringVecType* strIndexes)
     {
         _typeNameMap = typeNameMap;
+        _eventNameMap = eventNameMap;
         _strIndexes = strIndexes;
         for (const decode::Ast* ast : package->modules()) {
             for (const decode::Type* type : ast->typesRange()) {
                 traverseType(type);
+            }
+            if (ast->component().isNone()) {
+                continue;
+            }
+            const decode::Component* comp = ast->component().unwrap();
+            for (const decode::EventMsg* msg : comp->eventsRange()) {
+                std::string name;
+                name.reserve(comp->name().size() + 2 + msg->name().size());
+                name.append(comp->name().begin(), comp->name().end());
+                name.append("::", 2);
+                name.append(msg->name().begin(), msg->name().end());
+                _eventNameMap->emplace(msg, std::move(name));
             }
         }
     }
@@ -241,7 +257,8 @@ public:
     }
 
 private:
-    ValueInfoCache::MapType* _typeNameMap;
+    ValueInfoCache::TypeMapType* _typeNameMap;
+    ValueInfoCache::EventMapType* _eventNameMap;
     ValueInfoCache::StringVecType* _strIndexes;
 };
 
@@ -249,7 +266,7 @@ ValueInfoCache::ValueInfoCache(const decode::Package* package)
 {
     CacheCollector b;
     updateIndexes(&_arrayIndexes, 64); //HACK: limit maximum number of commands
-    b.collectNames(package, &_names, &_arrayIndexes);
+    b.collectNames(package, &_names, &_events, &_arrayIndexes);
 
 }
 
@@ -270,6 +287,15 @@ bmcl::StringView ValueInfoCache::nameForType(const decode::Type* type) const
 {
     auto it = _names.find(type);
     if (it == _names.end()) {
+        return bmcl::StringView("UNITIALIZED");
+    }
+    return it->second;
+}
+
+bmcl::StringView ValueInfoCache::nameForEvent(const decode::EventMsg* msg) const
+{
+    auto it = _events.find(msg);
+    if (it == _events.end()) {
         return bmcl::StringView("UNITIALIZED");
     }
     return it->second;

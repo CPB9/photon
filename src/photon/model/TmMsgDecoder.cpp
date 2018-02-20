@@ -227,6 +227,7 @@ EventNode::EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, b
     : FieldsNode(msg->partsRange(), cache, parent)
     , _msg(msg)
 {
+    _name = cache->nameForEvent(msg);
 }
 
 EventNode::~EventNode()
@@ -236,5 +237,10 @@ EventNode::~EventNode()
 bool EventNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
     return decodeFields(ctx, src);
+}
+
+bmcl::StringView EventNode::fieldName() const
+{
+    return _name;
 }
 }

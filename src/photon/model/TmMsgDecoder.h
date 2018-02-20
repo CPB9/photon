@@ -62,9 +62,11 @@ public:
     ~EventNode();
 
     bool decode(CoderState* ctx, bmcl::MemReader* src);
+    bmcl::StringView fieldName() const override;
 
 private:
     Rc<const decode::EventMsg> _msg;
+    bmcl::StringView _name;
 };
 
 class EventMsgDecoder {

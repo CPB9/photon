@@ -127,8 +127,8 @@ caf::behavior UiActor::make_behavior()
 
             delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
-        [this](UpdateStatusTmViewAtom, const Rc<NodeViewUpdater>& updater) {
-            _widget->applyTmUpdates(updater.get());
+        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& statusUpdater, const Rc<NodeViewUpdater>& eventUpdater) {
+            _widget->applyTmUpdates(statusUpdater.get(), eventUpdater.get());
         },
         [this](UpdateTmParams, const TmParamUpdate& update) {
             (void)update;
@@ -169,8 +169,8 @@ caf::behavior UiActor::make_behavior()
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
             request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, TestMsg::sub_(), _testSub);
         },
-        [this](SetTmViewAtom, const Rc<NodeView>& tmView) {
-            _widget->setRootTmNode(tmView.get());
+        [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
+            _widget->setRootTmNode(statusView.get(), eventView.get());
         },
         [this](FirmwareErrorEventAtom, const std::string& msg) {
             _statusWidget->firmwareError(msg);
@@ -206,7 +206,8 @@ caf::behavior UiActor::make_behavior()
             _statusWidget = bmcl::makeUnique<FirmwareStatusWidget>();
             bmcl::Rc<Node> emptyNode = new Node(bmcl::None);
             std::unique_ptr<QNodeViewModel> paramViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
-            _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel));
+            std::unique_ptr<QNodeViewModel> eventViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
+            _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel), std::move(eventViewModel));
 
             QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
                 BMCL_DEBUG() << "quitting";

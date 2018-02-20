@@ -33,11 +33,14 @@
 
 namespace photon {
 
-FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidget* parent)
+FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
+                               std::unique_ptr<QNodeViewModel>&& eventView,
+                               QWidget* parent)
     : QWidget(parent)
 {
     Rc<Node> emptyNode = new Node(bmcl::None);
-    _paramViewModel = std::move(nodeView);
+    _paramViewModel = std::move(paramView);
+    _eventViewModel = std::move(eventView);
 
     auto buttonLayout = new QHBoxLayout;
     auto clearButton = new QPushButton("Clear");
@@ -143,12 +146,29 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidg
     _paramViewWidget->setModel(_paramViewModel.get());
     _paramViewWidget->header()->moveSection(2, 1);
 
+    _eventViewWidget = new QTreeView;
+    _eventViewWidget->setAcceptDrops(false);
+    _eventViewWidget->setAlternatingRowColors(true);
+    _eventViewWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    _eventViewWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _eventViewWidget->setDragEnabled(false);
+    _eventViewWidget->setDragDropMode(QAbstractItemView::NoDragDrop);
+    _eventViewWidget->setDropIndicatorShown(false);
+    _eventViewWidget->header()->setStretchLastSection(false);
+    _eventViewWidget->setModel(_eventViewModel.get());
+    _eventViewWidget->header()->moveSection(2, 1);
+    _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
+
+    auto leftLayout = new QVBoxLayout;
+    leftLayout->addWidget(_paramViewWidget);
+    leftLayout->addWidget(_eventViewWidget);
+
     QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() { _scriptEditWidget->resizeColumnToContents(0); });
     QObject::connect(_paramViewWidget, &QTreeView::expanded, _paramViewWidget, [this]() {
         _paramViewWidget->resizeColumnToContents(0); });
 
     auto centralLayout = new QHBoxLayout;
-    centralLayout->addWidget(_paramViewWidget);
+    centralLayout->addLayout(leftLayout);
     centralLayout->addLayout(rightLayout);
     setLayout(centralLayout);
 }
@@ -193,12 +213,14 @@ void FirmwareWidget::nodeContextMenuRequested(const QPoint& pos)
     }
 }
 
-void FirmwareWidget::setRootTmNode(NodeView* root)
+void FirmwareWidget::setRootTmNode(NodeView* statusView, NodeView* eventView)
 {
-    _paramViewModel->setRoot(root);
+    _paramViewModel->setRoot(statusView);
     _paramViewWidget->expandToDepth(0);
+    _eventViewModel->setRoot(eventView);
+    _eventViewWidget->expandToDepth(0);
+    _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
 }
-
 
 void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
 {
@@ -207,9 +229,11 @@ void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
     _cache.reset(cache);
 }
 
-void FirmwareWidget::applyTmUpdates(NodeViewUpdater* updater)
+void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater)
 {
-    _paramViewModel->applyUpdates(updater);
+    _paramViewModel->applyUpdates(statusUpdater);
     _paramViewWidget->viewport()->update();
+    _eventViewModel->applyUpdates(eventUpdater);
+    _eventViewWidget->viewport()->update();
 }
 }

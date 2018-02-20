@@ -68,8 +68,9 @@ caf::behavior TmState::make_behavior()
     return caf::behavior{
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
             _model = new TmModel(update->device(), update->cache());
-            Rc<NodeView> view = new NodeView(_model->statusesNode());
-            send(_handler, SetTmViewAtom::value, view);
+            Rc<NodeView> statusView = new NodeView(_model->statusesNode());
+            Rc<NodeView> eventView = new NodeView(_model->eventsNode());
+            send(_handler, SetTmViewAtom::value, statusView, eventView);
             _updateCount++;
             delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
         },
@@ -125,9 +126,12 @@ bool TmState::subscribeTm(const NumberedSub& sub, const caf::actor& dest)
 
 void TmState::pushTmUpdates()
 {
-    Rc<NodeViewUpdater> updater = new NodeViewUpdater(_model->statusesNode());
-    _model->statusesNode()->collectUpdates(updater.get());
-    send(_handler, UpdateStatusTmViewAtom::value, updater);
+    Rc<NodeViewUpdater> statusUpdater = new NodeViewUpdater(_model->statusesNode());
+    _model->statusesNode()->collectUpdates(statusUpdater.get());
+
+    Rc<NodeViewUpdater> eventUpdater = new NodeViewUpdater(_model->eventsNode());
+    _model->eventsNode()->collectUpdates(eventUpdater.get());
+    send(_handler, UpdateTmViewAtom::value, statusUpdater, eventUpdater);
     for (const NamedSub& sub : _namedSubs) {
         send(sub.actor, sub.node->value(), sub.path);
     }

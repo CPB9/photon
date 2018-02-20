@@ -128,7 +128,10 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
     }
 }
 
-bool PhotonTm_HasMessages() { return _photonTm.allowedMsgCount != 0; }
+bool PhotonTm_HasMessages()
+{
+    return _photonTm.allowedMsgCount != 0;
+}
 
 PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
 {

@@ -16,6 +16,7 @@
 #include "photon/model/CoderState.h"
 #include "photon/model/Node.h"
 #include "photon/model/NodeViewUpdater.h"
+#include "photon/model/ValueInfoCache.h"
 
 #include <bmcl/MemReader.h>
 
@@ -153,6 +154,7 @@ private:
 TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
     : _device(dev)
     , _statuses(new StatusesNode)
+    , _events(new EventsNode)
 {
     for (const decode::Ast* ast : dev->modules()) {
         if (ast->component().isNone()) {
@@ -168,14 +170,16 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
         Rc<ComponentParamsNode> node = new ComponentParamsNode(comp, cache, _statuses.get());
         _statuses->addParamNode(node.get());
 
-        if (!comp->hasStatuses()) {
-            continue;
-        }
         std::size_t compNum = comp->number();
         for (const decode::StatusMsg* msg : comp->statusesRange()) {
             std::size_t msgNum = msg->number();
             uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
             _decoders.emplace(num, StatusMsgDecoder(msg, node.get()));
+        }
+        for (const decode::EventMsg* msg : comp->eventsRange()) {
+            std::size_t msgNum = msg->number();
+            uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
+            _decoders.emplace(num, EventMsgDecoder(msg, cache));
         }
     }
 }
@@ -209,5 +213,10 @@ TmModel::~TmModel()
 Node* TmModel::statusesNode()
 {
     return _statuses.get();
+}
+
+Node* TmModel::eventsNode()
+{
+    return _events.get();
 }
 }

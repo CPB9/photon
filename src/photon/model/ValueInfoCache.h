@@ -19,6 +19,7 @@
 namespace decode {
 class Type;
 class Package;
+class EventMsg;
 }
 
 namespace photon {
@@ -28,14 +29,16 @@ public:
     using Pointer = Rc<ValueInfoCache>;
     using ConstPointer = Rc<const ValueInfoCache>;
 
+    template <typename T>
     struct Hasher {
-        std::size_t operator()(const Rc<const decode::Type>& key) const
+        std::size_t operator()(const Rc<T>& key) const
         {
-            return std::hash<const decode::Type*>()(key.get());
+            return std::hash<T*>()(key.get());
         }
     };
 
-    using MapType = decode::HashMap<Rc<const decode::Type>, std::string, Hasher>;
+    using TypeMapType = decode::HashMap<Rc<const decode::Type>, std::string, Hasher<const decode::Type>>;
+    using EventMapType = decode::HashMap<Rc<const decode::EventMsg>, std::string, Hasher<const decode::EventMsg>>;
     using StringVecType = std::vector<bmcl::StringView>;
 
     ValueInfoCache(const decode::Package* package);
@@ -43,9 +46,11 @@ public:
 
     bmcl::StringView arrayIndex(std::size_t idx) const;
     bmcl::StringView nameForType(const decode::Type* type) const;
+    bmcl::StringView nameForEvent(const decode::EventMsg* msg) const;
 
 private:
     StringVecType _arrayIndexes;
-    MapType _names;
+    TypeMapType _names;
+    EventMapType _events;
 };
 }

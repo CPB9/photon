@@ -38,11 +38,13 @@ struct PacketResponse;
 class FirmwareWidget : public QWidget {
     Q_OBJECT
 public:
-    FirmwareWidget(std::unique_ptr<QNodeViewModel>&& nodeView, QWidget* parent = nullptr);
+    FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
+                   std::unique_ptr<QNodeViewModel>&& eventView,
+                   QWidget* parent = nullptr);
     ~FirmwareWidget();
 
-    void setRootTmNode(NodeView* root);
-    void applyTmUpdates(NodeViewUpdater* updater);
+    void setRootTmNode(NodeView* statusView, NodeView* eventView);
+    void applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater);
 
     void setRootCmdNode(const ValueInfoCache* cache, Node* root);
 
@@ -56,6 +58,7 @@ signals:
 
 private:
     QTreeView* _paramViewWidget;
+    QTreeView* _eventViewWidget;
     QTreeView* _scriptEditWidget;
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
@@ -63,6 +66,7 @@ private:
     Rc<ScriptResultNode> _scriptResultNode;
     Rc<const ValueInfoCache> _cache;
     std::unique_ptr<QNodeViewModel> _paramViewModel;
+    std::unique_ptr<QNodeViewModel> _eventViewModel;
     std::unique_ptr<QCmdModel> _scriptEditModel;
     std::unique_ptr<QNodeModel> _cmdViewModel;
     std::unique_ptr<QNodeModel> _scriptResultModel;
