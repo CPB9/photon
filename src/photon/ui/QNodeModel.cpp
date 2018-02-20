@@ -52,8 +52,6 @@ bool QNodeModel::setData(const QModelIndex& index, const QVariant& value, int ro
     return isOk;
 }
 
-static QVector<int> allRoles = {Qt::DisplayRole, Qt::BackgroundRole};
-
 void QNodeModel::setEditable(bool isEditable)
 {
     _isEditable = isEditable;
