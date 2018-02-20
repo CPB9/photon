@@ -32,6 +32,7 @@ public:
     void apply(NodeViewStore* dest);
 
     const std::vector<NodeViewUpdate>& updates() const;
+    std::vector<NodeViewUpdate>& updates();
 
 private:
     std::vector<NodeViewUpdate> _updates;

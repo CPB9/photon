@@ -52,4 +52,9 @@ const std::vector<NodeViewUpdate>& NodeViewUpdater::updates() const
 {
     return _updates;
 }
+
+std::vector<NodeViewUpdate>& NodeViewUpdater::updates()
+{
+    return _updates;
+}
 }

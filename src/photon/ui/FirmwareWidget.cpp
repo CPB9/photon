@@ -25,6 +25,7 @@
 #include <QHeaderView>
 #include <QMenu>
 #include <QInputDialog>
+#include <QCheckBox>
 
 #include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
@@ -45,10 +46,13 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     auto buttonLayout = new QHBoxLayout;
     auto clearButton = new QPushButton("Clear");
     auto sendButton = new QPushButton("Send");
-    buttonLayout->setDirection(QBoxLayout::RightToLeft);
-    buttonLayout->addWidget(sendButton);
+    _autoScrollBox = new QCheckBox("Autoscroll events");
+    _autoScrollBox->setCheckState(Qt::Checked);
+    buttonLayout->setDirection(QBoxLayout::LeftToRight);
+    buttonLayout->addWidget(_autoScrollBox);
     buttonLayout->addStretch(1);
     buttonLayout->addWidget(clearButton);
+    buttonLayout->addWidget(sendButton);
     buttonLayout->addStretch();
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
@@ -163,9 +167,12 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     leftLayout->addWidget(_paramViewWidget);
     leftLayout->addWidget(_eventViewWidget);
 
-    QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() { _scriptEditWidget->resizeColumnToContents(0); });
+    QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() {
+        _scriptEditWidget->resizeColumnToContents(0);
+    });
     QObject::connect(_paramViewWidget, &QTreeView::expanded, _paramViewWidget, [this]() {
-        _paramViewWidget->resizeColumnToContents(0); });
+        _paramViewWidget->resizeColumnToContents(0);
+    });
 
     auto centralLayout = new QHBoxLayout;
     centralLayout->addLayout(leftLayout);
@@ -231,9 +238,13 @@ void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
 
 void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater)
 {
+    //TODO: remove viewport updates
     _paramViewModel->applyUpdates(statusUpdater);
     _paramViewWidget->viewport()->update();
     _eventViewModel->applyUpdates(eventUpdater);
+    if (_autoScrollBox->isChecked()) {
+        _eventViewWidget->scrollToBottom();
+    }
     _eventViewWidget->viewport()->update();
 }
 }

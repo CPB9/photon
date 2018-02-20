@@ -22,6 +22,27 @@ namespace photon {
 
 class NodeView;
 class NodeViewUpdater;
+class QNodeViewModel;
+
+class QNodeViewStore : public NodeViewStore {
+public:
+    QNodeViewStore(NodeView* view, QNodeViewModel* parent);
+    ~QNodeViewStore();
+
+    void beginExtend(NodeView* view, std::size_t extendSize) override;
+    void endExtend() override;
+
+    void beginShrink(NodeView* view, std::size_t newSize) override;
+    void endShrink() override;
+
+    void handleValueUpdate(NodeView* view) override;
+
+private:
+    QNodeViewModel* _parent;
+    QModelIndex _lastIndex;
+    int _first;
+    int _last;
+};
 
 class QNodeViewModel : public QModelBase<NodeView> {
     Q_OBJECT
@@ -33,7 +54,9 @@ public:
     void setRoot(NodeView* node);
 
 private:
-    NodeViewStore _store;
+    friend class QNodeViewStore;
+
+    QNodeViewStore _store;
 };
 }
 

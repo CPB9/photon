@@ -24,6 +24,31 @@ NodeViewStore::~NodeViewStore()
 {
 }
 
+void NodeViewStore::beginExtend(NodeView* view, std::size_t extendSize)
+{
+    (void)view;
+    (void)extendSize;
+}
+
+void NodeViewStore::endExtend()
+{
+}
+
+void NodeViewStore::beginShrink(NodeView* view, std::size_t newSize)
+{
+    (void)view;
+    (void)newSize;
+}
+
+void NodeViewStore::endShrink()
+{
+}
+
+void NodeViewStore::handleValueUpdate(NodeView* view)
+{
+    (void)view;
+}
+
 void NodeViewStore::setRoot(NodeView* view)
 {
     _map.clear();
@@ -46,9 +71,11 @@ bool NodeViewStore::apply(NodeViewUpdate* update)
             break;
         case NodeViewUpdateKind::Value:
             dest->setValueUpdate(std::move(update->as<ValueUpdate>()));
+            handleValueUpdate(dest);
             break;
         case NodeViewUpdateKind::Extend: {
             NodeViewVec& vec = update->as<NodeViewVec>();
+            beginExtend(dest, vec.size());
             for (std::size_t i = 0; i < vec.size(); i++) {
                 const Rc<NodeView>& view = vec[i];
                 view->_parent = dest;
@@ -56,6 +83,7 @@ bool NodeViewStore::apply(NodeViewUpdate* update)
                 registerNodes(view.get());
             }
             dest->_children.insert(dest->_children.end(), vec.begin(), vec.end());
+            endExtend();
             break;
         }
         case NodeViewUpdateKind::Shrink: {
@@ -63,10 +91,12 @@ bool NodeViewStore::apply(NodeViewUpdate* update)
             if (newSize > dest->size()) {
                 return false;
             }
+            beginShrink(dest, newSize);
             for (std::size_t i = newSize; i < dest->size(); i++) {
                 unregisterNodes(dest->_children[i].get());
             }
             dest->_children.resize(newSize);
+            endShrink();
             break;
         }
     }

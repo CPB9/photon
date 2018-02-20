@@ -45,7 +45,7 @@ void PhotonTest_Tick()
     PhotonTestParamStruct s;
     s.parama = 1;
     s.paramb = 5;
-    if (eventCounter >= 10) {
+    if (eventCounter >= 100) {
         PhotonTest_QueueEvent_Event1(3, &s);
         eventCounter = 0;
     } else {

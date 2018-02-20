@@ -12,9 +12,50 @@
 
 namespace photon {
 
+QNodeViewStore::QNodeViewStore(NodeView* view, QNodeViewModel* parent)
+    : NodeViewStore(view)
+    , _parent(parent)
+{
+}
+
+QNodeViewStore::~QNodeViewStore()
+{
+}
+
+void QNodeViewStore::beginExtend(NodeView* view, std::size_t extendSize)
+{
+    _lastIndex = _parent->indexFromNode(view, 0);
+    _first = view->numChildren();
+    _last = _first + extendSize;
+    _parent->beginInsertRows(_lastIndex, _first, _last);
+}
+
+void QNodeViewStore::endExtend()
+{
+    _parent->endInsertRows();
+}
+
+void QNodeViewStore::beginShrink(NodeView* view, std::size_t newSize)
+{
+    _lastIndex = _parent->indexFromNode(view, 0);
+    _last = view->numChildren();
+    _first = newSize;
+    _parent->beginRemoveRows(_lastIndex, _first, _last);
+}
+
+void QNodeViewStore::endShrink()
+{
+    _parent->endRemoveRows();
+}
+
+void QNodeViewStore::handleValueUpdate(NodeView* view)
+{
+    //TODO: implement updates
+}
+
 QNodeViewModel::QNodeViewModel(NodeView* node)
     : QModelBase<NodeView>(node)
-    , _store(node)
+    , _store(node, this)
 {
 
 }

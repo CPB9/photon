@@ -25,6 +25,14 @@ public:
     void setRoot(NodeView* view);
     bool apply(NodeViewUpdate* update);
 
+    virtual void beginExtend(NodeView* view, std::size_t extendSize);
+    virtual void endExtend();
+
+    virtual void beginShrink(NodeView* view, std::size_t newSize);
+    virtual void endShrink();
+
+    virtual void handleValueUpdate(NodeView* view);
+
 private:
     void registerNodes(NodeView* view);
     void unregisterNodes(NodeView* view);

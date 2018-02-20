@@ -19,6 +19,7 @@
 #include <memory>
 
 class QTreeView;
+class QCheckBox;
 
 namespace photon {
 
@@ -62,6 +63,7 @@ private:
     QTreeView* _scriptEditWidget;
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
+    QCheckBox* _autoScrollBox;
     Rc<ScriptNode> _scriptNode;
     Rc<ScriptResultNode> _scriptResultNode;
     Rc<const ValueInfoCache> _cache;

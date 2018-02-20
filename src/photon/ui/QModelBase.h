@@ -150,6 +150,8 @@ protected:
     static QVariant backgroundFromValue(const T* node, const Value& value);
     static Value valueFromQvariant(const QVariant& variant, ValueKind kind);
 
+    QModelIndex indexFromNode(T* node, int column) const;
+
     Rc<T> _root;
     bool _isEditable;
 };
@@ -346,6 +348,17 @@ QModelIndex QModelBase<T>::index(int row, int column, const QModelIndex& parentI
 }
 
 template <typename T>
+QModelIndex QModelBase<T>::indexFromNode(T* node, int column) const
+{
+    int row = 0;
+    bmcl::Option<std::size_t> idx = node->indexInParent();
+    if (idx.isSome()) {
+        row = idx.unwrap();
+    }
+    return createIndex(row, column, node);
+}
+
+template <typename T>
 QModelIndex QModelBase<T>::parent(const QModelIndex& modelIndex) const
 {
     if (!modelIndex.isValid()) {
@@ -353,6 +366,7 @@ QModelIndex QModelBase<T>::parent(const QModelIndex& modelIndex) const
     }
 
     T* node = (T*)modelIndex.internalPointer();
+
     if (node == _root) {
         return QModelIndex();
     }
