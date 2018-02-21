@@ -104,6 +104,9 @@ caf::behavior TmState::make_behavior()
 
 bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
 {
+    if (!_model)
+        return false;
+
     auto rv = findNode(_model->statusesNode(), path);
     if (rv.isErr()) {
         return false;
