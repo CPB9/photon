@@ -274,3 +274,18 @@ PhotonError PhotonTest_ExecCmd_TestOptionU64(const PhotonOptionU64* p, PhotonOpt
     *rv = *p;
     return PhotonError_Ok;
 }
+
+static PhotonDynArrayOfU32MaxSize10 tempArray;
+
+PhotonDynArrayOfU32MaxSize10* PhotonTest_AllocCmdArg_TestCmdCall_P2()
+{
+    return &tempArray;
+}
+
+PhotonError PhotonTest_ExecCmd_TestCmdCall(PhotonTestParamStruct p1, const PhotonDynArrayOfU32MaxSize10* p2, const PhotonTestEnumParam* p3)
+{
+    (void)p1;
+    (void)p2;
+    (void)p3;
+    return PhotonError_Ok;
+}
