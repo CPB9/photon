@@ -49,9 +49,10 @@ struct ReqCfgRep {
 }
 
 enum MemberState {
-    Leader,
-    Candidate,
     Follower,
+    PreCandidate,
+    Candidate,
+    Leader,
 }
 
 struct Timeouts {
@@ -107,14 +108,13 @@ component {
         fn deleteGroup(group: GrpId)
         fn addMember(group: GrpId, member: UavId) -> ReqCfgRep
         fn removeMember(group: GrpId, member: UavId) -> ReqCfgRep
-        fn joinGroup(group: GrpId, members: &[UavId; 10]) -> ReqCfgRep
         fn execute(group: GrpId, cmd: &[u8; 500]) -> ReqCfgRep
         fn shareMsgs(group: GrpId, from: UavId, cmd: &[u8; 500])
         fn shareTest(group: GrpId, enable: bool)
 
-        fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId)
+        fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId, isPre: bool)
         fn reqVoteRep(group: GrpId, term: TermId, vote: Vote)
         fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10])
-        fn reqAppendEntryRep(group: GrpId, term: TermId, success: bool, currentIdx: Index, firstIdx: Index)
+        fn reqAppendEntryRep(group: GrpId, term: TermId, success: bool, currentIdx: Index)
     }
 }
