@@ -1,0 +1,70 @@
+module usm
+
+enum State {
+    Proccessing = 0,
+    Executed    = 1,
+    NotExecuted = 2
+}
+
+struct BuildState {
+    unpackState : State,
+    buildState : State,
+    installState : State,
+    uninstallState : State
+}
+
+type Str = &[char;255];
+
+struct SystemInfo {
+    appsList : &[char;512],
+	test: char,
+	dsadsa: u32
+}
+
+enum ApplicationState {
+    NotRunning = 0,
+    Starting = 1,
+    Running = 2
+}
+
+/// CurrentApplication short desc.
+///
+/// CurrentApplication long
+/// multiline desc.
+struct CurrentApplication {
+    appName : Str,
+    appState : ApplicationState,
+    appId : varuint
+}
+
+component {
+    parameters {
+        buildState: BuildState,
+        systemInfo: SystemInfo,
+        currectApp: CurrentApplication
+    }
+
+    statuses {
+        [buildState, 1, true]: {buildState},
+        [systemInfo, 1, true]: {systemInfo},
+        [currectApp, 1, true]: {currectApp}
+    }
+
+    commands {
+        fn getFile(fileId: varuint)
+        fn unpackFile()
+        fn buildTarget()
+        fn installTarget()
+
+        fn uninstallApplication(appName : Str)
+
+        fn runApplication(appName : Str)
+        fn stopApplication(appName : Str)
+        fn killApplication(appName : Str)
+    }
+
+    impl {
+        fn init()
+        fn tick()
+    }
+}
