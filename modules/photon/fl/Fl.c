@@ -3,7 +3,7 @@
 
 #define _PHOTON_FNAME "fl/Fl.c"
 
-//#ifdef PHOTON_STUB
+#ifdef PHOTON_STUB
 
 PhotonError PhotonFl_ExecCmd_BeginFile(uint64_t id, uint64_t size)
 {
@@ -23,6 +23,6 @@ PhotonError PhotonFl_ExecCmd_EndFile(uint64_t id, uint64_t size, PhotonFlChecksu
     return PhotonError_Ok;
 }
 
-//#endif
+#endif
 
 #undef _PHOTON_FNAME
