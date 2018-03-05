@@ -21,9 +21,9 @@ PhotonClkDuration PhotonClk_GetRawSystemTime()
 #include <windows.h>
 
 #if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-# define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+# define DELTA_EPOCH_IN_MICROSECS  116444736000000000Ui64
 #else
-# define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+# define DELTA_EPOCH_IN_MICROSECS  116444736000000000ULL
 #endif
 
 PhotonClkDuration PhotonClk_GetRawSystemTime()
