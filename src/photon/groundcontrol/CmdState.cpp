@@ -34,6 +34,11 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketResponse);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::GcCmd);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
 
+#define CHECK_CMD_INTERFACE(iface)                              \
+    if (_ifaces->iface().isNone()) {                    \
+        return caf::sec::invalid_argument;              \
+    }
+
 namespace photon {
 
 CmdState::CmdState(caf::actor_config& cfg, const caf::actor& exchange, const caf::actor& handler)
@@ -662,48 +667,70 @@ caf::behavior CmdState::make_behavior()
             if (!_proj) {
                 return caf::sec::invalid_argument;
             }
-            if (_ifaces->waypointInterface().isNone()) {
-                return caf::sec::invalid_argument;
-            }
-            if (_ifaces->fileInterface().isNone()) {
-                return caf::sec::invalid_argument;
-            }
+
             caf::response_promise promise = make_response_promise();
             switch (cmd.kind()) {
             case GcCmdKind::None:
                 return caf::sec::invalid_argument;
             case GcCmdKind::UploadRoute:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<RouteUploadActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<UploadRouteGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::SetActiveRoute:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<SetActiveRouteActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<SetActiveRouteGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::SetRouteActivePoint:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<SetRouteActivePointActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<SetRouteActivePointGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::SetRouteInverted:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<SetRouteInvertedActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<SetRouteInvertedGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::SetRouteClosed:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<SetRouteClosedActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<SetRouteClosedGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::DownloadRouteInfo:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<DownloadRouteInfoActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, _handler);
                 return promise;
+            }
             case GcCmdKind::DownloadRoute:
+            {
+                CHECK_CMD_INTERFACE(waypointInterface);
                 spawn<DownloadRouteActor>(_exc, _ifaces->waypointInterface().unwrap(), promise, std::move(cmd.as<DownloadRouteGcCmd>()), _handler);
                 return promise;
+            }
             case GcCmdKind::UploadFile:
+            {
+                CHECK_CMD_INTERFACE(fileInterface);
                 spawn<UploadFileActor>(_exc, _ifaces->fileInterface().unwrap(), promise, std::move(cmd.as<UploadFileGcCmd>()));
                 return promise;
+            }
             case GcCmdKind::GroupCreate:
             case GcCmdKind::GroupRemove:
             case GcCmdKind::GroupAttach:
             case GcCmdKind::GroupDetach:
                 return caf::sec::invalid_argument;
             case GcCmdKind::AddClient:
+            {
+                CHECK_CMD_INTERFACE(udpInterface);
                 spawn<AddClientActor>(_exc, _ifaces->udpInterface().unwrap(), promise, std::move(cmd.as<AddClientGcCmd>()));
                 return promise;
+            }
             };
             return caf::sec::invalid_argument;
         },
