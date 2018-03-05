@@ -211,5 +211,7 @@ component {
 
         #[cmdcall(p1=value, p2=alloc, p3=ptr)]
         fn testCmdCall(p1: ParamStruct, p2: &[u32; 10], p3: EnumParam)
+
+        fn testEvents(count : u8)
     }
 }

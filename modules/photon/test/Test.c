@@ -38,18 +38,16 @@ void PhotonTest_Init()
     }
 }
 
-static int eventCounter = 0;
+static int testEventsLeft = 0;
 
 void PhotonTest_Tick()
 {
-    PhotonTestParamStruct s;
-    s.parama = 1;
-    s.paramb = 5;
-    if (eventCounter >= 100) {
-        PhotonTest_QueueEvent_Event1(3, &s);
-        eventCounter = 0;
-    } else {
-        eventCounter++;
+    if (testEventsLeft > 0) {
+        PhotonTestParamStruct s;
+        s.parama = testEventsLeft;
+        s.paramb = testEventsLeft;
+         PhotonTest_QueueEvent_Event1(testEventsLeft, &s);
+         testEventsLeft--;
     }
     //_photonTest.dynArrayParam.size++;
     //if (_photonTest.dynArrayParam.size > 10) {
@@ -287,5 +285,11 @@ PhotonError PhotonTest_ExecCmd_TestCmdCall(PhotonTestParamStruct p1, const Photo
     (void)p1;
     (void)p2;
     (void)p3;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_ExecCmd_TestEvents(uint8_t count)
+{
+    testEventsLeft = count;
     return PhotonError_Ok;
 }
