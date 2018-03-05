@@ -293,3 +293,8 @@ PhotonError PhotonTest_ExecCmd_TestEvents(uint8_t count)
     testEventsLeft = count;
     return PhotonError_Ok;
 }
+
+PhotonError PhotonTest_ExecCmd_TestError(PhotonError value)
+{
+    return value;
+}

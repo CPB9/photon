@@ -1,7 +1,7 @@
 /// Module for testing generator
 module test
 
-import core::Option
+import core::{Option, Error}
 type UavId = varuint;
 
 type FnTypedef = &Fn(&Fn(i64) -> &Fn(i32) -> i8, i16) -> &Fn(f64) -> f32;
@@ -199,6 +199,7 @@ component {
         /// dec params command
         fn decAllParams()
 
+        fn testError(value: Error)
         fn testU8(p: u8) -> u8
         fn testI8(p: i8) -> i8
         fn testStruct(p: ParamStruct) -> ParamStruct

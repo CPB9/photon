@@ -200,7 +200,7 @@ PhotonError PhotonGrp_ExecCmd_Execute(uint64_t group, const PhotonDynArrayOfU8Ma
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm)
+PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t lastLogIdx, uint64_t lastLogTerm, bool isPre)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
@@ -227,12 +227,12 @@ PhotonError PhotonGrp_ExecCmd_ReqVoteRep(uint64_t group, uint64_t term, PhotonGr
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ExecCmd_ReqAppendEntryRep(uint64_t group, uint64_t term, bool success, uint64_t currentIdx, uint64_t firstIdx)
+PhotonError PhotonGrp_ExecCmd_ReqAppendEntryRep(uint64_t group, uint64_t term, bool success, uint64_t currentIdx)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
 
-    PHOTON_INFO("ReqAppendEntryRep: group(%" PRIu64 "), term(%" PRIu64 "), success(%" PRIu64 "), currentIdx(%" PRIu64 "), firstIdx(%" PRIu64 ")", group, term, success, currentIdx, firstIdx);
+    PHOTON_INFO("ReqAppendEntryRep: group(%" PRIu64 "), term(%" PRIu64 "), success(%" PRIu64 "), currentIdx(%" PRIu64 ")", group, term, success, currentIdx);
     return PhotonError_Ok;
 }
 
