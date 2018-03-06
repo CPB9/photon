@@ -17,8 +17,6 @@ type Str = &[char;255];
 
 struct SystemInfo {
     appsList : &[char;512],
-	test: char,
-	dsadsa: u32
 }
 
 enum ApplicationState {
@@ -41,15 +39,19 @@ component {
     parameters {
         buildState: BuildState,
         systemInfo: SystemInfo,
-        currectApp: CurrentApplication
+        currentApp: CurrentApplication
     }
 
     statuses {
         [buildState, 1, true]: {buildState},
         [systemInfo, 1, true]: {systemInfo},
-        [currectApp, 1, true]: {currectApp}
+        [currentApp, 1, true]: {currentApp}
     }
 
+    events {
+        [logMessage, true]: { level: u8, source: u8, text: Str }
+    }
+    
     commands {
         fn getFile(fileId: varuint)
         fn unpackFile()
