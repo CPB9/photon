@@ -85,6 +85,19 @@ static inline PhotonTmMessageDesc* currentDesc()
     return &_messageDesc[_photonTm.currentDesc];
 }
 
+static void popOnceRequests(size_t num)
+{
+    if (num >= _photonTm.onceRequestsNum) {
+        _photonTm.onceRequestsNum = 0;
+        return;
+    }
+    size_t delta = _photonTm.onceRequestsNum - num;
+    for (size_t i = 0; i < delta; i++) {
+        _onceRequests[i] = _onceRequests[i + num];
+    }
+    _photonTm.onceRequestsNum -= num;
+}
+
 PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 {
     unsigned totalMessages = 0;
@@ -106,9 +119,42 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         _photonTm.storedEvents--;
     }
 
+    if (_photonTm.onceRequestsNum > TM_MAX_ONCE_REQUESTS) {
+        _photonTm.onceRequestsNum = TM_MAX_ONCE_REQUESTS;
+        //TODO: report error
+    }
+
     if (_photonTm.allowedMsgCount == 0) {
         return PhotonError_NoDataAvailable;
     }
+
+    size_t i;
+    for (i = 0; i < _photonTm.onceRequestsNum; i++) {
+        size_t currentId = _onceRequests[i];
+        if (currentId >= _PHOTON_TM_MSG_COUNT) {
+            i++;
+            continue;
+            //TODO: report error
+        }
+        uint8_t* current = PhotonWriter_CurrentPtr(dest);
+        PhotonError rv = _messageDesc[currentId].func(dest);
+        if (rv == PhotonError_Ok) {
+            totalMessages++;
+            continue;
+        } else if (rv == PhotonError_NotEnoughSpace) {
+            PhotonWriter_SetCurrentPtr(dest, current);
+            if (totalMessages == 0) {
+                popOnceRequests(i + 1);
+                return PhotonError_NotEnoughSpace;
+            }
+            popOnceRequests(i + 1);
+            return PhotonError_Ok;
+        } else {
+            popOnceRequests(i + 1);
+            return rv;
+        }
+    }
+    popOnceRequests(i);
 
     while (true) {
         while (!currentDesc()->isEnabled) {
