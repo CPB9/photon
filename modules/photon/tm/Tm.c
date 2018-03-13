@@ -87,9 +87,6 @@ static inline PhotonTmMessageDesc* currentDesc()
 
 PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 {
-    if (_photonTm.allowedMsgCount == 0) {
-        return PhotonError_NoDataAvailable;
-    }
     unsigned totalMessages = 0;
 
     while (true) {
@@ -109,7 +106,14 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         _photonTm.storedEvents--;
     }
 
+    if (_photonTm.allowedMsgCount == 0) {
+        return PhotonError_NoDataAvailable;
+    }
+
     while (true) {
+        while (!currentDesc()->isEnabled) {
+            selectNextMessage();
+        }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = currentDesc()->func(dest);
         if (rv == PhotonError_Ok) {
