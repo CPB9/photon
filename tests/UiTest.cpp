@@ -73,7 +73,7 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self, const Rc<const pho
             bmcl::MemReader reader(value.view());
             TestMsg msg;
             CoderState state(OnboardTime::now());
-            if (sub == validator->statusMsgTestOpParamSub()) {
+            if (sub == validator->statusMsgTestOpParamSub().unwrap()) {
                 if (photongenDeserialize(&msg, &reader, &state)) {
                     //BMCL_DEBUG() << "test msg param1: " << msg.param1;
                     //BMCL_DEBUG() << "test msg optionParam.isSome(): " << msg.optionParam.isSome();
@@ -167,7 +167,7 @@ caf::behavior UiActor::make_behavior()
             _testSub = spawn(testNamedSubActor, _validator);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub(), _testSub);
+            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
             _widget->setRootTmNode(statusView.get(), eventView.get());
