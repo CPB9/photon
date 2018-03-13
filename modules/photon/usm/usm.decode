@@ -1,9 +1,10 @@
 module usm
 
 enum State {
-    Proccessing = 0,
-    Executed    = 1,
-    NotExecuted = 2
+    Empty       = 0,
+    Proccessing = 1,
+    Executed    = 2,
+    NotExecuted = 4
 }
 
 struct BuildState {
@@ -41,14 +42,14 @@ component {
     }
 
     statuses {
-        [buildState, 1, true]: {buildState},
-        [systemInfo, 1, true]: {systemInfo},
-        [currentApp, 1, true]: {currentApp},
-        [buildLog, 1, true]:   {buildLog}
+        [buildState, 1, false]: {buildState},
+        [systemInfo, 1, false]: {systemInfo},
+        [currentApp, 1, false]: {currentApp},
+        [buildLog, 1, false]:   {buildLog}
     }
 
     events {
-        [logMessage, true]: { level: u8, source: u8, text: Str }
+        [logMessage, true]: { level: u8, source: u8, text: StrList }
     }
 
     commands {
