@@ -13,12 +13,6 @@ struct NumberedSub {
     {
     }
 
-    template <typename T>
-    static NumberedSub fromMsg()
-    {
-        return NumberedSub(T::COMP_NUM, T::MSG_NUM);
-    }
-
     uint32_t compNum;
     uint32_t msgNum;
 

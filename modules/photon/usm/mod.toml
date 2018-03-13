@@ -2,4 +2,4 @@ name = "usm"
 decode = "usm.decode"
 dest = "photon/usm"
 id = 69
-sources = []
+sources = ["Stubs.c"]

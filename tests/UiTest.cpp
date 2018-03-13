@@ -63,17 +63,17 @@ UiActor::~UiActor()
 
 using TestMsg = photongen::test::statuses::OpParam;
 
-caf::behavior testNamedSubActor(caf::event_based_actor* self)
+caf::behavior testNamedSubActor(caf::event_based_actor* self, const Rc<const photongen::Validator>& validator)
 {
     return caf::behavior{
-        [](const Value& value, const std::string& path) {
+        [=](const Value& value, const std::string& path) {
             BMCL_DEBUG() << path << ": " << value.asUnsigned();
         },
-        [](const NumberedSub& sub, const bmcl::SharedBytes& value) {
+        [=](const NumberedSub& sub, const bmcl::SharedBytes& value) {
             bmcl::MemReader reader(value.view());
             TestMsg msg;
             CoderState state(OnboardTime::now());
-            if (sub.id() == TestMsg::MSG_ID) {
+            if (sub == validator->statusMsgTestOpParamSub()) {
                 if (photongenDeserialize(&msg, &reader, &state)) {
                     //BMCL_DEBUG() << "test msg param1: " << msg.param1;
                     //BMCL_DEBUG() << "test msg optionParam.isSome(): " << msg.optionParam.isSome();
@@ -160,14 +160,14 @@ caf::behavior UiActor::make_behavior()
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(update->device(), update->cache(), bmcl::None);
             _widget->setRootCmdNode(update->cache(), cmdNode.get());
-            _testSub = spawn(testNamedSubActor);
             if (_validator) {
                 delete _validator;
             }
             _validator = new photongen::Validator(update->project(), update->device());
+            _testSub = spawn(testNamedSubActor, _validator);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, TestMsg::sub_(), _testSub);
+            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub(), _testSub);
         },
         [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
             _widget->setRootTmNode(statusView.get(), eventView.get());
