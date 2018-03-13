@@ -14,9 +14,10 @@ struct BuildState {
 }
 
 type Str = &[char;255];
+type StrList = &[char;768];
 
 struct SystemInfo {
-    appsList : &[char;512],
+    appsList : StrList,
 }
 
 enum ApplicationState {
@@ -25,10 +26,6 @@ enum ApplicationState {
     Running = 2
 }
 
-/// CurrentApplication short desc.
-///
-/// CurrentApplication long
-/// multiline desc.
 struct CurrentApplication {
     appName : Str,
     appState : ApplicationState,
@@ -39,20 +36,24 @@ component {
     parameters {
         buildState: BuildState,
         systemInfo: SystemInfo,
-        currentApp: CurrentApplication
+        currentApp: CurrentApplication,
+        buildLog:   StrList
     }
 
     statuses {
         [buildState, 1, true]: {buildState},
         [systemInfo, 1, true]: {systemInfo},
-        [currentApp, 1, true]: {currentApp}
+        [currentApp, 1, true]: {currentApp},
+        [buildLog, 1, true]:   {buildLog}
     }
 
     events {
         [logMessage, true]: { level: u8, source: u8, text: Str }
     }
-    
+
     commands {
+        fn requestStatus(statusCode: u8)
+
         fn getFile(fileId: varuint)
         fn unpackFile()
         fn buildTarget()
