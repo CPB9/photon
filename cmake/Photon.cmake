@@ -75,6 +75,7 @@ macro(photon_init dir)
     #set(_PHOTON_DEPENDS ${PHOTON_GEN_SRC_DIR}/Config.h)
     set(_PHOTON_DEPENDS
         ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.hpp
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.cpp
         ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.c
         ${PHOTON_GEN_SRC_ONBOARD_DIR}/Photon.h
     )
@@ -182,6 +183,7 @@ macro(photon_init dir)
         ${PHOTON_UI_SRC}
         ${PHOTON_GROUNDCONTROL_SRC}
         ${PHOTON_MODEL_SRC}
+        ${PHOTON_GEN_SRC_GROUNDCONTROL_DIR}/Photon.cpp
     )
 
     add_dependencies(photon photon-gen-src)

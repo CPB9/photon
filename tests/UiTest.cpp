@@ -18,7 +18,9 @@
 #include <photon/groundcontrol/Packet.h>
 #include <photon/groundcontrol/ProjectUpdate.h>
 #include <photon/groundcontrol/TmState.h>
+
 #include <Photon.hpp>
+#include <photongen/groundcontrol/_statuses_/Test_OpParam.hpp>
 
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
