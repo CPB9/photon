@@ -1,9 +1,9 @@
 #include "photon/groundcontrol/ProjectUpdate.h"
+#include "photon/model/ValueInfoCache.h"
 #include "decode/parser/Project.h"
 #include "decode/parser/Package.h"
-#include "photon/model/ValueInfoCache.h"
 
-#include "Photon.hpp"
+#include "photongen/groundcontrol/Validator.hpp"
 
 #include <decode/core/Utils.h>
 #include <decode/parser/Project.h>
@@ -37,7 +37,6 @@ ProjectUpdateResult ProjectUpdate::fromProjectAndName(const decode::Project* pro
     update->_cache = new ValueInfoCache(project->package());
     return Rc<const ProjectUpdate>(update);
 }
-
 
 ProjectUpdateResult ProjectUpdate::fromMemory(const void* src, std::size_t size)
 {
