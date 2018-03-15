@@ -144,13 +144,13 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         } else if (rv == PhotonError_NotEnoughSpace) {
             PhotonWriter_SetCurrentPtr(dest, current);
             if (totalMessages == 0) {
-                popOnceRequests(i + 1);
+                popOnceRequests(i);
                 return PhotonError_NotEnoughSpace;
             }
-            popOnceRequests(i + 1);
+            popOnceRequests(i);
             return PhotonError_Ok;
         } else {
-            popOnceRequests(i + 1);
+            popOnceRequests(i);
             return rv;
         }
     }
