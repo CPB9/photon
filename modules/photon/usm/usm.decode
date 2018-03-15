@@ -7,6 +7,13 @@ enum State {
     NotExecuted = 4
 }
 
+enum Frames {
+    BuildStateFrame = 1,
+    SystemInfoFrame,
+    CurrentAppFrame,
+    BuildLogFrame
+}
+
 struct BuildState {
     unpackState : State,
     buildState : State,
