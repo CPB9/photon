@@ -114,7 +114,7 @@ component {
 
         fn reqVote(group: GrpId, term: TermId, lastLogIdx: Index, lastLogTerm: TermId, isPre: bool)
         fn reqVoteRep(group: GrpId, term: TermId, vote: Vote)
-        fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, entries: &[LogEntry; 10])
+        fn reqAppendEntry(group: GrpId, term: TermId, prevLogIdx: Index, prevLogTerm: TermId, leaderCommit: Index, lastCfgSeen: Index, entries: &[LogEntry; 10])
         fn reqAppendEntryRep(group: GrpId, term: TermId, success: bool, currentIdx: Index)
     }
 }
