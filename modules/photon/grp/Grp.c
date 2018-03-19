@@ -209,7 +209,7 @@ PhotonError PhotonGrp_ExecCmd_ReqVote(uint64_t group, uint64_t term, uint64_t la
     return PhotonError_Ok;
 }
 
-PhotonError PhotonGrp_ExecCmd_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries)
+PhotonError PhotonGrp_ExecCmd_ReqAppendEntry(uint64_t group, uint64_t term, uint64_t prevLogIdx, uint64_t prevLogTerm, uint64_t leaderCommit, uint64_t lastCfgSeen, PhotonDynArrayOfGrpLogEntryMaxSize10 const* entries)
 {
     if (!isSameGroup(group))
         return PhotonError_InvalidDeviceId;
