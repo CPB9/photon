@@ -227,7 +227,7 @@ foreach test : client_tests
   executable('photon-' + test[0],
     include_directories : gc_inc,
     sources : 'tests/' + test[1],
-    dependencies : deps,
+    dependencies: [deps, gen_src_dep],
     link_with : uitest_lib,
   )
 endforeach
@@ -279,7 +279,7 @@ foreach name : photon_targets
       executable('photon-' + test[0] + '-' + name,
         include_directories : [gc_inc, onboard_inc],
         sources : 'tests/' + test[1],
-        dependencies : deps,
+        dependencies: [deps, gen_src_dep],
         link_with : [uitest_lib, lib],
       )
     endforeach
