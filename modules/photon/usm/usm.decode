@@ -4,55 +4,68 @@ enum State {
     Empty       = 0,
     Proccessing = 1,
     Executed    = 2,
-    NotExecuted = 4
+    NotExecuted = 4,
 }
 
 enum Frames {
     BuildStateFrame = 1,
+    BuildLogOutputFrame,
+    BuildLogErrorsFrame,
     SystemInfoFrame,
     CurrentAppFrame,
-    BuildLogFrame
+    CurrentAppOutputFrame,
 }
 
 struct BuildState {
-    unpackState : State,
-    buildState : State,
-    installState : State,
-    uninstallState : State
+    unpackState     : State,
+    buildState      : State,
+    installState    : State,
+    uninstallState  : State,
 }
 
-type Str = &[char;255];
-type StrList = &[char;768];
+type Str        = &[char;255];
+type StrList    = &[char;768];
 
 struct SystemInfo {
-    appsList : StrList,
+    appsList        : StrList,
+}
+struct LogMessage {
+    identification  : u16,
+    fragmentOffset  : u16,
+    data            : StrList,
 }
 
 enum ApplicationState {
-    NotRunning = 0,
-    Starting = 1,
-    Running = 2
+    NotRunning  = 0,
+    Starting    = 1,
+    Running     = 2,
+    Finished    = 3,
+    Crashed     = 4,
 }
 
 struct CurrentApplication {
-    appName : Str,
-    appState : ApplicationState,
-    appId : varuint
+    name         : Str,
+    state        : ApplicationState,
+    pid          : varuint,
 }
 
 component {
     parameters {
-        buildState: BuildState,
-        systemInfo: SystemInfo,
-        currentApp: CurrentApplication,
-        buildLog:   StrList
+        buildState      : BuildState,
+        buildLogOutput  : LogMessage,
+        buildLogErrors  : LogMessage,
+        systemInfo      : SystemInfo,
+        currentApp      : CurrentApplication,
+        currentAppOutput: LogMessage,
     }
 
     statuses {
-        [buildState, 1, false]: {buildState},
-        [systemInfo, 1, false]: {systemInfo},
-        [currentApp, 1, false]: {currentApp},
-        [buildLog, 1, false]:   {buildLog}
+        [buildState         , 1, false]: {buildState},
+        [buildLogOutput     , 1, false]: {buildLogOutput},
+        [buildLogErrors     , 1, false]: {buildLogErrors},
+        [systemInfo         , 1, false]: {systemInfo},
+        [currentApp         , 1, false]: {currentApp},
+        [currentAppOutput   , 1, false]: {currentAppOutput},
     }
 
     events {
@@ -69,7 +82,7 @@ component {
 
         fn uninstallApplication(appName : Str)
 
-        fn runApplication(appName : Str)
+        fn runApplication(appNameWithArguments : StrList)
         fn stopApplication(appName : Str)
         fn killApplication(appName : Str)
     }
