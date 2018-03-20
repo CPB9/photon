@@ -114,8 +114,8 @@ model_src = [
   'src/photon/model/NodeViewUpdater.h',
   'src/photon/model/OnboardTime.cpp',
   'src/photon/model/OnboardTime.h',
-  'src/photon/model/StatusDecoder.cpp',
-  'src/photon/model/StatusDecoder.h',
+  'src/photon/model/TmMsgDecoder.cpp',
+  'src/photon/model/TmMsgDecoder.h',
   'src/photon/model/TmModel.cpp',
   'src/photon/model/TmModel.h',
   'src/photon/model/Value.cpp',
@@ -177,29 +177,35 @@ endif
 
 gen_src = custom_target('photon-generated-src',
   input : project_path,
-  output : ['Photon.c', 'Photon.h', 'Photon.hpp'],
+  output : ['Photon.c', 'Photon.h', 'Photon.cpp', 'Photon.hpp'],
   depend_files : modules_src,
   command : [decode_gen, '-p', '@INPUT@', '-o', meson.current_build_dir(), '-c', '4', abs_paths_flag],
+)
+
+gen_src_headers = [gen_src[1], gen_src[3]]
+
+gen_src_dep = declare_dependency(
+  sources: gen_src_headers,
 )
 
 gen_onboard_src = []
 gen_onboard_src += gen_src[0]
 gen_onboard_src += gen_src[1]
-gen_gc_src = [gen_src[2]]
+gen_gc_src = [gen_src[2], gen_src[3]]
 
 gc_inc = include_directories('.', 'src')
 
 photon_lib = static_library('photon',
   sources : ui_src + groundcontrol_src + model_src + gen_gc_src,
   include_directories: gc_inc,
-  dependencies: deps,
+  dependencies: [deps, gen_src_dep],
   cpp_args: '-DBUILDING_PHOTON',
 )
 
 photon_dep = declare_dependency(
   link_with : photon_lib,
   include_directories: gc_inc,
-  dependencies: deps,
+  dependencies: [deps, gen_src_dep],
 )
 
 test_moc = qt5.preprocess(
@@ -211,7 +217,7 @@ uitest_lib = static_library('photon-uitest',
   sources : ['tests/UiTest.cpp', test_moc],
   include_directories: gc_inc,
   link_with: photon_lib,
-  dependencies: deps,
+  dependencies: [deps, gen_src_dep],
 )
 
 client_tests = [
@@ -223,7 +229,7 @@ foreach test : client_tests
   executable('photon-' + test[0],
     include_directories : gc_inc,
     sources : 'tests/' + test[1],
-    dependencies : deps,
+    dependencies: [deps, gen_src_dep],
     link_with : uitest_lib,
   )
 endforeach
@@ -275,7 +281,7 @@ foreach name : photon_targets
       executable('photon-' + test[0] + '-' + name,
         include_directories : [gc_inc, onboard_inc],
         sources : 'tests/' + test[1],
-        dependencies : deps,
+        dependencies: [deps, gen_src_dep],
         link_with : [uitest_lib, lib],
       )
     endforeach
