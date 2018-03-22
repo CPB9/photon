@@ -35,7 +35,7 @@ PhotonError PhotonUsm_ExecCmd_UninstallApplication(const PhotonDynArrayOfCharMax
     return PhotonError_Ok;
 }
 
-PhotonError PhotonUsm_ExecCmd_RunApplication(const PhotonDynArrayOfCharMaxSize255* appName)
+PhotonError PhotonUsm_ExecCmd_RunApplication(const PhotonDynArrayOfCharMaxSize768* appName)
 {
     return PhotonError_Ok;
 }
