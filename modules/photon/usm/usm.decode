@@ -46,7 +46,7 @@ enum ApplicationState {
 struct CurrentApplication {
     name         : Str,
     state        : ApplicationState,
-    pid          : varuint,
+    pid          : i64,
 }
 
 component {
