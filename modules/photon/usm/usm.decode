@@ -8,12 +8,12 @@ enum State {
 }
 
 enum Frames {
-    BuildStateFrame = 1,
-    BuildLogOutputFrame,
-    BuildLogErrorsFrame,
-    SystemInfoFrame,
-    CurrentAppFrame,
-    CurrentAppOutputFrame,
+    BuildStateFrame         = 1,
+    BuildLogOutputFrame     = 2,
+    BuildLogErrorsFrame     = 3,
+    SystemInfoFrame         = 4,
+    CurrentAppFrame         = 5,
+    CurrentAppOutputFrame   = 6,
 }
 
 struct BuildState {
@@ -51,25 +51,21 @@ struct CurrentApplication {
 
 component {
     parameters {
-        buildState      : BuildState,
-        buildLogOutput  : LogMessage,
-        buildLogErrors  : LogMessage,
-        systemInfo      : SystemInfo,
-        currentApp      : CurrentApplication,
-        currentAppOutput: LogMessage,
+        buildState : BuildState,
+        systemInfo : SystemInfo,
+        currentApp : CurrentApplication,
     }
 
     statuses {
-        [buildState         , 1, false]: {buildState},
-        [buildLogOutput     , 1, false]: {buildLogOutput},
-        [buildLogErrors     , 1, false]: {buildLogErrors},
-        [systemInfo         , 1, false]: {systemInfo},
-        [currentApp         , 1, false]: {currentApp},
-        [currentAppOutput   , 1, false]: {currentAppOutput},
+        [buildState, 1, false]: {buildState},
+        [systemInfo, 1, false]: {systemInfo},
+        [currentApp, 1, false]: {currentApp},
     }
 
     events {
-        [logMessage, true]: { level: u8, source: u8, text: StrList }
+        [buildLogOutput,    true]: {output : LogMessage},
+        [buildLogErrors,    true]: {errors : LogMessage},
+        [currentAppOutput,  true]: {output : LogMessage},
     }
 
     commands {
