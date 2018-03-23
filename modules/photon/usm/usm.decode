@@ -66,6 +66,7 @@ component {
         [buildLogOutput,    true]: {output : LogMessage},
         [buildLogErrors,    true]: {errors : LogMessage},
         [currentAppOutput,  true]: {output : LogMessage},
+        [currentAppStatus,  true]: {output : LogMessage},
     }
 
     commands {
@@ -81,6 +82,8 @@ component {
         fn runApplication(appNameWithArguments : StrList)
         fn stopApplication(appName : Str)
         fn killApplication(appName : Str)
+
+        fn requestApplicationStatus(appName : Str)
     }
 
     impl {
