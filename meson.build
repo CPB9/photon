@@ -62,6 +62,9 @@ modules_src = [
   'modules/photon/tm/StatusMessage.c',
   'modules/photon/tm/Tm.c',
   'modules/photon/tm/tm.decode',
+  'modules/photon/usm/usm.decode',
+  'modules/photon/usm/mod.toml',
+  'modules/photon/usm/Stubs.c',
 ] + get_option('additional_depends')
 
 groundcontrol_src = [
