@@ -199,7 +199,7 @@ gen_gc_src = [gen_src[2], gen_src[3]]
 gc_inc = include_directories('.', 'src')
 
 photon_lib = static_library('photon',
-  sources : ui_src + groundcontrol_src + model_src + gen_gc_src,
+  sources : ui_src + groundcontrol_src + model_src + [gen_gc_src[0]],
   include_directories: gc_inc,
   dependencies: [deps, gen_src_dep],
   cpp_args: '-DBUILDING_PHOTON',
