@@ -20,7 +20,7 @@ class NodeViewUpdate;
 class NodeViewStore {
 public:
     NodeViewStore(NodeView* view);
-    ~NodeViewStore();
+    virtual ~NodeViewStore();
 
     void setRoot(NodeView* view);
     bool apply(NodeViewUpdate* update);
