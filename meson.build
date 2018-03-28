@@ -212,7 +212,7 @@ photon_dep = declare_dependency(
 )
 
 test_moc = qt5.preprocess(
-  moc_headers : 'tests/UiTest.h',
+#  moc_headers : 'tests/UiTest.h',
   include_directories: gc_inc,
 )
 
