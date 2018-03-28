@@ -67,6 +67,7 @@ component {
         [buildLogErrors,    true]: {errors : LogMessage},
         [currentAppOutput,  true]: {output : LogMessage},
         [currentAppStatus,  true]: {output : LogMessage},
+        [appRemoving,       true]: {state : State, project : Str, files : LogMessage},
     }
 
     commands {
@@ -76,6 +77,7 @@ component {
         fn unpackFile()
         fn buildTarget()
         fn installTarget()
+        fn stopBuildProcess(kill : bool)
 
         fn uninstallApplication(appName : Str)
 
