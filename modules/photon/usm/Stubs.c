@@ -50,6 +50,11 @@ PhotonError PhotonUsm_ExecCmd_KillApplication(const PhotonDynArrayOfCharMaxSize2
     return PhotonError_Ok;
 }
 
+PhotonError PhotonUsm_ExecCmd_RequestApplicationStatus(const PhotonDynArrayOfCharMaxSize255* appName)
+{
+    return PhotonError_Ok;
+}
+
 PhotonError PhotonUsm_ExecCmd_RequestStatus(uint8_t statusCode)
 {
     return PhotonError_Ok;

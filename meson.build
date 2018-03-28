@@ -62,6 +62,9 @@ modules_src = [
   'modules/photon/tm/StatusMessage.c',
   'modules/photon/tm/Tm.c',
   'modules/photon/tm/tm.decode',
+  'modules/photon/usm/usm.decode',
+  'modules/photon/usm/mod.toml',
+  'modules/photon/usm/Stubs.c',
 ] + get_option('additional_depends')
 
 groundcontrol_src = [
@@ -196,7 +199,7 @@ gen_gc_src = [gen_src[2], gen_src[3]]
 gc_inc = include_directories('.', 'src')
 
 photon_lib = static_library('photon',
-  sources : ui_src + groundcontrol_src + model_src + gen_gc_src,
+  sources : ui_src + groundcontrol_src + model_src + [gen_gc_src[0]],
   include_directories: gc_inc,
   dependencies: [deps, gen_src_dep],
   cpp_args: '-DBUILDING_PHOTON',
@@ -209,7 +212,7 @@ photon_dep = declare_dependency(
 )
 
 test_moc = qt5.preprocess(
-  moc_headers : 'tests/UiTest.h',
+#  moc_headers : 'tests/UiTest.h',
   include_directories: gc_inc,
 )
 
