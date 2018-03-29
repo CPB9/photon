@@ -60,4 +60,9 @@ PhotonError PhotonUsm_ExecCmd_RequestStatus(uint8_t statusCode)
     return PhotonError_Ok;
 }
 
+PhotonError PhotonUsm_ExecCmd_StopBuildProcess(bool kill)
+{
+    return PhotonError_Ok;
+}
+
 #endif

@@ -154,6 +154,7 @@ component {
     }
 
     events {
+        [event0, true]: {},
         [event1, true]: {param1: u8, param2: ParamStruct},
     }
 
