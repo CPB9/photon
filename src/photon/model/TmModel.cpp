@@ -50,11 +50,21 @@ private:
     Rc<const decode::Component> _comp;
 };
 
-class StatusesNode : public Node {
+class StatusesNode : public NodeWithNamedChildren {
 public:
     StatusesNode(bmcl::OptionPtr<Node> parent = bmcl::None)
-        : Node(parent)
+        : NodeWithNamedChildren(parent)
     {
+    }
+
+    bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override
+    {
+        for (const Rc<ComponentParamsNode>& child : _nodes) {
+            if (child->fieldName() == name) {
+                return child.get();
+            }
+        }
+        return bmcl::None;
     }
 
     void collectUpdates(NodeViewUpdater* dest) override

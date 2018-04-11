@@ -69,7 +69,11 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self, const Rc<const pho
 {
     return caf::behavior{
         [=](const Value& value, const std::string& path) {
-            BMCL_DEBUG() << path << ": " << value.asUnsigned();
+            if (value.isA(ValueKind::Uninitialized)) {
+                BMCL_DEBUG() << path << ": uninitialized";
+            } else {
+                BMCL_DEBUG() << path << ": " << value.asUnsigned();
+            }
         },
         [=](const NumberedSub& sub, const bmcl::SharedBytes& value) {
             bmcl::MemReader reader(value.view());
