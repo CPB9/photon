@@ -1,4 +1,15 @@
+/// SDK module
 module usm
+
+enum LanguageCodes {
+    LanguageCpp     = 1,
+    LanguagePython  = 2,
+}
+
+enum ApplicationFlags {
+    AutolaunchFlag  = 1,
+    RunningFlag     = 64,
+}
 
 enum State {
     Empty       = 0,
@@ -30,8 +41,11 @@ struct SystemInfo {
     appsList        : StrList,
 }
 struct LogMessage {
+    /// Unique datagram code
     identification  : u16,
+    /// Fragment offset or zlib-compression flag (0x8000)
     fragmentOffset  : u16,
+    /// Text with '\n' delimiters
     data            : StrList,
 }
 
