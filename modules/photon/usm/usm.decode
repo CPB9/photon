@@ -28,25 +28,34 @@ enum Frames {
 }
 
 struct BuildState {
+    language        : LanguageCodes,
     unpackState     : State,
     buildState      : State,
     installState    : State,
     uninstallState  : State,
 }
 
-type Str        = &[char;255];
-type StrList    = &[char;768];
+/// Text data. If first byte is 0 text was compressed by z-lib
+type TextLine       = &[char;255];
+/// Array of text strings with '\n' delimiters. If first byte is 0 text was compressed by z-lib
+type TextLinesList  = &[char;768];
+/// Date in Unix-time seconds
+type TimeStamp      = i64;
 
 struct SystemInfo {
-    appsList        : StrList,
+    language        : LanguageCodes,
+    appsList        : TextLinesList,
+    appsFlags       : &[u8;384]
 }
 struct LogMessage {
+    ///
+    language        : LanguageCodes,
     /// Unique datagram code
     identification  : u16,
-    /// Fragment offset or zlib-compression flag (0x8000)
+    /// Fragment offset
     fragmentOffset  : u16,
-    /// Text with '\n' delimiters
-    data            : StrList,
+    /// Text with '\n' delimiters (if first byte is zero text was compressed by z-lib)
+    data            : TextLinesList,
 }
 
 enum ApplicationState {
@@ -58,9 +67,19 @@ enum ApplicationState {
 }
 
 struct CurrentApplication {
-    name         : Str,
+    language     : LanguageCodes,
+    name         : TextLine,
     state        : ApplicationState,
     pid          : i64,
+}
+struct ProjectInfo {
+    language        : LanguageCodes,
+    /// Project name
+    name            : TextLine,
+    /// Installed files
+    filesList       : TextLinesList,
+    /// Last project update date
+    updated         : TimeStamp,
 }
 
 component {
@@ -81,25 +100,25 @@ component {
         [buildLogErrors,    true]: {errors : LogMessage},
         [currentAppOutput,  true]: {output : LogMessage},
         [currentAppStatus,  true]: {output : LogMessage},
-        [appRemoving,       true]: {state : State, project : Str, files : LogMessage},
+        [appRemoving,       true]: {state : State, project : TextLine, files : LogMessage},
     }
 
     commands {
-        fn requestStatus(statusCode: u8)
+        fn requestStatus(language : LanguageCodes, statusCode: u8)
 
-        fn getFile(fileId: varuint)
-        fn unpackFile()
-        fn buildTarget()
-        fn installTarget()
-        fn stopBuildProcess(kill : bool)
+        fn getFile(language : LanguageCodes, fileId: varuint)
+        fn unpackFile(language : LanguageCodes)
+        fn buildTarget(language : LanguageCodes)
+        fn installTarget(language : LanguageCodes)
+        fn stopBuildProcess(language : LanguageCodes, kill : bool)
 
-        fn uninstallApplication(appName : Str)
+        fn uninstallApplication(language : LanguageCodes, appName : TextLine)
 
-        fn runApplication(appNameWithArguments : StrList)
-        fn stopApplication(appName : Str)
-        fn killApplication(appName : Str)
+        fn runApplication(language : LanguageCodes, appNameWithArguments : TextLinesList)
+        fn stopApplication(language : LanguageCodes, appName : TextLine)
+        fn killApplication(language : LanguageCodes, appName : TextLine)
 
-        fn requestApplicationStatus(appName : Str)
+        fn requestApplicationStatus(language : LanguageCodes, appName : TextLine)
     }
 
     impl {
