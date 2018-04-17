@@ -24,7 +24,8 @@ enum Frames {
     BuildLogErrorsFrame     = 3,
     SystemInfoFrame         = 4,
     CurrentAppFrame         = 5,
-    CurrentAppOutputFrame   = 6,
+    ProjectInfoFrame        = 6,
+    CurrentAppOutputFrame   = 7,
 }
 
 struct BuildState {
@@ -72,6 +73,7 @@ struct CurrentApplication {
     state        : ApplicationState,
     pid          : i64,
 }
+/// Info about installed project with specified name
 struct ProjectInfo {
     language        : LanguageCodes,
     /// Project name
@@ -84,15 +86,17 @@ struct ProjectInfo {
 
 component {
     parameters {
-        buildState : BuildState,
-        systemInfo : SystemInfo,
-        currentApp : CurrentApplication,
+        buildState  : BuildState,
+        systemInfo  : SystemInfo,
+        currentApp  : CurrentApplication,
+        projectInfo : ProjectInfo,
     }
 
     statuses {
-        [buildState, 1, false]: {buildState},
-        [systemInfo, 1, false]: {systemInfo},
-        [currentApp, 1, false]: {currentApp},
+        [buildState,    1, false]: {buildState},
+        [systemInfo,    1, false]: {systemInfo},
+        [currentApp,    1, false]: {currentApp},
+        [projectInfo,   1, false]: {projectInfo},
     }
 
     events {
