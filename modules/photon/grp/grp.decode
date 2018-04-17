@@ -68,7 +68,7 @@ struct TestSharedTime {
 }
 
 component {
-    parameters {
+    variables {
         group: Option<GrpId>,
         members: &[UavId; 10],
         leader: Option<UavId>,

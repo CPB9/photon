@@ -106,7 +106,7 @@ enum ClientError {
 }
 
 component {
-    parameters {
+    variables {
         devices: &[Device; 8],
         address: varuint,
     }

@@ -82,7 +82,7 @@ struct AllRoutesInfo {
 }
 
 component {
-    parameters {
+    variables {
         latLon: LatLon,
         orientation: Orientation,
         altitude: f64,

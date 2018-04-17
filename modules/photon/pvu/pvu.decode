@@ -21,7 +21,7 @@ enum ExecutionMode {
 }
 
 component {
-    parameters {
+    variables {
         numScripts: usize,
         totalScriptsSize: usize,
         currentScript: *mut Script,

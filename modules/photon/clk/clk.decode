@@ -9,7 +9,7 @@ type TimePoint = varuint;
 type Duration = varint;
 
 component {
-    parameters {
+    variables {
         /// corrected time at tick start
         tickTime: TimePoint,
         /// raw system time correction

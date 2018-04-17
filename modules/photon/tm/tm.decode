@@ -21,7 +21,7 @@ impl StatusMessage {
 }
 
 component {
-    parameters {
+    variables {
         lostEvents: varuint,
         storedEvents: varuint,
         generatedEvents: varuint,

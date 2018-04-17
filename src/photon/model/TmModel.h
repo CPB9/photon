@@ -31,7 +31,7 @@ class StatusMsgDecoder;
 class NodeViewUpdater;
 template <typename T>
 class NumericValueNode;
-class ComponentParamsNode;
+class ComponentVarsNode;
 class StatusesNode;
 class EventsNode;
 
