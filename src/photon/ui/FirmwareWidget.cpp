@@ -19,6 +19,7 @@
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QSplitter>
 #include <QPushButton>
 #include <QTreeView>
 #include <QMessageBox>
@@ -129,13 +130,10 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptResultWidget->setRootIndex(_scriptResultModel->index(0, 0));
     _scriptResultWidget->setColumnHidden(3, true);
 
-    auto rightLayout = new QVBoxLayout;
-    auto cmdLayout = new QVBoxLayout;
-    cmdLayout->addWidget(_cmdViewWidget);
-    cmdLayout->addWidget(_scriptEditWidget);
-    cmdLayout->addWidget(_scriptResultWidget);
-    rightLayout->addLayout(cmdLayout);
-    rightLayout->addLayout(buttonLayout);
+    auto rightSplitter = new QSplitter(Qt::Vertical);
+    rightSplitter->addWidget(_cmdViewWidget);
+    rightSplitter->addWidget(_scriptEditWidget);
+    rightSplitter->addWidget(_scriptResultWidget);
 
     _paramViewWidget = new QTreeView;
     _paramViewWidget->setAcceptDrops(true);
@@ -163,9 +161,9 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _eventViewWidget->header()->moveSection(2, 1);
     _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
 
-    auto leftLayout = new QVBoxLayout;
-    leftLayout->addWidget(_paramViewWidget);
-    leftLayout->addWidget(_eventViewWidget);
+    auto leftSplitter = new QSplitter(Qt::Vertical);
+    leftSplitter->addWidget(_paramViewWidget);
+    leftSplitter->addWidget(_eventViewWidget);
 
     QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() {
         _scriptEditWidget->resizeColumnToContents(0);
@@ -174,9 +172,13 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
         _paramViewWidget->resizeColumnToContents(0);
     });
 
-    auto centralLayout = new QHBoxLayout;
-    centralLayout->addLayout(leftLayout);
-    centralLayout->addLayout(rightLayout);
+    auto centralSplitter = new QSplitter(Qt::Horizontal);
+    centralSplitter->addWidget(leftSplitter);
+    centralSplitter->addWidget(rightSplitter);
+
+    auto centralLayout = new QVBoxLayout;
+    centralLayout->addWidget(centralSplitter);
+    centralLayout->addLayout(buttonLayout);
     setLayout(centralLayout);
 }
 
