@@ -96,7 +96,7 @@ struct TestGeneric<A, B, C, D> {
 }
 
 component {
-    parameters {
+    variables {
         /// param 1
         #[ranges(default=1, min=0, max=20)]
         param1: u8,

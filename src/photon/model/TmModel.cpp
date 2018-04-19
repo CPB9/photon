@@ -24,15 +24,15 @@
 
 namespace photon {
 
-class ComponentParamsNode : public FieldsNode {
+class ComponentVarsNode : public FieldsNode {
 public:
-    ComponentParamsNode(const decode::Component* comp, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
-        : FieldsNode(comp->paramsRange(), cache, parent)
+    ComponentVarsNode(const decode::Component* comp, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
+        : FieldsNode(comp->varsRange(), cache, parent)
         , _comp(comp)
     {
     }
 
-    ~ComponentParamsNode()
+    ~ComponentVarsNode()
     {
     }
 
@@ -59,7 +59,7 @@ public:
 
     bmcl::OptionPtr<Node> nodeWithName(bmcl::StringView name) override
     {
-        for (const Rc<ComponentParamsNode>& child : _nodes) {
+        for (const Rc<ComponentVarsNode>& child : _nodes) {
             if (child->fieldName() == name) {
                 return child.get();
             }
@@ -92,13 +92,13 @@ public:
         return "~";
     }
 
-    void addParamNode(ComponentParamsNode* node)
+    void addVarsNode(ComponentVarsNode* node)
     {
         _nodes.emplace_back(node);
     }
 
 private:
-    std::vector<Rc<ComponentParamsNode>> _nodes;
+    std::vector<Rc<ComponentVarsNode>> _nodes;
 };
 
 class EventsNode : public Node {
@@ -173,12 +173,12 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
 
         const decode::Component* comp = ast->component().unwrap();
 
-        if (!comp->hasParams()) {
+        if (!comp->hasVars()) {
             continue;
         }
 
-        Rc<ComponentParamsNode> node = new ComponentParamsNode(comp, cache, _statuses.get());
-        _statuses->addParamNode(node.get());
+        Rc<ComponentVarsNode> node = new ComponentVarsNode(comp, cache, _statuses.get());
+        _statuses->addVarsNode(node.get());
 
         std::size_t compNum = comp->number();
         for (const decode::StatusMsg* msg : comp->statusesRange()) {

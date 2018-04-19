@@ -28,7 +28,7 @@ struct Chunk {
 }
 
 component {
-    parameters {
+    variables {
         firmware: Chunk,
         hashRequested: bool,
         chunk: Chunk,

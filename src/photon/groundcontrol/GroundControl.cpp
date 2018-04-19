@@ -195,7 +195,11 @@ beginSearch:
         it = std::find(it, end, firstSepPart);
         next = it + 1;
         if (next >= end) {
-            return SearchResult(size, 0);
+            if (it >= end) {
+                return SearchResult(size, 0);
+            } else {
+                return SearchResult(0, 0);
+            }
         }
         if (*next == secondSepPart) {
             break;

@@ -76,6 +76,9 @@ caf::behavior testNamedSubActor(caf::event_based_actor* self, const Rc<const pho
             }
         },
         [=](const NumberedSub& sub, const bmcl::SharedBytes& value) {
+            if (validator->statusMsgTestOpParamSub().isNone()) {
+                return;
+            }
             bmcl::MemReader reader(value.view());
             TestMsg msg;
             CoderState state(OnboardTime::now());
@@ -173,7 +176,9 @@ caf::behavior UiActor::make_behavior()
             _testSub = spawn(testNamedSubActor, _validator);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
+            if (_validator->statusMsgTestOpParamSub().isSome()) {
+                request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
+            }
         },
         [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
             _widget->setRootTmNode(statusView.get(), eventView.get());

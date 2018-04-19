@@ -97,7 +97,7 @@ struct ProjectInfo {
 }
 
 component {
-    parameters {
+    variables {
         buildState  : BuildState,
         appsInfo    : AppsInfo,
         currentApp  : CurrentApplication,
