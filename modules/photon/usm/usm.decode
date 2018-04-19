@@ -22,10 +22,11 @@ enum Frames {
     BuildStateFrame         = 1,
     BuildLogOutputFrame     = 2,
     BuildLogErrorsFrame     = 3,
-    SystemInfoFrame         = 4,
+    AppsInfoFrame           = 4,
     CurrentAppFrame         = 5,
     ProjectInfoFrame        = 6,
     CurrentAppOutputFrame   = 7,
+    SystemInfoFrame         = 8,
 }
 
 struct BuildState {
@@ -43,11 +44,22 @@ type TextLinesList  = &[char;768];
 /// Date in Unix-time seconds
 type TimeStamp      = i64;
 
-struct SystemInfo {
+struct AppsInfo {
     language        : LanguageCodes,
     appsList        : TextLinesList,
-    appsFlags       : &[u8;384]
+    appsFlags       : &[u8;384],
 }
+
+struct SystemInfo {
+    cpuLoad         : f32,
+    cpuCores        : u8,
+    cpuCoresLoad    : &[u8;128],
+    memoryLoad      : u64,
+    memorySize      : u64,
+    diskLoad        : u64,
+    diskSize        : u64,
+}
+
 struct LogMessage {
     ///
     language        : LanguageCodes,
@@ -87,16 +99,18 @@ struct ProjectInfo {
 component {
     parameters {
         buildState  : BuildState,
-        systemInfo  : SystemInfo,
+        appsInfo    : AppsInfo,
         currentApp  : CurrentApplication,
         projectInfo : ProjectInfo,
+        systemInfo  : SystemInfo,
     }
 
     statuses {
         [buildState,    1, false]: {buildState},
-        [systemInfo,    1, false]: {systemInfo},
+        [appsInfo,      1, false]: {appsInfo},
         [currentApp,    1, false]: {currentApp},
         [projectInfo,   1, false]: {projectInfo},
+        [systemInfo,    1, false]: {systemInfo},
     }
 
     events {
