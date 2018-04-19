@@ -50,18 +50,26 @@ struct AppsInfo {
     appsFlags       : &[u8;384],
 }
 
+/// System loading information
 struct SystemInfo {
+/// CPU load in percentages
     cpuLoad         : f32,
+/// Amount of CPU cores
     cpuCores        : u8,
+/// Load of each CPU core in percentages
     cpuCoresLoad    : &[u8;128],
+/// Used memory in bytes
     memoryLoad      : u64,
+/// Whole memory size in bytes
     memorySize      : u64,
+/// Used disk size in bytes
     diskLoad        : u64,
+/// Whole disk size in bytes
     diskSize        : u64,
 }
 
 struct LogMessage {
-    ///
+    /// Progamming language code
     language        : LanguageCodes,
     /// Unique datagram code
     identification  : u16,
