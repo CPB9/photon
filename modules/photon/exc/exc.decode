@@ -63,7 +63,8 @@ struct PacketRequest {
     header: DataHeader,
 }
 
-type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer) -> Error;
+type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer, *mut void) -> Error;
+type TmHandler = &Fn(u8, u8, *const void, *mut void);
 
 struct StreamState {
     currentReliableDownlinkCounter: u16,
@@ -96,12 +97,15 @@ struct Device {
     telemStream: StreamState,
     userStream: StreamState,
     deviceKind: DeviceKind,
+
+    tmHandler: TmHandler,
+    tmUserData: *mut void,
 }
 
 impl Device {
     fn initGroundControl(&mut self, address: varuint)
     fn initUav(&mut self, address: varuint)
-    fn initSlave(&mut self, address: varuint)
+    fn initSlave(&mut self, address: varuint, tmHandler: TmHandler, tmUserData: *mut void)
     fn acceptInput(&mut self, src: *const void, size: usize)
     fn genNextPacket(&mut self, dest: *mut Writer) -> Error
     fn queueCustomCmdPacket(&mut self, data: *mut void, gen: Generator) -> Error
@@ -132,7 +136,7 @@ component {
         fn selfSlaveAddress() -> varuint
         fn registerGroundControl(id: varuint, device: *mut *mut Device) -> ClientError
         fn registerUav(id: varuint, device: *mut *mut Device) -> ClientError
-        fn registerSlave(id: varuint, device: *mut *mut Device) -> ClientError
+        fn registerSlave(id: varuint, device: *mut *mut Device, tmHandler: TmHandler, tmUserData: *mut void) -> ClientError
         fn removeClient(id: varuint) -> ClientError
     }
 

@@ -65,13 +65,13 @@ PhotonExcClientError PhotonExc_RegisterUav(uint64_t id, PhotonExcDevice** device
     return PhotonExcClientError_Ok;
 }
 
-PhotonExcClientError PhotonExc_RegisterSlave(uint64_t id, PhotonExcDevice** device)
+PhotonExcClientError PhotonExc_RegisterSlave(uint64_t id, PhotonExcDevice** device, PhotonExcTmHandler handler, void* data)
 {
     if (_photonExc.devices.size == 16) {
         return PhotonExcClientError_NoDescriptorsLeft;
     }
     PhotonExcDevice* d = &_photonExc.devices.data[_photonExc.devices.size];
-    PhotonExcDevice_InitSlave(d, id);
+    PhotonExcDevice_InitSlave(d, id, handler, data);
     _photonExc.devices.size++;
     *device = d;
     return PhotonExcClientError_Ok;

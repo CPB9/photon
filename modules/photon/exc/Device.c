@@ -49,18 +49,24 @@ void PhotonExcDevice_InitGroundControl(PhotonExcDevice* self, uint64_t address)
 {
     init(self, address);
     self->deviceKind = PhotonExcDeviceKind_GroundControl;
+    self->tmHandler = 0;
+    self->tmUserData = 0;
 }
 
 void PhotonExcDevice_InitUav(PhotonExcDevice* self, uint64_t address)
 {
     init(self, address);
     self->deviceKind = PhotonExcDeviceKind_Uav;
+    self->tmHandler = 0;
+    self->tmUserData = 0;
 }
 
-void PhotonExcDevice_InitSlave(PhotonExcDevice* self, uint64_t address)
+void PhotonExcDevice_InitSlave(PhotonExcDevice* self, uint64_t address, PhotonExcTmHandler handler, void* data)
 {
     init(self, address);
     self->deviceKind = PhotonExcDeviceKind_Slave;
+    self->tmHandler = handler;
+    self->tmUserData = data;
 }
 
 #define HANDLE_INVALID_PACKET(self, ...)                      \
@@ -227,6 +233,25 @@ static bool findPacket(PhotonExcDevice* self, PhotonMemChunks* chunks)
     return handlePacket(self, expectedSize);
 }
 
+static PhotonError handlePvuPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
+{
+    (void)data;
+    return PhotonPvu_ExecuteFrom(header, reader, writer);
+}
+
+static PhotonError handleFwtPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
+{
+    (void)data;
+    return PhotonFwt_AcceptCmd(header, reader, writer);
+}
+
+static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
+{
+    (void)writer;
+    PhotonExcDevice* self = (PhotonExcDevice*)data;
+    return Photon_DeserializeTelemetry(reader, self->tmHandler, self->tmUserData);
+}
+
 static bool handlePacket(PhotonExcDevice* self, size_t size)
 {
     if (size < 4) {
@@ -279,6 +304,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     PhotonExcStreamState* state;
     PhotonExcStreamHandler handler;
 
+    void* userData = 0;
     switch(self->incomingHeader.streamType) {
     case PhotonExcStreamType_Firmware: {
         if (self->deviceKind != PhotonExcDeviceKind_GroundControl) {
@@ -286,17 +312,27 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
             return true;
         }
         state = &self->fwtStream;
-        handler = PhotonFwt_AcceptCmd;
+        handler = handleFwtPacket;
         break;
     }
     case PhotonExcStreamType_Cmd: {
+        if (self->deviceKind == PhotonExcDeviceKind_Slave) {
+            HANDLE_INVALID_PACKET(self, "Recieved cmd packet from slave");
+            return true;
+        }
         state = &self->cmdStream;
-        handler = PhotonPvu_ExecuteFrom;
+        handler = handlePvuPacket;
         break;
     }
     case PhotonExcStreamType_Telem:
-        HANDLE_INVALID_PACKET(self, "Telem packets not supported");
-        return true;
+        if (self->deviceKind != PhotonExcDeviceKind_Slave) {
+            HANDLE_INVALID_PACKET(self, "Recieved tm packet from device");
+            return true;
+        }
+        state = &self->telemStream;
+        handler = handleTmPacket;
+        userData = self->tmUserData;
+        break;
     case PhotonExcStreamType_User:
         HANDLE_INVALID_PACKET(self, "User packets not supported");
         return true;
@@ -307,7 +343,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     case PhotonExcPacketType_Unreliable:
         //TODO: compare counters, check number of lost packets
         state->expectedUnreliableUplinkCounter = self->incomingHeader.counter + 1;
-        if (handler(&self->incomingHeader, &payload, &results) != PhotonError_Ok) {
+        if (handler(&self->incomingHeader, &payload, &results, userData) != PhotonError_Ok) {
             HANDLE_INVALID_PACKET(self, "Recieved packet with invalid payload");
             return true;
         }
@@ -318,7 +354,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
             HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter: expected(%" PRIu16 "), got(%" PRIu16 ")", state->expectedReliableUplinkCounter, self->incomingHeader.counter);
             return false;
         }
-        if (handler(&self->incomingHeader, &payload, &results) != PhotonError_Ok) {
+        if (handler(&self->incomingHeader, &payload, &results, userData) != PhotonError_Ok) {
             queueReceipt(self, &self->incomingHeader, 0, genPayloadErrorReceiptPayload);
             HANDLE_INVALID_PACKET(self, "Invalid payload");
             return false;
