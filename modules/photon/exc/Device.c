@@ -269,7 +269,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid header");
         return true;
     }
-    if (self->incomingHeader.streamDirection != PhotonExcStreamDirection_Uplink) {
+    if (self->incomingHeader.streamDirection != PhotonExcStreamDirection_Uplink && self->deviceKind != PhotonExcDeviceKind_Slave) {
         HANDLE_INVALID_PACKET(self, "Recieved packet with invalid stream direction(%" PRIi64 ")", self->incomingHeader.streamDirection);
         return true;
     }
@@ -331,7 +331,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         }
         state = &self->telemStream;
         handler = handleTmPacket;
-        userData = self->tmUserData;
+        userData = self;
         break;
     case PhotonExcStreamType_User:
         HANDLE_INVALID_PACKET(self, "User packets not supported");
