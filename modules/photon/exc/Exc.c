@@ -1,7 +1,4 @@
-#include "photongen/onboard/exc/Exc.Component.h"
-#include "photongen/onboard/pvu/Pvu.Component.h"
-#include "photongen/onboard/fwt/Fwt.Component.h"
-#include "photongen/onboard/tm/Tm.Component.h"
+#include "Photon.h"
 
 #include "photon/core/Logging.h"
 
@@ -16,6 +13,7 @@ void PhotonExc_Init()
     PhotonTm_Init();
     PhotonFwt_Init();
     _photonExc.address = 2;
+    _photonExc.slaveAddress = PHOTON_DEVICE_ID;
 }
 
 void PhotonExc_Tick()
@@ -25,6 +23,11 @@ void PhotonExc_Tick()
 uint64_t PhotonExc_SelfAddress()
 {
     return _photonExc.address;
+}
+
+uint64_t PhotonExc_SelfSlaveAddress()
+{
+    return _photonExc.slaveAddress;
 }
 
 PhotonError PhotonExc_ExecCmd_SetAddress(uint64_t address)
@@ -40,7 +43,7 @@ void PhotonExc_SetAddress(uint64_t address)
 
 PhotonExcClientError PhotonExc_RegisterGroundControl(uint64_t id, PhotonExcDevice** device)
 {
-    if (_photonExc.devices.size == 8) {
+    if (_photonExc.devices.size == 16) {
         return PhotonExcClientError_NoDescriptorsLeft;
     }
     PhotonExcDevice* d = &_photonExc.devices.data[_photonExc.devices.size];
@@ -52,11 +55,23 @@ PhotonExcClientError PhotonExc_RegisterGroundControl(uint64_t id, PhotonExcDevic
 
 PhotonExcClientError PhotonExc_RegisterUav(uint64_t id, PhotonExcDevice** device)
 {
-    if (_photonExc.devices.size == 8) {
+    if (_photonExc.devices.size == 16) {
         return PhotonExcClientError_NoDescriptorsLeft;
     }
     PhotonExcDevice* d = &_photonExc.devices.data[_photonExc.devices.size];
     PhotonExcDevice_InitUav(d, id);
+    _photonExc.devices.size++;
+    *device = d;
+    return PhotonExcClientError_Ok;
+}
+
+PhotonExcClientError PhotonExc_RegisterSlave(uint64_t id, PhotonExcDevice** device)
+{
+    if (_photonExc.devices.size == 16) {
+        return PhotonExcClientError_NoDescriptorsLeft;
+    }
+    PhotonExcDevice* d = &_photonExc.devices.data[_photonExc.devices.size];
+    PhotonExcDevice_InitSlave(d, id);
     _photonExc.devices.size++;
     *device = d;
     return PhotonExcClientError_Ok;

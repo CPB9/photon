@@ -73,6 +73,12 @@ struct StreamState {
     expectedUnreliableUplinkCounter: u16,
 }
 
+enum DeviceKind {
+    GroundControl,
+    Uav,
+    Slave,
+}
+
 struct Device {
     address: varuint,
     incomingHeader: DataHeader,
@@ -89,12 +95,13 @@ struct Device {
     cmdStream: StreamState,
     telemStream: StreamState,
     userStream: StreamState,
-    isGroundControl: bool,
+    deviceKind: DeviceKind,
 }
 
 impl Device {
     fn initGroundControl(&mut self, address: varuint)
     fn initUav(&mut self, address: varuint)
+    fn initSlave(&mut self, address: varuint)
     fn acceptInput(&mut self, src: *const void, size: usize)
     fn genNextPacket(&mut self, dest: *mut Writer) -> Error
     fn queueCustomCmdPacket(&mut self, data: *mut void, gen: Generator) -> Error
@@ -107,11 +114,13 @@ enum ClientError {
 
 component {
     variables {
-        devices: &[Device; 8],
+        devices: &[Device; 16],
         address: varuint,
+        slaveAddress: varuint,
     }
 
     statuses {
+        [addrs, 0, true]: {address, slaveAddress},
     }
 
     impl {
@@ -120,8 +129,10 @@ component {
 
         fn selfAddress() -> varuint
         fn setAddress(address: varuint)
+        fn selfSlaveAddress() -> varuint
         fn registerGroundControl(id: varuint, device: *mut *mut Device) -> ClientError
         fn registerUav(id: varuint, device: *mut *mut Device) -> ClientError
+        fn registerSlave(id: varuint, device: *mut *mut Device) -> ClientError
         fn removeClient(id: varuint) -> ClientError
     }
 

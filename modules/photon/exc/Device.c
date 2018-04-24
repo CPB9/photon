@@ -48,13 +48,19 @@ static void init(PhotonExcDevice* self, uint64_t address)
 void PhotonExcDevice_InitGroundControl(PhotonExcDevice* self, uint64_t address)
 {
     init(self, address);
-    self->isGroundControl = true;
+    self->deviceKind = PhotonExcDeviceKind_GroundControl;
 }
 
 void PhotonExcDevice_InitUav(PhotonExcDevice* self, uint64_t address)
 {
     init(self, address);
-    self->isGroundControl = false;
+    self->deviceKind = PhotonExcDeviceKind_Uav;
+}
+
+void PhotonExcDevice_InitSlave(PhotonExcDevice* self, uint64_t address)
+{
+    init(self, address);
+    self->deviceKind = PhotonExcDeviceKind_Slave;
 }
 
 #define HANDLE_INVALID_PACKET(self, ...)                      \
@@ -248,7 +254,18 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         return true;
     }
 
-    if (self->incomingHeader.destAddress != PhotonExc_SelfAddress()) {
+    uint64_t destAddr;
+    switch (self->deviceKind) {
+    case PhotonExcDeviceKind_GroundControl:
+    case PhotonExcDeviceKind_Uav:
+        destAddr = PhotonExc_SelfAddress();
+        break;
+    case PhotonExcDeviceKind_Slave:
+        destAddr = PhotonExc_SelfSlaveAddress();
+        break;
+    }
+
+    if (self->incomingHeader.destAddress != destAddr) {
 #ifdef PHOTON_HAS_MODULE_GRP
         if (!PhotonGrp_IsPacketForMe(self->incomingHeader.destAddress)) {
             HANDLE_INVALID_PACKET(self, "Recieved packet with invalid dest address(%" PRIi64 ")", self->incomingHeader.destAddress);
@@ -264,7 +281,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
 
     switch(self->incomingHeader.streamType) {
     case PhotonExcStreamType_Firmware: {
-        if (!self->isGroundControl) {
+        if (self->deviceKind != PhotonExcDeviceKind_GroundControl) {
             HANDLE_INVALID_PACKET(self, "Recieved fwt packet from uav");
             return true;
         }
@@ -419,7 +436,15 @@ PhotonError PhotonExcDevice_QueueCustomCmdPacket(PhotonExcDevice* self, void* da
     self->request.header.packetType = PhotonExcPacketType_Unreliable; //TODO: make reliable
     self->request.header.streamType = PhotonExcStreamType_Cmd;
     self->request.header.counter = self->cmdStream.currentReliableUplinkCounter;
-    self->request.header.srcAddress = PhotonExc_SelfAddress();
+    switch (self->deviceKind) {
+    case PhotonExcDeviceKind_GroundControl:
+    case PhotonExcDeviceKind_Uav:
+        self->request.header.srcAddress = PhotonExc_SelfAddress();
+        break;
+    case PhotonExcDeviceKind_Slave:
+        self->request.header.srcAddress = PhotonExc_SelfSlaveAddress();
+        break;
+    }
     self->request.header.destAddress = self->address;
 
     self->fwtStream.currentReliableUplinkCounter++;
@@ -451,7 +476,7 @@ PhotonError PhotonExcDevice_GenNextPacket(PhotonExcDevice* self, PhotonWriter* d
             self->hasDataQueued = false;
         return e;
     }
-    if (self->isGroundControl) {
+    if (self->deviceKind == PhotonExcDeviceKind_GroundControl) {
         if (PhotonFwt_HasAnswers()) {
             queueFwtPacket(self);
             return genPacket(self, dest);
