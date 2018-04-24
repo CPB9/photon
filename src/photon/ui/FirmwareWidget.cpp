@@ -87,8 +87,8 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptEditWidget->setDragDropMode(QAbstractItemView::DragDrop);
     _scriptEditWidget->viewport()->setAcceptDrops(true);
     _scriptEditWidget->setAcceptDrops(true);
-    _scriptEditWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    _scriptEditWidget->header()->setStretchLastSection(false);
+    //_scriptEditWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    //_scriptEditWidget->header()->setStretchLastSection(false);
     _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
     _scriptEditWidget->expandToDepth(1);
     _scriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
