@@ -26,6 +26,10 @@
 # include "photongen/onboard/grp/Grp.Component.h"
 #endif
 
+#if defined(PHOTON_HAS_MODULE_ZCVM)
+# include "photongen/onboard/zcvm/Zcvm.Component.h"
+#endif
+
 void Photon_Init()
 {
 #if defined(PHOTON_HAS_MODULE_CLK)
@@ -54,6 +58,9 @@ void Photon_Init()
 #endif
 #if defined(PHOTON_HAS_MODULE_GRP)
     PhotonGrp_Init();
+#endif
+#if defined(PHOTON_HAS_MODULE_ZCVM)
+    PhotonZcvm_Init();
 #endif
 }
 
@@ -85,6 +92,9 @@ void Photon_Tick()
 #endif
 #if defined(PHOTON_HAS_MODULE_GRP)
     PhotonGrp_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_ZCVM)
+    PhotonZcvm_Tick();
 #endif
 }
 
