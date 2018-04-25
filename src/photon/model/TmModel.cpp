@@ -52,8 +52,9 @@ private:
 
 class StatusesNode : public NodeWithNamedChildren {
 public:
-    StatusesNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+    StatusesNode(const decode::Device* dev, bmcl::OptionPtr<Node> parent = bmcl::None)
         : NodeWithNamedChildren(parent)
+        , _dev(dev)
     {
     }
 
@@ -89,7 +90,7 @@ public:
 
     bmcl::StringView fieldName() const override
     {
-        return "~";
+        return _dev->name();
     }
 
     void addVarsNode(ComponentVarsNode* node)
@@ -99,6 +100,7 @@ public:
 
 private:
     std::vector<Rc<ComponentVarsNode>> _nodes;
+    Rc<const decode::Device> _dev;
 };
 
 class EventsNode : public Node {
@@ -163,7 +165,7 @@ private:
 
 TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
     : _device(dev)
-    , _statuses(new StatusesNode)
+    , _statuses(new StatusesNode(dev))
     , _events(new EventsNode)
 {
     for (const decode::Ast* ast : dev->modules()) {

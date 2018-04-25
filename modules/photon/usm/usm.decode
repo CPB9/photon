@@ -100,6 +100,8 @@ struct ProjectInfo {
     name            : TextLine,
     /// Installed files
     filesList       : TextLinesList,
+    /// Overall size at disk in bytes
+    size            : u64,
     /// Last project update date
     updated         : TimeStamp,
 }
@@ -145,6 +147,7 @@ component {
         fn killApplication(language : LanguageCodes, appName : TextLine)
 
         fn requestApplicationStatus(language : LanguageCodes, appName : TextLine)
+        fn requestProjectOfApplication(language : LanguageCodes, appName : TextLine)
     }
 
     impl {
