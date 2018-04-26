@@ -89,7 +89,7 @@ struct Device {
     dataSize: usize,
 
     inRingBuf: RingBuf,
-    inRingBufData: [u8; 1024],
+    inRingBufData: [u8; 2048],
     outData: [u8; 512],
 
     fwtStream: StreamState,

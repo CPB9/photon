@@ -23,7 +23,9 @@
 
 #define _PHOTON_FNAME "exc/Device.c"
 
-static uint8_t inTemp[1024];
+#define PHOTON_CFG_EXC_INPUT_RINGBUF_SIZE 2048
+
+static uint8_t inTemp[PHOTON_CFG_EXC_INPUT_RINGBUF_SIZE];
 
 static void initStream(PhotonExcStreamState* self)
 {
@@ -108,6 +110,9 @@ static PhotonError genCounterCorrectionReceiptPayload(void* data, PhotonWriter* 
 void PhotonExcDevice_AcceptInput(PhotonExcDevice* self, const void* src, size_t size)
 {
     //FIXME: return error if size > ringbuf size
+    if (size > PhotonRingBuf_WritableSize(&self->inRingBuf)) {
+        PHOTON_WARNING("input ringbuf overflow");
+    }
     PhotonRingBuf_Write(&self->inRingBuf, src, size);
 
     bool canContinue;
@@ -224,10 +229,10 @@ static bool findPacket(PhotonExcDevice* self, PhotonMemChunks* chunks)
     }
 
     if (expectedSize <= chunks->first.size) {
-        memcpy(inTemp, chunks->first.data, chunks->first.size);
+        memcpy(inTemp, chunks->first.data, expectedSize);
     } else {
         memcpy(inTemp, chunks->first.data, chunks->first.size);
-        memcpy(inTemp + chunks->first.size, chunks->second.data, size - expectedSize);
+        memcpy(inTemp + chunks->first.size, chunks->second.data, expectedSize - chunks->first.size);
     }
 
     return handlePacket(self, expectedSize);
