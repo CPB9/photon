@@ -215,5 +215,8 @@ component {
         fn testCmdCall(p1: ParamStruct, p2: &[u32; 10], p3: EnumParam)
 
         fn testEvents(count : u8)
+        fn genTestEvent()
+
+        fn testPvuScript(name: &[char; 16])
     }
 }

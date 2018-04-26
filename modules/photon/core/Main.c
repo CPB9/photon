@@ -38,8 +38,8 @@ void Photon_Init()
 #if defined(PHOTON_HAS_MODULE_TM)
     PhotonTm_Init();
 #endif
-#if defined(PHOTON_HAS_MODULE_INT)
-    PhotonInt_Init();
+#if defined(PHOTON_HAS_MODULE_PVU)
+    PhotonPvu_Init();
 #endif
 #if defined(PHOTON_HAS_MODULE_FWT)
     PhotonFwt_Init();
@@ -72,8 +72,8 @@ void Photon_Tick()
 #if defined(PHOTON_HAS_MODULE_TM)
     PhotonTm_Tick();
 #endif
-#if defined(PHOTON_HAS_MODULE_INT)
-    PhotonInt_Tick();
+#if defined(PHOTON_HAS_MODULE_PVU)
+    PhotonPvu_Tick();
 #endif
 #if defined(PHOTON_HAS_MODULE_FWT)
     PhotonFwt_Tick();

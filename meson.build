@@ -1,5 +1,14 @@
 project('photon', ['c', 'cpp'], default_options : ['cpp_std=c++11', 'c_std=c99'])
 
+cc = meson.get_compiler('c')
+
+c_args = []
+if cc.get_id() == 'clang' or cc.get_id() == 'gcc'
+  c_args = ['-Werror=implicit-function-declaration']
+endif
+
+add_project_arguments(c_args, language : 'c')
+
 platform_deps = declare_dependency()
 if host_machine.system() == 'windows'
   platform_deps = declare_dependency(dependencies : meson.get_compiler('c').find_library('ws2_32'))

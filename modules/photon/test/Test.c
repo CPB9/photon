@@ -1,4 +1,5 @@
 #include "photongen/onboard/test/Test.Component.h"
+#include "photongen/onboard/pvu/Pvu.Component.h"
 
 void PhotonTest_Init()
 {
@@ -297,4 +298,34 @@ PhotonError PhotonTest_ExecCmd_TestEvents(uint8_t count)
 PhotonError PhotonTest_ExecCmd_TestError(PhotonError value)
 {
     return value;
+}
+
+PhotonError PhotonTest_ExecCmd_GenTestEvent()
+{
+    PhotonTestParamStruct s;
+    s.parama = 2;
+    s.paramb = 3;
+    PhotonTest_QueueEvent_Event1(1, &s);
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTest_ExecCmd_TestPvuScript(const PhotonDynArrayOfCharMaxSize16* name)
+{
+    PhotonDynArrayOfU8MaxSize1024 cmds;
+    PhotonWriter writer;
+    PhotonWriter_Init(&writer, cmds.data, sizeof(cmds.data));
+    PHOTON_TRY(PhotonTest_SerializeCmd_GenTestEvent(&writer));
+    PHOTON_TRY(PhotonPvu_SerializeCmd_SleepFor(5000, &writer));
+    PHOTON_TRY(PhotonTest_SerializeCmd_GenTestEvent(&writer));
+    cmds.size = writer.current - writer.start;
+
+    PhotonPvuScriptDesc desc;
+    desc.name = *name;
+    desc.autoremove = true;
+    desc.autostart = true;
+    return PhotonPvu_AddScript(&desc, &cmds);
+    //uint8_t data[1024];
+    //PhotonWriter_Init(&writer, data, sizeof(data));
+    //PHOTON_TRY(PhotonPvu_SerializeCmd_AddScript(&desc, &cmds, &writer));
+    //return PhotonError_Ok;
 }

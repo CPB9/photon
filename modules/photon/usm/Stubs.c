@@ -65,4 +65,9 @@ PhotonError PhotonUsm_ExecCmd_RequestApplicationStatus(PhotonUsmLanguageCodes la
     return PhotonError_Ok;
 }
 
+PhotonError PhotonUsm_ExecCmd_RequestProjectOfApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize255* appName)
+{
+    return PhotonError_Ok;
+}
+
 #endif

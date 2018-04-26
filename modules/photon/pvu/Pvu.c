@@ -4,6 +4,7 @@
 #include "photongen/onboard/clk/Clk.Component.h"
 #include "photon/core/Logging.h"
 #include "photongen/onboard/pvu/Script.h"
+#include "photongen/onboard/CmdDecoder.h"
 #include "photon/core/Assert.h"
 
 #include <string.h>
@@ -16,7 +17,11 @@ PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReade
         return PhotonError_Ok;
     }
     _photonPvu.currentHeader = header;
-    return Photon_ExecScript(src, results);
+    PhotonError rv = Photon_ExecScript(src, results);
+    if (rv != PhotonError_Ok) {
+        PhotonPvu_QueueEvent_PacketExecFailed(rv, header);
+    }
+    return rv;
 }
 
 const PhotonExcDataHeader* PhotonPvu_CurrentHeader()
@@ -24,122 +29,143 @@ const PhotonExcDataHeader* PhotonPvu_CurrentHeader()
     return _photonPvu.currentHeader;
 }
 
-static void initScript(PhotonPvuScript* self)
-{
-    self->isSleeping = false;
-    self->isFinished = false;
-    self->sleepUntil = 0;
-}
-
 void PhotonPvu_Init()
 {
-    _photonPvu.numScripts = 0;
+    _photonPvu.scripts.size = 0;
     _photonPvu.totalScriptsSize = 0;
 }
 
-static PhotonPvuScript _scripts[PHOTON_PVU_SCRIPT_NUM];
 static uint8_t _temp[128];
 static uint8_t _scriptData[PHOTON_PVU_TOTAL_SCRIPTS_SIZE];
 
 static void endCurrent()
 {
     _photonPvu.currentScript->isFinished = true;
+    _photonPvu.currentScript->isExecuting = false;
 }
 
 static void execCurrent()
 {
-    PhotonClkTimePoint currentTime = PhotonClk_GetTickTime();
     PhotonPvuScript* current = _photonPvu.currentScript;
+    if (!current->isExecuting) {
+        return;
+    }
+    PhotonClkTimePoint currentTime = PhotonClk_GetTime();
     _photonPvu.currentHeader = NULL; //HACK
     if (current->isSleeping) {
-        if (current->sleepUntil < currentTime) {
+        if (currentTime < current->sleepUntil) {
             return;
         }
         current->isSleeping = false;
     }
-    if (PhotonReader_ReadableSize(&current->data) == 0) {
+    PhotonReader reader;
+    PhotonReader_Init(&reader, &_scriptData[current->memOffset], current->size);
+    PhotonReader_Skip(&reader, current->readOffset);
+    if (PhotonReader_ReadableSize(&reader) == 0) {
         endCurrent();
         return;
     }
     do {
-        if (PhotonReader_ReadableSize(&current->data) < 2) {
+        if (PhotonReader_ReadableSize(&reader) < 2) {
             PHOTON_CRITICAL("Unable to decode cmd header");
-            endCurrent();
-            return;
+            goto end;
         }
 
-        uint8_t compNum = PhotonReader_ReadU8(&current->data);
-        uint8_t cmdNum = PhotonReader_ReadU8(&current->data);
+        uint8_t compNum = PhotonReader_ReadU8(&reader);
+        uint8_t cmdNum = PhotonReader_ReadU8(&reader);
 
         PhotonWriter writer;
         PhotonWriter_Init(&writer, _temp, sizeof(_temp));
 
-        PhotonError rv = Photon_DeserializeAndExecCmd(compNum, cmdNum, &current->data, &writer);
+        PhotonError rv = Photon_DeserializeAndExecCmd(compNum, cmdNum, &reader, &writer);
         if (rv == PhotonError_WouldBlock) {
-            return;
+            goto correct;
         }
         if (rv != PhotonError_Ok) {
-            endCurrent();
-            return;
+            PhotonPvu_QueueEvent_ScriptExecFailed(rv);
+            goto end;
         }
-    } while (PhotonReader_ReadableSize(&current->data) != 0);
+    } while (PhotonReader_ReadableSize(&reader) != 0);
+
+end:
     endCurrent();
+correct:
+    current->readOffset = reader.current - reader.start;
+}
+
+void removeScript(size_t deletedIndex)
+{
+    size_t moveSize = 0;
+    for (size_t i = deletedIndex; i < _photonPvu.scripts.size; i++) {
+        moveSize += _photonPvu.scripts.data[i].size;
+    }
+    PhotonPvuScript* deleted = &_photonPvu.scripts.data[deletedIndex];
+    uint8_t* begin = &_scriptData[deleted->memOffset];
+    memmove(begin, begin + deleted->size, moveSize);
+    memmove(&_photonPvu.scripts.data[deletedIndex], &_photonPvu.scripts.data[deletedIndex + 1], sizeof(PhotonPvuScript) * (_photonPvu.scripts.size - deletedIndex + 1));
+    _photonPvu.scripts.size--;
+    for (size_t i = deletedIndex; i < _photonPvu.scripts.size; i++) {
+        _photonPvu.scripts.data[i].memOffset -= deleted->size;
+    }
+    _photonPvu.totalScriptsSize -= moveSize;
 }
 
 void PhotonPvu_Tick()
 {
-    if (_photonPvu.numScripts == 0) {
+    if (_photonPvu.scripts.size == 0) {
         return;
     }
-    for (size_t i = 0; i < _photonPvu.numScripts; i++) {
-        _photonPvu.currentScript = &_scripts[i];
+    for (size_t i = 0; i < _photonPvu.scripts.size; i++) {
+        _photonPvu.currentScript = &_photonPvu.scripts.data[i];
         execCurrent();
+    }
+    if (!_photonPvu.currentScript->desc.autoremove) {
+        _photonPvu.currentScript = NULL;
+        return;
     }
     _photonPvu.currentScript = NULL;
 
-    size_t deletedIndex = _photonPvu.numScripts;
+    size_t deletedIndex = _photonPvu.scripts.size;
     while (true) {
         if (deletedIndex == 0) {
             return;
         }
         deletedIndex--;
-        if (_scripts[deletedIndex].isFinished) {
+        if (_photonPvu.scripts.data[deletedIndex].isFinished) {
             break;
         }
     }
-    size_t moveSize = 0;
-    for (size_t i = deletedIndex + 1; i < _photonPvu.numScripts; i++) {
-        moveSize += _scripts[i].data.end - _scripts[i].data.start;
-    }
-    PhotonPvuScript* deleted = &_scripts[deletedIndex];
-    size_t deletedSize = deleted->data.end - deleted->data.start;
-    memmove((uint8_t*)deleted->data.start, deleted->data.end, moveSize);
-    memmove(&_scripts[deletedIndex], &_scripts[deletedIndex + 1], sizeof(PhotonPvuScript) * (_photonPvu.numScripts - deletedIndex + 1));
-    _photonPvu.numScripts--;
-    for (size_t i = deletedIndex; i < _photonPvu.numScripts; i++) {
-        _scripts[i].data.start -= deletedSize;
-        _scripts[i].data.current -= deletedSize;
-        _scripts[i].data.end -= deletedSize;
-    }
+    removeScript(deletedIndex);
 }
 
-PhotonError PhotonPvu_AddScript(PhotonReader* src)
+PhotonError PhotonPvu_AddScript(const PhotonPvuScriptDesc* desc, const PhotonDynArrayOfU8MaxSize1024* body)
 {
     PHOTON_ASSERT(_photonPvu.totalScriptsSize <= PHOTON_PVU_TOTAL_SCRIPTS_SIZE);
-    if (_photonPvu.numScripts >= PHOTON_PVU_SCRIPT_NUM) {
+    if (_photonPvu.scripts.size >= PHOTON_PVU_SCRIPT_NUM) {
         return PhotonError_NotEnoughSpace;
     }
 
-    size_t scriptSize = PhotonReader_ReadableSize(src);
+    size_t scriptSize = body->size;
     if (scriptSize > (PHOTON_PVU_TOTAL_SCRIPTS_SIZE - _photonPvu.totalScriptsSize)) {
         return PhotonError_NotEnoughSpace;
     }
-    PhotonReader_Read(src, &_scriptData[_photonPvu.totalScriptsSize], scriptSize);
-    PhotonPvuScript* current = &_scripts[_photonPvu.numScripts];
-    initScript(current);
-    PhotonReader_Init(&current->data, &_scriptData[_photonPvu.totalScriptsSize], scriptSize);
+    for (size_t i = 0; i < _photonPvu.scripts.size; i++) {
+        if (strcmp(_photonPvu.scripts.data[i].desc.name.data, desc->name.data) == 0) {
+            return PhotonError_ScriptNameConflict;
+        }
+    }
+    memcpy(&_scriptData[_photonPvu.totalScriptsSize], body->data, scriptSize);
+    PhotonPvuScript* current = &_photonPvu.scripts.data[_photonPvu.scripts.size];
+    current->isExecuting = desc->autostart;
+    current->isSleeping = false;
+    current->isFinished = false;
+    current->sleepUntil = 0;
+    current->memOffset = _photonPvu.totalScriptsSize;
+    current->readOffset = 0;
+    current->size = scriptSize;
+    current->desc = *desc;
     _photonPvu.totalScriptsSize += scriptSize;
-    _photonPvu.numScripts++;
+    _photonPvu.scripts.size++;
 
     return PhotonError_Ok;
 }
@@ -153,7 +179,7 @@ PhotonError PhotonPvu_ExecCmd_SleepFor(int64_t delta)
         return PhotonError_Ok;
     }
     _photonPvu.currentScript->isSleeping = true;
-    _photonPvu.currentScript->sleepUntil = PhotonClk_GetTime() + delta;
+    _photonPvu.currentScript->sleepUntil = PhotonClk_GetTime() + delta; //TODO: check for overflow
     return PhotonError_WouldBlock;
 }
 
@@ -162,13 +188,49 @@ PhotonError PhotonPvu_ExecCmd_SleepUntil(uint64_t time)
     if (!_photonPvu.currentScript) {
         return PhotonError_BlockingCmdOutsidePvu;
     }
-    PhotonClkTimePoint currentTime = PhotonClk_GetTickTime();
+    PhotonClkTimePoint currentTime = PhotonClk_GetTime();
     if (time >= currentTime) {
         return PhotonError_Ok;
     }
     _photonPvu.currentScript->isSleeping = true;
     _photonPvu.currentScript->sleepUntil = time;
     return PhotonError_WouldBlock;
+}
+
+PhotonError PhotonPvu_ExecCmd_AddScript(const PhotonPvuScriptDesc* desc, const PhotonDynArrayOfU8MaxSize1024* body)
+{
+    //TODO: only allow in packet cmds
+    return PhotonPvu_AddScript(desc, body);
+}
+
+PhotonError PhotonPvu_ExecCmd_RemoveScript(const PhotonDynArrayOfCharMaxSize16* name)
+{
+    for (size_t i = 0; i < _photonPvu.scripts.size; i++) {
+        if (strcmp(_photonPvu.scripts.data[i].desc.name.data, name->data) == 0) {
+            removeScript(i);
+            return PhotonError_Ok;
+        }
+    }
+    return PhotonError_InvalidValue;
+}
+
+PhotonError PhotonPvu_ExecCmd_StartScript(const PhotonDynArrayOfCharMaxSize16* name)
+{
+    for (size_t i = 0; i < _photonPvu.scripts.size; i++) {
+        PhotonPvuScript* script = &_photonPvu.scripts.data[i];
+        if (strcmp(script->desc.name.data, name->data) == 0) {
+            if (script->isExecuting) {
+                //already executing
+                return PhotonError_InvalidValue;
+            }
+            script->isExecuting = true;
+            script->isFinished = false;
+            script->readOffset = 0;
+            script->isSleeping = false;
+            return PhotonError_Ok;
+        }
+    }
+    return PhotonError_InvalidValue;
 }
 
 #undef _PHOTON_FNAME
