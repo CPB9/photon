@@ -17,6 +17,10 @@
 #include <bmcl/OptionPtr.h>
 #include <bmcl/StringView.h>
 
+namespace decode {
+class StringBuilder;
+}
+
 namespace photon {
 
 class Value;
@@ -55,6 +59,7 @@ public:
     virtual bool isInRange() const;
     virtual bmcl::Option<OnboardTime> lastUpdateTime() const;
     virtual bmcl::Option<std::vector<Value>> possibleValues() const;
+    virtual void stringify(decode::StringBuilder* dest) const;
 
     bmcl::Option<std::size_t> indexInParent() const;
 

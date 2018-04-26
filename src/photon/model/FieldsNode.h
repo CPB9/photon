@@ -44,6 +44,7 @@ public:
     std::size_t numChildren() const override;
     bmcl::Option<std::size_t> childIndex(const Node* node) const override;
     bmcl::OptionPtr<Node> childAt(std::size_t idx) override;
+    void stringify(decode::StringBuilder* dest) const override;
     bool setValues(bmcl::ArrayView<Value> values);
 
 protected:

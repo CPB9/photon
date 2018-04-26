@@ -8,12 +8,15 @@
 
 #include "photon/model/TmMsgDecoder.h"
 #include "decode/core/Try.h"
+#include "decode/core/Foreach.h"
+#include "decode/core/StringBuilder.h"
 #include "decode/ast/Component.h"
 #include "decode/ast/Type.h"
 #include "photon/model/FieldsNode.h"
 #include "decode/ast/Field.h"
 #include "photon/model/ValueNode.h"
 #include "photon/model/CoderState.h"
+#include "photon/model/Value.h"
 
 #include <bmcl/Bytes.h>
 #include <bmcl/MemReader.h>
@@ -228,6 +231,7 @@ EventNode::EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, b
     , _msg(msg)
 {
     _name = cache->nameForEvent(msg);
+    _value = "???";
 }
 
 EventNode::~EventNode()
@@ -236,11 +240,34 @@ EventNode::~EventNode()
 
 bool EventNode::decode(CoderState* ctx, bmcl::MemReader* src)
 {
-    return decodeFields(ctx, src);
+    bool rv = decodeFields(ctx, src);
+    updateValue();
+    return rv;
 }
 
 bmcl::StringView EventNode::fieldName() const
 {
     return _name;
+}
+
+Value EventNode::value() const
+{
+    return Value::makeStringView(_value);
+}
+
+ValueKind EventNode::valueKind() const
+{
+    return ValueKind::StringView;
+}
+
+void EventNode::updateValue()
+{
+    if (_nodes.empty()) {
+        _value.clear();
+        return;
+    }
+    decode::StringBuilder builder;
+    stringify(&builder);
+    _value = builder.toStdString();
 }
 }

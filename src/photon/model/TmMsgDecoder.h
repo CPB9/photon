@@ -33,6 +33,7 @@ class DecoderAction;
 class CoderState;
 class ValueInfoCache;
 class EventNode;
+class Value;
 
 struct ChainElement {
     ChainElement(std::size_t index, DecoderAction* action, ValueNode* node);
@@ -63,10 +64,15 @@ public:
 
     bool decode(CoderState* ctx, bmcl::MemReader* src);
     bmcl::StringView fieldName() const override;
+    Value value() const override;
+    ValueKind valueKind() const override;
 
 private:
+    void updateValue();
+
     Rc<const decode::EventMsg> _msg;
     bmcl::StringView _name;
+    std::string _value;
 };
 
 class EventMsgDecoder {

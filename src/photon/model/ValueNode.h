@@ -103,7 +103,7 @@ public:
     const ValueNode* nodeAt(std::size_t index) const;
     ValueNode* nodeAt(std::size_t index);
 
-    const std::vector<Rc<ValueNode>> values();
+    const std::vector<Rc<ValueNode>>& values();
 
 protected:
     explicit ContainerValueNode(const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent);
@@ -122,6 +122,7 @@ public:
     void collectUpdates(NodeViewUpdater* dest) override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
     const decode::Type* type() const override;
+    void stringify(decode::StringBuilder* dest) const override;
 
 private:
     Rc<const decode::ArrayType> _type;
@@ -140,6 +141,7 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
 
     const decode::Type* type() const override;
 
@@ -165,6 +167,7 @@ public:
 
     void collectUpdates(NodeViewUpdater* dest) override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
 
     const decode::Type* type() const override;
     bmcl::OptionPtr<ValueNode> nodeWithName(bmcl::StringView name);
@@ -234,6 +237,7 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
 
     ValueKind valueKind() const override;
     bool canSetValue() const override;
@@ -273,6 +277,7 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
 
     bool isInitialized() const override;
     Value value() const override;
@@ -301,6 +306,7 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
 
     bool isInitialized() const override;
     Value value() const override;
@@ -350,6 +356,8 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
+
     Value value() const override;
     ValueKind valueKind() const override;
 
@@ -402,6 +410,8 @@ public:
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const override;
     bool decode(CoderState* ctx, bmcl::MemReader* src) override;
+    void stringify(decode::StringBuilder* dest) const override;
+
     Value value() const override;
 
     bool isInitialized() const override;

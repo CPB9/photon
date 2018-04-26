@@ -10,6 +10,8 @@
 #include "decode/ast/Component.h"
 #include "photon/model/ValueNode.h"
 #include "photon/model/Value.h"
+#include "decode/core/StringBuilder.h"
+#include "decode/core/Foreach.h"
 #include "decode/ast/Field.h"
 
 namespace photon {
@@ -102,5 +104,18 @@ bool FieldsNode::setValues(bmcl::ArrayView<Value> values)
         }
     }
     return true;
+}
+
+void FieldsNode::stringify(decode::StringBuilder* dest) const
+{
+    dest->append("{");
+    decode::foreachList(_nodes, [dest](const Rc<ValueNode>& node) {
+        dest->append(node->fieldName());
+        dest->append(": ");
+        node->stringify(dest);
+    }, [dest](const Rc<ValueNode>& node) {
+        dest->append(", ");
+    });
+    dest->append("}");
 }
 }

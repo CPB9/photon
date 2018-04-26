@@ -14,6 +14,7 @@
 #include "decode/core/RangeAttr.h"
 #include "decode/ast/Type.h"
 #include "decode/ast/Component.h"
+#include "decode/core/StringBuilder.h"
 #include "photon/model/ValueInfoCache.h"
 #include "photon/model/NodeViewUpdate.h"
 #include "photon/model/NodeView.h"
@@ -262,7 +263,7 @@ bool ContainerValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
     return true;
 }
 
-const std::vector<Rc<ValueNode>> ContainerValueNode::values()
+const std::vector<Rc<ValueNode>>& ContainerValueNode::values()
 {
     return _values;
 }
@@ -327,6 +328,17 @@ bool ArrayValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
 const decode::Type* ArrayValueNode::type() const
 {
     return _type.get();
+}
+
+void ArrayValueNode::stringify(decode::StringBuilder* dest) const
+{
+    dest->append("[");
+    decode::foreachList(_values, [dest](const Rc<ValueNode>& node) {
+        node->stringify(dest);
+    }, [dest](const Rc<ValueNode>& node) {
+        dest->append(", ");
+    });
+    dest->append("]");
 }
 
 DynArrayValueNode::DynArrayValueNode(const decode::DynArrayType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
@@ -428,6 +440,17 @@ void DynArrayValueNode::resizeDynArray(OnboardTime time, std::size_t size)
     assert(values().size() == size);
 }
 
+void DynArrayValueNode::stringify(decode::StringBuilder* dest) const
+{
+    dest->append("&[");
+    decode::foreachList(_values, [dest](const Rc<ValueNode>& node) {
+        node->stringify(dest);
+    }, [dest](const Rc<ValueNode>& node) {
+        dest->append(", ");
+    });
+    dest->append("]");
+}
+
 StructValueNode::StructValueNode(const decode::StructType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : ContainerValueNode(cache, parent)
     , _type(type)
@@ -471,6 +494,19 @@ bmcl::OptionPtr<ValueNode> StructValueNode::nodeWithName(bmcl::StringView name)
         }
     }
     return bmcl::None;
+}
+
+void StructValueNode::stringify(decode::StringBuilder* dest) const
+{
+    dest->append("{");
+    decode::foreachList(_values, [dest](const Rc<ValueNode>& node) {
+        dest->append(node->fieldName());
+        dest->append(": ");
+        node->stringify(dest);
+    }, [dest](const Rc<ValueNode>& node) {
+        dest->append(", ");
+    });
+    dest->append("}");
 }
 
 VariantValueNode::VariantValueNode(const decode::VariantType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
@@ -648,6 +684,15 @@ const decode::Type* VariantValueNode::type() const
     return _type.get();
 }
 
+void VariantValueNode::stringify(decode::StringBuilder* dest) const
+{
+    if (_currentId.isSome()) {
+        dest->append(_type->fieldsBegin()[_currentId.unwrap().value()]->name());
+        return;
+    }
+    dest->append("?");
+}
+
 NonContainerValueNode::NonContainerValueNode(const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : ValueNode(cache, parent)
 {
@@ -769,6 +814,17 @@ bool StringValueNode::setValue(const Value& value)
     return false;
 }
 
+void StringValueNode::stringify(decode::StringBuilder* dest) const
+{
+    if (_value.isSome()) {
+        dest->append("\"");
+        dest->append(_value.unwrap());
+        dest->append("\"");
+        return;
+    }
+    dest->append("?");
+}
+
 AddressValueNode::AddressValueNode(const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : NonContainerValueNode(cache, parent)
 {
@@ -850,6 +906,16 @@ bool AddressValueNode::setValue(const Value& value)
         return true;
     }
     return false;
+}
+
+void AddressValueNode::stringify(decode::StringBuilder* dest) const
+{
+    if (_address.isSome()) {
+        dest->append("0x");
+        dest->appendHexValue(_address.unwrap().value());
+        return;
+    }
+    dest->append("?");
 }
 
 ReferenceValueNode::ReferenceValueNode(const decode::ReferenceType* type, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
@@ -960,6 +1026,19 @@ Value EnumValueNode::value() const
     return Value::makeUninitialized();
 }
 
+void EnumValueNode::stringify(decode::StringBuilder* dest) const
+{
+    if (_currentId.isSome()) {
+        auto it = _type->constantsRange().findIf([this](const decode::EnumConstant* c) {
+            return c->value() == _currentId.unwrap().value();
+        });
+        assert(it != _type->constantsEnd());
+        dest->append(it->name());
+        return;
+    }
+    dest->append("?");
+}
+
 ValueKind EnumValueNode::valueKind() const
 {
     return ValueKind::StringView;
@@ -1034,6 +1113,23 @@ NumericValueNode<T>::NumericValueNode(const decode::BuiltinType* type,const Valu
 template <typename T>
 NumericValueNode<T>::~NumericValueNode()
 {
+}
+
+
+template <typename T>
+void NumericValueNode<T>::stringify(decode::StringBuilder* dest) const
+{
+    if (_value.isSome()) {
+        if (std::is_floating_point<T>::value) {
+            dest->append(std::to_string(_value.unwrap().value()));
+        } else if (std::is_signed<T>::value) {
+            dest->appendNumericValue((int64_t)_value.unwrap().value());
+        } else {
+            dest->appendNumericValue((uint64_t)_value.unwrap().value());
+        }
+        return;
+    }
+    dest->append("?");
 }
 
 template <typename T>

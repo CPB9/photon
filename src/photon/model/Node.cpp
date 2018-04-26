@@ -8,6 +8,7 @@
 
 #include "photon/model/Node.h"
 #include "photon/model/Value.h"
+#include "decode/core/StringBuilder.h"
 
 #include <bmcl/Option.h>
 
@@ -141,5 +142,33 @@ bmcl::Option<std::vector<Value>> Node::possibleValues() const
 bmcl::Option<OnboardTime> Node::lastUpdateTime() const
 {
     return bmcl::None;
+}
+
+void Node::stringify(decode::StringBuilder* dest) const
+{
+    Value v = value();
+    switch (v.kind()) {
+    case ValueKind::None:
+        dest->append("none");
+        return;
+    case ValueKind::Uninitialized:
+        dest->append("?");
+        return;
+    case ValueKind::Signed:
+        dest->appendNumericValue(v.asSigned());
+        return;
+    case ValueKind::Unsigned:
+        dest->appendNumericValue(v.asUnsigned());
+        return;
+    case ValueKind::Double:
+        dest->append(std::to_string(v.asDouble())); //FIXME
+        return;
+    case ValueKind::String:
+        dest->append(v.asString());
+        return;
+    case ValueKind::StringView:
+        dest->append(v.asStringView());
+        return;
+    }
 }
 }
