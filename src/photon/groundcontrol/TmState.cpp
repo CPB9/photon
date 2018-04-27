@@ -72,6 +72,21 @@ caf::behavior TmState::make_behavior()
             Rc<NodeView> eventView = new NodeView(_model->eventsNode());
             send(_handler, SetTmViewAtom::value, statusView, eventView);
             _updateCount++;
+
+            for (NamedSub& sub : _namedSubs) {
+                auto rv = findNode(_model->statusesNode(), sub.path);
+                if (rv.isErr()) {
+                    sub.actor = caf::actor(); //TODO: remove
+                    continue;
+                }
+                Node* node = rv.unwrap().get();
+                ValueNode* valueNode = dynamic_cast<ValueNode*>(node);
+                if (!valueNode) {
+                    sub.actor = caf::actor(); //TODO: remove
+                    continue;
+                }
+                sub.node = valueNode;
+            }
             delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
         },
         [this](RecvPacketPayloadAtom, const PacketHeader& header, const bmcl::SharedBytes& data) {
