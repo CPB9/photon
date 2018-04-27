@@ -1115,7 +1115,6 @@ NumericValueNode<T>::~NumericValueNode()
 {
 }
 
-
 template <typename T>
 void NumericValueNode<T>::stringify(decode::StringBuilder* dest) const
 {

@@ -82,7 +82,7 @@ static void execCurrent()
             goto correct;
         }
         if (rv != PhotonError_Ok) {
-            PhotonPvu_QueueEvent_ScriptExecFailed(rv);
+            PhotonPvu_QueueEvent_ScriptExecFailed(rv, &current->desc.name);
             goto end;
         }
     } while (PhotonReader_ReadableSize(&reader) != 0);

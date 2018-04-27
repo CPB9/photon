@@ -74,6 +74,9 @@ modules_src = [
   'modules/photon/usm/usm.decode',
   'modules/photon/usm/mod.toml',
   'modules/photon/usm/Stubs.c',
+  'modules/photon/param/mod.toml',
+  'modules/photon/param/param.decode',
+  'modules/photon/param/Param.c',
 ] + get_option('additional_depends')
 
 groundcontrol_src = [

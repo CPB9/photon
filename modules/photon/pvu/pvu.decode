@@ -60,7 +60,7 @@ component {
 
     events {
         [packetExecFailed, true]: {err: Error, header: DataHeader},
-        [scriptExecFailed, true]: {err: Error},
+        [scriptExecFailed, true]: {err: Error, name: ScriptName},
     }
 
     statuses {

@@ -1,0 +1,7 @@
+name = "param"
+decode = "param.decode"
+dest = "photon/param"
+id = 86
+sources = [
+  "Param.c"
+]

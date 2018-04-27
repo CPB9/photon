@@ -219,4 +219,9 @@ component {
 
         fn testPvuScript(name: &[char; 16])
     }
+
+    parameters {
+        {name: p1, autosave: true, readonly: false, callback: true, path: param1},
+        {name: p9b, path: param9.paramb},
+    }
 }

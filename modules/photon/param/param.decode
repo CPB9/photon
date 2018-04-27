@@ -1,0 +1,26 @@
+module param
+
+import core::{Error}
+
+type ParamId = varuint;
+
+component {
+    impl {
+        fn set(id: ParamId, src: *const void, size: usize) -> Error
+    }
+
+    commands {
+        fn setParamU8( id: ParamId, value:  u8)
+        fn setParamU16(id: ParamId, value: u16)
+        fn setParamU32(id: ParamId, value: u32)
+        fn setParamU64(id: ParamId, value: u64)
+        fn setParamI8( id: ParamId, value:  i8)
+        fn setParamI16(id: ParamId, value: i16)
+        fn setParamI32(id: ParamId, value: i32)
+        fn setParamI64(id: ParamId, value: i64)
+        fn setParamF32(id: ParamId, value: f32)
+        fn setParamF64(id: ParamId, value: f64)
+    }
+}
+
+

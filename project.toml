@@ -1,7 +1,7 @@
 [project]
 name = "default"
 master = "master"
-common_modules = ["core", "tm", "fwt", "exc", "clk", "nav", "pvu"]
+common_modules = ["core", "tm", "fwt", "exc", "clk", "pvu", "param"]
 mcc_id = 0
 module_dirs = [
   "modules/photon/core",
@@ -15,6 +15,7 @@ module_dirs = [
   "modules/photon/fl",
   "modules/photon/grp",
   "modules/photon/usm",
+  "modules/photon/param",
 ]
 
 [[devices]]
@@ -22,7 +23,7 @@ name = "master"
 id = 1
 cmd_targets = ["slave1", "master"]
 tm_sources = ["slave1", "master"]
-modules = ["test", "fl", "grp", "usm"]
+modules = ["test", "fl", "grp", "usm", "nav"]
 
 [[devices]]
 name = "slave1"
