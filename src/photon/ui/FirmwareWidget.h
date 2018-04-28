@@ -20,6 +20,11 @@
 
 class QTreeView;
 class QCheckBox;
+class QLineEdit;
+
+namespace photongen {
+class Validator;
+}
 
 namespace photon {
 
@@ -48,8 +53,11 @@ public:
     void applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater);
 
     void setRootCmdNode(const ValueInfoCache* cache, Node* root);
+    void setValidator(photongen::Validator* validator);
 
     void acceptPacketResponse(const PacketResponse& response);
+private:
+    void sendPvuScriptCommand(const std::string& name, bool autoremove, bool autostart, const bmcl::Buffer& scriptBuffer);
 
 private slots:
     void nodeContextMenuRequested(const QPoint& pos);
@@ -63,13 +71,24 @@ private:
     QTreeView* _scriptEditWidget;
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
+
+    QTreeView* _pvuScriptEditWidget;
+    QLineEdit* _pvuScriptNameWidget;
+    QCheckBox* _autoremovePvuScript;
+    QCheckBox* _autostartPvuScript;
+
     QCheckBox* _autoScrollBox;
+
+    Rc<const photongen::Validator> _validator;
+
     Rc<ScriptNode> _scriptNode;
+    Rc<ScriptNode> _pvuScriptNode;
     Rc<ScriptResultNode> _scriptResultNode;
     Rc<const ValueInfoCache> _cache;
     std::unique_ptr<QNodeViewModel> _paramViewModel;
     std::unique_ptr<QNodeViewModel> _eventViewModel;
     std::unique_ptr<QCmdModel> _scriptEditModel;
+    std::unique_ptr<QCmdModel> _pvuScriptEditModel;
     std::unique_ptr<QNodeModel> _cmdViewModel;
     std::unique_ptr<QNodeModel> _scriptResultModel;
 };

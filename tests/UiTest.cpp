@@ -173,6 +173,7 @@ caf::behavior UiActor::make_behavior()
                 delete _validator;
             }
             _validator = new photongen::Validator(update->project(), update->device());
+            _widget->setValidator(_validator);
             _testSub = spawn(testNamedSubActor, _validator);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);

@@ -15,6 +15,9 @@
 #include "photon/groundcontrol/Packet.h"
 #include "photon/model/CoderState.h"
 
+#include "photongen/groundcontrol/Validator.hpp"
+#include "photongen/groundcontrol/pvu/Script.hpp"
+
 #include <QWidget>
 
 #include <QVBoxLayout>
@@ -27,6 +30,8 @@
 #include <QMenu>
 #include <QInputDialog>
 #include <QCheckBox>
+#include <QTabWidget>
+#include <QLabel>
 
 #include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
@@ -56,21 +61,38 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     buttonLayout->addWidget(sendButton);
     buttonLayout->addStretch();
 
+    auto tabWidget = new QTabWidget();
+
     _scriptNode.reset(new ScriptNode(bmcl::None));
-    QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
-        bmcl::Buffer dest;
-        dest.reserve(2048);
-        CoderState ctx(OnboardTime::now());
-        if (_scriptNode->encode(&ctx, &dest)) {
-            PacketRequest req;
-            req.streamType = StreamType::Cmd;
-            req.payload = bmcl::SharedBytes::create(dest);
-            setEnabled(false);
-            emit reliablePacketQueued(req);
-        } else {
-            QString err = "Error while encoding cmd: ";
-            err.append(ctx.error().c_str());
-            QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
+    QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this, tabWidget]() {
+        if (tabWidget->currentIndex() == 0) {
+            bmcl::Buffer dest;
+            dest.reserve(2048);
+            CoderState ctx(OnboardTime::now());
+            if (_scriptNode->encode(&ctx, &dest)) {
+                PacketRequest req;
+                req.streamType = StreamType::Cmd;
+                req.payload = bmcl::SharedBytes::create(dest);
+                setEnabled(false);
+                emit reliablePacketQueued(req);
+            }
+            else {
+                QString err = "Error while encoding cmd: ";
+                err.append(ctx.error().c_str());
+                QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
+            }
+        }
+        else {
+            bmcl::Buffer dest;
+            dest.reserve(1024);
+            CoderState ctx(OnboardTime::now());
+            if (!_pvuScriptNode->encode(&ctx, &dest)) {
+                QString err = "Error while encoding cmd: ";
+                err.append(ctx.error().c_str());
+                QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
+                return;
+            }
+            sendPvuScriptCommand(_pvuScriptNameWidget->text().toStdString(), _autoremovePvuScript->isChecked(), _autostartPvuScript->isChecked(), dest);
         }
     });
 
@@ -130,10 +152,54 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptResultWidget->setRootIndex(_scriptResultModel->index(0, 0));
     _scriptResultWidget->setColumnHidden(3, true);
 
+    QWidget* krlCmdWidget = new QWidget();
+    QVBoxLayout* krlCmdLayout = new QVBoxLayout();
+    krlCmdLayout->addWidget(_scriptEditWidget);
+    krlCmdLayout->addWidget(_scriptResultWidget);
+    krlCmdWidget->setLayout(krlCmdLayout);
+
+    _pvuScriptNode.reset(new ScriptNode(bmcl::None));
+    _pvuScriptEditWidget = new QTreeView();
+    _pvuScriptNameWidget = new QLineEdit();
+    _pvuScriptNameWidget->setMaxLength(16);
+    _pvuScriptNameWidget->setText("Script");
+
+    _pvuScriptEditModel = bmcl::makeUnique<QCmdModel>(_pvuScriptNode.get());
+    _pvuScriptEditModel->setEditable(true);
+    _pvuScriptEditWidget->setModel(_pvuScriptEditModel.get());
+    _pvuScriptEditWidget->setItemDelegate(new QModelItemDelegate<Node>(_pvuScriptEditWidget));
+    _pvuScriptEditWidget->setAlternatingRowColors(true);
+    _pvuScriptEditWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    _pvuScriptEditWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _pvuScriptEditWidget->setDropIndicatorShown(true);
+    _pvuScriptEditWidget->setDragEnabled(true);
+    _pvuScriptEditWidget->setDragDropMode(QAbstractItemView::DragDrop);
+    _pvuScriptEditWidget->viewport()->setAcceptDrops(true);
+    _pvuScriptEditWidget->setAcceptDrops(true);
+    _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
+    _pvuScriptEditWidget->expandToDepth(1);
+    _pvuScriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    _pvuScriptEditWidget->setColumnHidden(3, true);
+
+    _autostartPvuScript = new QCheckBox("Auto remove");
+    _autoremovePvuScript = new QCheckBox("Auto start");
+
+    QWidget* pvuEditWidget = new QWidget();
+    auto pvuEditLayout = new QGridLayout();
+    pvuEditLayout->addWidget(new QLabel("Script Name:"), 0, 0, 1, 1);
+    pvuEditLayout->addWidget(_pvuScriptNameWidget, 0, 1, 1, 1);
+    pvuEditLayout->addWidget(_autoremovePvuScript, 0, 2, 1, 1);
+    pvuEditLayout->addWidget(_autostartPvuScript, 0, 3, 1, 1);
+    pvuEditLayout->addWidget(_pvuScriptEditWidget, 1, 0, 1, 4);
+
+    pvuEditWidget->setLayout(pvuEditLayout);
+
+    tabWidget->addTab(krlCmdWidget, "KRL");
+    tabWidget->addTab(pvuEditWidget, "PVU");
+
     auto rightSplitter = new QSplitter(Qt::Vertical);
     rightSplitter->addWidget(_cmdViewWidget);
-    rightSplitter->addWidget(_scriptEditWidget);
-    rightSplitter->addWidget(_scriptResultWidget);
+    rightSplitter->addWidget(tabWidget);
 
     _paramViewWidget = new QTreeView;
     _paramViewWidget->setAcceptDrops(true);
@@ -198,6 +264,35 @@ void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
     setEnabled(true);
 }
 
+void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremove, bool autostart, const bmcl::Buffer& scriptBuffer)
+{
+    std::vector<char> charName;
+    charName.resize(name.size());
+    memcpy(charName.data(), name.data(), name.size());
+
+    photongen::pvu::ScriptDesc desc(charName, autoremove, autostart);
+    desc.setName(charName); //HACK
+    photongen::pvu::ScriptBody scriptBody;
+    scriptBody.resize(scriptBuffer.size());
+    memcpy(scriptBody.data(), scriptBuffer.data(), scriptBuffer.size());
+
+    bmcl::Buffer dest;
+    dest.reserve(1024);
+    CoderState ctx(OnboardTime::now());
+    if (_validator->encodeCmdPvuAddScript(desc, scriptBody, &dest, &ctx))
+    {
+        PacketRequest req;
+        req.streamType = StreamType::Cmd;
+        req.payload = bmcl::SharedBytes::create(dest);
+        setEnabled(false);
+        emit reliablePacketQueued(req);
+
+        _pvuScriptEditModel->reset();
+        _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
+
+    }
+}
+
 void FirmwareWidget::nodeContextMenuRequested(const QPoint& pos)
 {
     auto index = _scriptEditWidget->indexAt(pos);
@@ -236,6 +331,11 @@ void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
     _cmdViewModel->setRoot(root);
     _cmdViewWidget->expandToDepth(0);
     _cache.reset(cache);
+}
+
+void FirmwareWidget::setValidator(photongen::Validator* validator)
+{
+    _validator = validator;
 }
 
 void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater)
