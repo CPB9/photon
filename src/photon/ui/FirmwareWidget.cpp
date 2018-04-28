@@ -333,7 +333,7 @@ void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
     _cache.reset(cache);
 }
 
-void FirmwareWidget::setValidator(photongen::Validator* validator)
+void FirmwareWidget::setValidator(const Rc<photongen::Validator>& validator)
 {
     _validator = validator;
 }

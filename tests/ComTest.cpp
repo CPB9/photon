@@ -28,6 +28,7 @@ public:
     SerialStream(caf::actor_config& cfg, asio::serial_port&& serial)
         : caf::blocking_actor(cfg)
         , _serial(std::move(serial))
+        , _isRunning(true)
     {
     }
 
@@ -50,6 +51,12 @@ public:
                     [this](StartAtom) {
                         _hasStarted = true;
                     },
+                    [&](const caf::down_msg& x) {
+                        _isRunning = false;
+                    },
+                    [&](const caf::exit_msg& x) {
+                        _isRunning = false;
+                    },
                     caf::others >> [](caf::message_view& x) -> caf::result<caf::message> {
                         return caf::sec::unexpected_message;
                     }
@@ -61,7 +68,7 @@ public:
             }
 
             recieveFromSerial();
-        } while (true);
+        } while (_isRunning);
     }
 
     void recieveFromSerial()
@@ -83,12 +90,14 @@ public:
 
     void on_exit() override
     {
+        send_exit(_dest, caf::exit_reason::user_shutdown);
         destroy(_dest);
     }
 
     bool _hasStarted;
     caf::actor _dest;
     asio::serial_port _serial;
+    bool _isRunning;
 };
 
 using namespace decode;

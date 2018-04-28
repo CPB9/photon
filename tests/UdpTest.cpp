@@ -28,6 +28,8 @@ public:
         : caf::blocking_actor(cfg)
         , _socket(std::move(socket))
         , _endpoint(std::move(endpoint))
+        , _isRunning(true)
+
     {
         _socket.non_blocking(true);
     }
@@ -53,6 +55,12 @@ public:
                     [this](StartAtom) {
                         _hasStarted = true;
                     },
+                    [&](const caf::down_msg& x) {
+                        _isRunning = false;
+                    },
+                    [&](const caf::exit_msg& x) {
+                        _isRunning = false;
+                    },
                     caf::others >> [](caf::message_view& x) -> caf::result<caf::message> {
                         return caf::sec::unexpected_message;
                     }
@@ -64,7 +72,7 @@ public:
             }
 
             recieveFromSocket();
-        } while (true);
+        } while (_isRunning);
     }
 
     void recieveFromSocket()
@@ -75,7 +83,7 @@ public:
         std::size_t size = _socket.receive_from(asio::buffer(buf), endpoint, 0, err);
         if (err) {
             if (err == asio::error::would_block) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 return;
             }
             BMCL_CRITICAL() << "error recieving packet: " << err.message();
@@ -95,6 +103,7 @@ public:
 
     void on_exit() override
     {
+        send_exit(_dest, caf::exit_reason::user_shutdown);
         destroy(_dest);
     }
 
@@ -102,6 +111,7 @@ public:
     caf::actor _dest;
     udp::socket _socket;
     udp::endpoint _endpoint;
+    bool _isRunning;
 };
 
 using namespace decode;

@@ -53,7 +53,7 @@ public:
     void applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater);
 
     void setRootCmdNode(const ValueInfoCache* cache, Node* root);
-    void setValidator(photongen::Validator* validator);
+    void setValidator(const Rc<photongen::Validator>& validator);
 
     void acceptPacketResponse(const PacketResponse& response);
 private:
