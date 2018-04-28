@@ -50,7 +50,7 @@ private:
     caf::actor _testSub;
     bool _widgetShown;
     uint16_t _param2Value;
-    photongen::Validator* _validator;
+    photon::Rc<photongen::Validator> _validator;
 
 };
 

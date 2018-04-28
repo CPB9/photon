@@ -58,9 +58,6 @@ UiActor::UiActor(caf::actor_config& cfg, uint64_t srcAddress, uint64_t destAddre
 
 UiActor::~UiActor()
 {
-    if (_validator) {
-        delete _validator;
-    }
 }
 
 using TestMsg = photongen::test::statuses::OpParam;
@@ -169,10 +166,7 @@ caf::behavior UiActor::make_behavior()
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(update->device(), update->cache(), bmcl::None);
             _widget->setRootCmdNode(update->cache(), cmdNode.get());
-            if (_validator) {
-                delete _validator;
-            }
-            _validator = new photongen::Validator(update->project(), update->device());
+            _validator.reset(new photongen::Validator(update->project(), update->device()));
             _testSub = spawn(testNamedSubActor, _validator);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
             request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
@@ -253,6 +247,8 @@ void UiActor::on_exit()
 {
     send_exit(_gc, caf::exit_reason::user_shutdown);
     send_exit(_stream, caf::exit_reason::user_shutdown);
+    send_exit(_testSub, caf::exit_reason::user_shutdown);
     destroy(_gc);
     destroy(_stream);
+    destroy(_testSub);
 }
