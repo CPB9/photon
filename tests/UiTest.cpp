@@ -124,7 +124,7 @@ caf::behavior UiActor::make_behavior()
                     req.streamType = StreamType::Cmd;
                     req.payload = bmcl::SharedBytes::create(dest);
 
-                    request(_gc, caf::infinite, SendReliablePacketAtom::value, req).then([this](const PacketResponse& response) {
+                    request(_gc, caf::infinite, SendReliablePacketAtom::value, req).then([](const PacketResponse& response) {
                     });
                 } else {
                     BMCL_CRITICAL() << "failed to encode cmd setParam3";
@@ -136,28 +136,10 @@ caf::behavior UiActor::make_behavior()
         [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& statusUpdater, const Rc<NodeViewUpdater>& eventUpdater) {
             _widget->applyTmUpdates(statusUpdater.get(), eventUpdater.get());
         },
-        [this](UpdateTmParams, const TmParamUpdate& update) {
+        [](UpdateTmParams, const TmParamUpdate& update) {
             (void)update;
-            switch (update.kind()) {
-            case TmParamKind::None:
-                return;
-            case TmParamKind::Position: {
-                const Position& latLon = update.as<Position>();
-                (void)latLon;
-                return;
-            }
-            case TmParamKind::Orientation: {
-                const Orientation& orientation = update.as<Orientation>();
-                (void)orientation;
-                return;
-            }
-            case TmParamKind::RoutesInfo: {
-                BMCL_DEBUG() << "accepted routes info";
-                return;
-            }
-            }
         },
-        [this](LogAtom, const std::string& msg) {
+        [](LogAtom, const std::string& msg) {
             BMCL_DEBUG() << msg;
         },
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
@@ -166,14 +148,15 @@ caf::behavior UiActor::make_behavior()
             _widget->showMaximized();
             Rc<CmdModel> cmdNode = new CmdModel(update->device(), update->cache(), bmcl::None);
             _widget->setRootCmdNode(update->cache(), cmdNode.get());
+            BMCL_DEBUG() << "validator size: " << sizeof(photongen::Validator);
             _validator.reset(new photongen::Validator(update->project(), update->device()));
             _widget->setValidator(_validator);
             _testSub = spawn(testNamedSubActor, _validator);
-            request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
-            request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
-            if (_validator->statusMsgTestOpParamSub().isSome()) {
-                request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
-            }
+            //request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param2"), _testSub);
+            //request(_gc, caf::infinite, SubscribeNamedTmAtom::value, std::string("test.param3"), _testSub);
+            //if (_validator->statusMsgTestOpParamSub().isSome()) {
+            //    request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
+            //}
         },
         [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
             _widget->setRootTmNode(statusView.get(), eventView.get());
@@ -181,7 +164,7 @@ caf::behavior UiActor::make_behavior()
         [this](FirmwareErrorEventAtom, const std::string& msg) {
             _statusWidget->firmwareError(msg);
         },
-        [this](ExchangeErrorEventAtom, const std::string& msg) {
+        [](ExchangeErrorEventAtom, const std::string& msg) {
             BMCL_CRITICAL() << "exc: " + msg;
         },
         [this](FirmwareDownloadStartedEventAtom) {

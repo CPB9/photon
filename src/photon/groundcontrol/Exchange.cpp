@@ -379,7 +379,7 @@ bool Exchange::acceptPacket(const PacketHeader& header, bmcl::Bytes payload, Str
 
 bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType packetType, uint16_t counter)
 {
-    BMCL_DEBUG() << counter;
+    //BMCL_DEBUG() << counter;
     uint8_t header[8 + 8 + 8 + 8 + 8 + 2 + 8];
     bmcl::MemWriter headerWriter(header, sizeof(header));
     headerWriter.writeVarUint(_selfAddress);
