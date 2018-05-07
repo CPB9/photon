@@ -18,6 +18,15 @@ module_dirs = [
   "modules/photon/param",
 ]
 
+[component_numbers]
+core = 0
+clk = 1
+param = 2
+tm = 3
+pvu = 4
+exc = 5
+fwt = 6
+
 [[devices]]
 name = "master"
 id = 1
