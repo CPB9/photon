@@ -120,7 +120,7 @@ public:
     }
 };
 
-static Rc<DecoderAction> createMsgDecoder(const decode::StatusRegexp* part, const decode::Type* lastType)
+static Rc<DecoderAction> createMsgDecoder(const decode::VarRegexp* part, const decode::Type* lastType)
 {
     assert(part->hasAccessors());
     if (part->accessorsRange().size() == 1) {
@@ -177,7 +177,7 @@ static Rc<DecoderAction> createMsgDecoder(const decode::StatusRegexp* part, cons
 
 StatusMsgDecoder::StatusMsgDecoder(const decode::StatusMsg* msg, FieldsNode* node)
 {
-    for (const decode::StatusRegexp* part : msg->partsRange()) {
+    for (const decode::VarRegexp* part : msg->partsRange()) {
         if (!part->hasAccessors()) {
             continue;
         }

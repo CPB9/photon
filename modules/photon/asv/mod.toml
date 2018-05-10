@@ -1,0 +1,7 @@
+name = "asv"
+decode = "asv.decode"
+dest = "photon/asv"
+id = 16
+sources = [
+  "Stubs.c",
+]

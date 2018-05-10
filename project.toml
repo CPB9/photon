@@ -1,9 +1,10 @@
 [project]
 name = "default"
 master = "master"
-common_modules = ["core", "tm", "fwt", "exc", "clk", "pvu", "param"]
+common_modules = ["core", "asv", "tm", "fwt", "exc", "clk", "pvu", "param"]
 mcc_id = 0
 module_dirs = [
+  "modules/photon/asv",
   "modules/photon/core",
   "modules/photon/tm",
   "modules/photon/fwt",
@@ -26,6 +27,7 @@ tm = 3
 pvu = 4
 exc = 5
 fwt = 6
+asv = 7
 
 [[devices]]
 name = "master"

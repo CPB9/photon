@@ -1,0 +1,15 @@
+module asv
+
+import core::Error
+
+component {
+    impl {
+        fn saveVars() -> Error
+        fn loadVars() -> Error
+    }
+
+    commands {
+        fn saveVars()
+        fn loadVars()
+    }
+}
