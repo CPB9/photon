@@ -57,7 +57,7 @@ void PhotonTm_EndEventMsg()
     //TODO: check overflow
     uint16_t msgSize = eventWriter.current - eventWriter.start;
     size_t writableSize = PhotonRingBuf_WritableSize(&_eventRingBuf);
-    while ((msgSize + 2) > writableSize) {
+    while ((msgSize + 2u) > writableSize) {
         _photonTm.lostEvents++;
         _photonTm.storedEvents--;
         uint16_t currentSize;

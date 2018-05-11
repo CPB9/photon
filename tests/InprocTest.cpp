@@ -64,7 +64,7 @@ public:
                 uint8_t temp[1024];
                 PhotonWriter writer;
                 PhotonWriter_Init(&writer, temp, 1024);
-                PhotonError err = PhotonExcDevice_GenNextPacket(_dev, &writer);
+                PhotonExcDevice_GenNextPacket(_dev, &writer);
 
                 auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
                 send(_dest, RecvDataAtom::value, data);

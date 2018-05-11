@@ -253,6 +253,7 @@ static PhotonError handleFwtPacket(const PhotonExcDataHeader* header, PhotonRead
 static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)writer;
+    (void)header;
     PhotonExcDevice* self = (PhotonExcDevice*)data;
     return Photon_DeserializeTelemetry(reader, self->tmHandler, self->tmUserData);
 }

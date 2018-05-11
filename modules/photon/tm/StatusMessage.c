@@ -5,6 +5,7 @@
 
 PhotonError PhotonTmStatusMessage_Encode(PhotonTmStatusMessage* self, PhotonGenerator gen, void* data, PhotonWriter* dest)
 {
+    (void)self;
     if (PhotonWriter_WritableSize(dest) < 2) {
         return PhotonError_NotEnoughSpace;
     }

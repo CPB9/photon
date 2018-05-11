@@ -79,6 +79,7 @@ PhotonExcClientError PhotonExc_RegisterSlave(uint64_t id, PhotonExcDevice** devi
 
 PhotonExcClientError PhotonExc_RemoveClient(uint64_t id)
 {
+    (void)id;
     return PhotonExcClientError_Ok;
 }
 
