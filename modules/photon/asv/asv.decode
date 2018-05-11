@@ -12,4 +12,8 @@ component {
         fn saveVars()
         fn loadVars()
     }
+
+    events {
+        [loadError, true]: {err: Error},
+    }
 }

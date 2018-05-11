@@ -1,10 +1,10 @@
+#ifdef PHOTON_STUB
+
 #include "photongen/onboard/asv/Asv.Component.h"
 #include "photongen/onboard/Autosave.inc.c"
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef PHOTON_STUB
 
 static const char* varPath = "photon-model-vars-" PHOTON_DEVICE_NAME ".pasv";
 
