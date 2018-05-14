@@ -87,7 +87,6 @@ caf::behavior TmState::make_behavior()
                 }
                 sub.node = valueNode;
             }
-            delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
         },
         [this](RecvPacketPayloadAtom, const PacketHeader& header, const bmcl::SharedBytes& data) {
             acceptData(header, data.view());
@@ -154,7 +153,6 @@ void TmState::pushTmUpdates()
         send(sub.actor, sub.node->value(), sub.path);
     }
     _updateCount++;
-    delayed_send(this, std::chrono::milliseconds(1000), PushTmUpdatesAtom::value, _updateCount);
 }
 
 template <typename T>
@@ -218,5 +216,6 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
         }
 
     }
+    pushTmUpdates();
 }
 }

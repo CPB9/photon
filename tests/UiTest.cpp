@@ -216,7 +216,7 @@ caf::behavior UiActor::make_behavior()
             delayed_send(_stream, std::chrono::milliseconds(100), StartAtom::value);
             delayed_send(_gc, std::chrono::milliseconds(200), StartAtom::value);
             delayed_send(this, std::chrono::milliseconds(10), RepeatEventLoopAtom::value);
-            delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
+            //delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
             //send(_gc, EnableLoggindAtom::value, true);
         },
     };
