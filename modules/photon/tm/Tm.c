@@ -173,6 +173,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             }
             return PhotonError_Ok;
         } else {
+            selectNextMessage();
             return rv;
         }
     }

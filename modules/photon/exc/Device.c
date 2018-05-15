@@ -109,9 +109,18 @@ static PhotonError genCounterCorrectionReceiptPayload(void* data, PhotonWriter* 
 
 void PhotonExcDevice_AcceptInput(PhotonExcDevice* self, const void* src, size_t size)
 {
-    //FIXME: return error if size > ringbuf size
-    if (size > PhotonRingBuf_WritableSize(&self->inRingBuf)) {
-        PHOTON_WARNING("input ringbuf overflow");
+    size_t writableSize = PhotonRingBuf_WritableSize(&self->inRingBuf);
+    if (size > writableSize) {
+        size_t maxSize = self->inRingBuf.size;
+        if (size > maxSize) {
+            size_t delta = size - maxSize;
+            PHOTON_WARNING("input ringbuf smaller then packet: %u, %u, %u", (unsigned)size, (unsigned)maxSize, (unsigned)delta);
+            src = (const uint8_t*)src + delta;
+            size = maxSize;
+        } else {
+            size_t delta = size - writableSize;
+            PHOTON_WARNING("input ringbuf overflow: %u, %u, %u", (unsigned)size, (unsigned)writableSize, (unsigned)delta);
+        }
     }
     PhotonRingBuf_Write(&self->inRingBuf, src, size);
 
