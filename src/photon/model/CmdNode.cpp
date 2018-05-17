@@ -114,6 +114,14 @@ bool ScriptNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
     return true;
 }
 
+void ScriptNode::removeCmd(const CmdNode* cmd)
+{
+    auto it = std::find(_nodes.begin(), _nodes.end(), cmd);
+    if (it != _nodes.end()) {
+        _nodes.erase(it);
+    }
+}
+
 void ScriptNode::moveNode(std::size_t i1, std::size_t i2)
 {
     std::swap(_nodes[i1], _nodes[i2]);

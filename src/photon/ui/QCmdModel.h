@@ -38,6 +38,9 @@ public:
     }
 
     void resizeNode(const QModelIndex& index, size_t size);
+    void removeCmd(const QModelIndex& idx);
+
+    static bool isCmdIndex(const QModelIndex& idx);
 
 signals:
     void cmdAdded(const QModelIndex& idx);

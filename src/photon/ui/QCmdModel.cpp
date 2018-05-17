@@ -91,11 +91,37 @@ bool QCmdModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, in
     return false;
 }
 
+bool QCmdModel::isCmdIndex(const QModelIndex& idx)
+{
+    Node* node = static_cast<Node*>(idx.internalPointer());
+    return dynamic_cast<CmdNode*>(node) != nullptr;
+}
+
+void QCmdModel::removeCmd(const QModelIndex& idx)
+{
+    Node* node = static_cast<Node*>(idx.internalPointer());
+    CmdNode* cmdNode = dynamic_cast<CmdNode*>(node);
+    if (!cmdNode) {
+        return;
+    }
+    bmcl::OptionPtr<Node> parentNode = cmdNode->parent();
+    if (parentNode.isNone()) {
+        return;
+    }
+    if (parentNode != _cmds.get()) {
+        return;
+    }
+    bmcl::Option<std::size_t> i = _cmds->childIndex(cmdNode);
+    if (i.isNone()) {
+        return;
+    }
+    beginRemoveRows(parent(idx), i.unwrap(), i.unwrap());
+    _cmds->removeCmd(cmdNode);
+    endRemoveRows();
+}
+
 bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
 {
-    if (parent.internalPointer() != _cmds.get()) {
-        return false;
-    }
 
     bmcl::OptionPtr<CmdNode> node = decodeQModelDrop(data);
     if (node.isSome()) {
@@ -105,6 +131,10 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
         endInsertRows();
         emit cmdAdded(indexFromNode(newNode.get(), 0));
         return true;
+    }
+
+    if (parent.internalPointer() != _cmds.get()) {
+        return false;
     }
 
     bmcl::OptionPtr<CmdNode> cmdNode = decodeQCmdModelDrop(data, parent);

@@ -40,6 +40,34 @@
 
 namespace photon {
 
+void FirmwareWidget::updateButtonsAfterTabSwitch(int index)
+{
+    if (index == 0) {
+        updateButtonsFromSelection(_scriptEditWidget->selectionModel()->selection());
+    } else {
+        updateButtonsFromSelection(_pvuScriptEditWidget->selectionModel()->selection());
+    }
+}
+
+void FirmwareWidget::updateButtonsFromSelection(const QItemSelection& selection)
+{
+    for (const QModelIndex& idx : selection.indexes()) {
+        if (QCmdModel::isCmdIndex(idx)) {
+            _removeButton->setEnabled(true);
+            return;
+        }
+    }
+    _removeButton->setEnabled(false);
+}
+
+void FirmwareWidget::updateButtons()
+{
+    auto selection = _pvuScriptEditWidget->selectionModel()->selection();
+    selection += _scriptEditWidget->selectionModel()->selection();
+
+    updateButtonsFromSelection(selection);
+}
+
 void FirmwareWidget::expandSubtree(const QAbstractItemModel* model, const QModelIndex& idx, QTreeView* view)
 {
     view->expand(idx);
@@ -48,6 +76,26 @@ void FirmwareWidget::expandSubtree(const QAbstractItemModel* model, const QModel
         QModelIndex child = model->index(i, 0, idx);
         expandSubtree(model, child, view);
     }
+}
+
+static void removeCmdFrom(const QTreeView* view, QCmdModel* model)
+{
+    auto idxs = view->selectionModel()->selection().indexes();
+    if (idxs.isEmpty()) {
+        return;
+    }
+    model->removeCmd(idxs[0]);
+}
+
+void FirmwareWidget::removeCurrentCmd()
+{
+    int i = _tabWidget->currentIndex();
+    if (i == 0) {
+        removeCmdFrom(_scriptEditWidget, _scriptEditModel.get());
+    } else {
+        removeCmdFrom(_pvuScriptEditWidget, _pvuScriptEditModel.get());
+    }
+    updateButtonsAfterTabSwitch(i);
 }
 
 FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
@@ -60,6 +108,9 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _eventViewModel = std::move(eventView);
 
     auto buttonLayout = new QHBoxLayout;
+    _removeButton = new QPushButton("Remove");
+    _removeButton->setDisabled(true);
+    connect(_removeButton, &QPushButton::clicked, this, &FirmwareWidget::removeCurrentCmd);
     auto clearButton = new QPushButton("Clear");
     auto sendButton = new QPushButton("Send");
     _autoScrollBox = new QCheckBox("Autoscroll events");
@@ -67,15 +118,17 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     buttonLayout->setDirection(QBoxLayout::LeftToRight);
     buttonLayout->addWidget(_autoScrollBox);
     buttonLayout->addStretch(1);
+    buttonLayout->addWidget(_removeButton);
     buttonLayout->addWidget(clearButton);
     buttonLayout->addWidget(sendButton);
     buttonLayout->addStretch();
 
-    auto tabWidget = new QTabWidget();
+    _tabWidget = new QTabWidget();
+    connect(_tabWidget, &QTabWidget::currentChanged, this, &FirmwareWidget::updateButtonsAfterTabSwitch);
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
-    QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this, tabWidget]() {
-        if (tabWidget->currentIndex() == 0) {
+    QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
+        if (_tabWidget->currentIndex() == 0) {
             bmcl::Buffer dest;
             dest.reserve(2048);
             CoderState ctx(OnboardTime::now());
@@ -129,12 +182,18 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     connect(_scriptEditModel.get(), &QCmdModel::cmdAdded, this, [this](const QModelIndex& idx) {
         expandSubtree(_scriptEditModel.get(), idx, _scriptEditWidget);
     });
+    connect(_scriptEditWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &FirmwareWidget::updateButtons);
 
     connect(clearButton, &QPushButton::clicked, this,
             [=]()
     {
-        _scriptEditModel->reset();
-        _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
+        if (_tabWidget->currentIndex() == 0) {
+            _scriptEditModel->reset();
+            _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
+        } else {
+            _pvuScriptEditModel->reset();
+            _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
+        }
     });
 
     _cmdViewModel = bmcl::makeUnique<QNodeModel>(emptyNode.get());
@@ -193,7 +252,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _pvuScriptEditWidget->expandToDepth(1);
     _pvuScriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     _pvuScriptEditWidget->setColumnHidden(3, true);
-
+    connect(_pvuScriptEditWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &FirmwareWidget::updateButtons);
     connect(_pvuScriptEditModel.get(), &QCmdModel::cmdAdded, this, [this](const QModelIndex& idx) {
         expandSubtree(_pvuScriptEditModel.get(), idx, _pvuScriptEditWidget);
     });
@@ -211,12 +270,12 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
 
     pvuEditWidget->setLayout(pvuEditLayout);
 
-    tabWidget->addTab(krlCmdWidget, "KRL");
-    tabWidget->addTab(pvuEditWidget, "PVU");
+    _tabWidget->addTab(krlCmdWidget, "KRL");
+    _tabWidget->addTab(pvuEditWidget, "PVU");
 
     auto rightSplitter = new QSplitter(Qt::Vertical);
     rightSplitter->addWidget(_cmdViewWidget);
-    rightSplitter->addWidget(tabWidget);
+    rightSplitter->addWidget(_tabWidget);
 
     _paramViewWidget = new QTreeView;
     _paramViewWidget->setAcceptDrops(true);

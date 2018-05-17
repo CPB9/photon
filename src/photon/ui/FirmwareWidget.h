@@ -20,7 +20,10 @@
 
 class QTreeView;
 class QCheckBox;
+class QPushButton;
 class QLineEdit;
+class QTabWidget;
+class QItemSelection;
 class QAbstractItemModel;
 
 namespace photongen {
@@ -63,12 +66,16 @@ private:
 private slots:
     void nodeContextMenuRequested(const QPoint& pos);
     void expandSubtree(const QAbstractItemModel* model, const QModelIndex& idx, QTreeView* view);
+    void updateButtons();
+    void updateButtonsAfterTabSwitch(int index);
+    void removeCurrentCmd();
 
 signals:
     void unreliablePacketQueued(const PacketRequest& packet);
     void reliablePacketQueued(const PacketRequest& packet);
 
 private:
+    void updateButtonsFromSelection(const QItemSelection& selection);
 
     QTreeView* _paramViewWidget;
     QTreeView* _eventViewWidget;
@@ -76,12 +83,15 @@ private:
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
 
+    QTabWidget* _tabWidget;
+
     QTreeView* _pvuScriptEditWidget;
     QLineEdit* _pvuScriptNameWidget;
     QCheckBox* _autoremovePvuScript;
     QCheckBox* _autostartPvuScript;
 
     QCheckBox* _autoScrollBox;
+    QPushButton* _removeButton;
 
     Rc<const photongen::Validator> _validator;
 

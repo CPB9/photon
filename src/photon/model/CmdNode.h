@@ -123,6 +123,8 @@ public:
 
     void clear();
 
+    void removeCmd(const CmdNode* cmd);
+
 private:
     bmcl::StringView _fieldName;
 };
