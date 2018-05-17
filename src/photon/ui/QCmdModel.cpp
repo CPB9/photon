@@ -90,10 +90,11 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
 {
     bmcl::OptionPtr<CmdNode> node = decodeQModelDrop(data);
     if (node.isSome()) {
-        beginInsertRows(parent, _cmds->numChildren(), _cmds->numChildren());
         auto newNode = node.unwrap()->clone(_cmds.get());
+        beginInsertRows(parent, _cmds->numChildren(), _cmds->numChildren());
         _cmds->addCmdNode(newNode.get());
         endInsertRows();
+        emit cmdAdded(indexFromNode(newNode.get(), 0));
         return true;
     }
 

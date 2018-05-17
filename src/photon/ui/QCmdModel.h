@@ -38,6 +38,10 @@ public:
     }
 
     void resizeNode(const QModelIndex& index, size_t size);
+
+signals:
+    void cmdAdded(const QModelIndex& idx);
+
 private:
     static bmcl::OptionPtr<CmdNode> decodeQModelDrop(const QMimeData* data);
     static bmcl::OptionPtr<CmdNode> decodeQCmdModelDrop(const QMimeData* data, const QModelIndex& parent);

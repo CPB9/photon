@@ -116,6 +116,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     _scriptEditWidget->setColumnHidden(3, true);
     connect(_scriptEditWidget, &QWidget::customContextMenuRequested, this, &FirmwareWidget::nodeContextMenuRequested);
+    connect(_scriptEditModel.get(), &QCmdModel::cmdAdded, _scriptEditWidget, &QTreeView::expand);
 
     connect(clearButton, &QPushButton::clicked, this,
             [=]()
@@ -180,6 +181,8 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _pvuScriptEditWidget->expandToDepth(1);
     _pvuScriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     _pvuScriptEditWidget->setColumnHidden(3, true);
+
+    connect(_pvuScriptEditModel.get(), &QCmdModel::cmdAdded, _pvuScriptEditWidget, &QTreeView::expand);
 
     _autostartPvuScript = new QCheckBox("Auto remove");
     _autoremovePvuScript = new QCheckBox("Auto start");
