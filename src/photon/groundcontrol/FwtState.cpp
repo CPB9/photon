@@ -396,8 +396,8 @@ void FwtState::readFirmware()
     Rc<decode::Diagnostics> diag = new decode::Diagnostics();
     auto project = decode::Project::decodeFromMemory(diag.get(), _desc.data(), _desc.size());
     if (project.isErr()) {
+        reportFirmwareError("Firmware decode failed");
         //TODO: restart download
-        //TODO: print errors
         stopDownload();
         return;
     }
@@ -406,8 +406,8 @@ void FwtState::readFirmware()
     _project = project.unwrap();
     auto update = ProjectUpdate::fromProjectAndName(_project.get(), _deviceName);
     if (update.isErr()) {
+        reportFirmwareError("Project update error: " + update.unwrapErr());
         //TODO: restart download
-        //TODO: print errors
         stopDownload();
         return;
     }
@@ -483,8 +483,8 @@ void FwtState::acceptHashResponse(bmcl::MemReader* src)
     send(_handler, FirmwareDownloadFinishedEventAtom::value);
     auto update = ProjectUpdate::fromProjectAndName(_project.get(), _deviceName);
     if (update.isErr()) {
+        reportFirmwareError("Project update error: " + update.unwrapErr());
         //TODO: restart download
-        //TODO: print errors
         stopDownload();
         return;
     }
