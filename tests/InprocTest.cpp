@@ -6,10 +6,7 @@
 #include <photon/groundcontrol/Atoms.h>
 #include <photon/groundcontrol/AllowUnsafeMessageType.h>
 
-#include "photongen/onboard/core/Core.Component.h"
-#include "photongen/onboard/exc/Exc.Component.h"
-#include "photongen/onboard/exc/Device.h"
-#include "photongen/onboard/asv/Asv.Component.h"
+#include "Photon.h"
 
 #include <bmcl/Assert.h>
 #include <bmcl/Logging.h>
@@ -31,18 +28,22 @@ public:
     {
         Photon_Init();
         PhotonExc_SetAddress(uavId);
+#ifdef PHOTON_HAS_MODULE_ASV
         PhotonAsv_LoadVars();
+#endif
         auto err = PhotonExc_RegisterGroundControl(mccId, &_dev);
         BMCL_ASSERT(err == PhotonExcClientError_Ok);
     }
 
     ~PhotonStream()
     {
+#ifdef PHOTON_HAS_MODULE_ASV
         BMCL_DEBUG() << "saving params";
         PhotonError rv = PhotonAsv_SaveVars();
         if (rv != PhotonError_Ok) {
             BMCL_CRITICAL() << "failed to save vars";
         }
+#endif
     }
 
     caf::behavior make_behavior() override

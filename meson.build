@@ -298,6 +298,7 @@ foreach name : photon_targets
         sources : 'tests/' + test[1],
         dependencies: [deps, gen_src_dep],
         link_with : [uitest_lib, lib],
+        cpp_args : onboard_flags + [flag],
       )
     endforeach
   endif
