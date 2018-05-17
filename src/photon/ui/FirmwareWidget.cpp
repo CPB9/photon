@@ -40,6 +40,16 @@
 
 namespace photon {
 
+void FirmwareWidget::expandSubtree(const QAbstractItemModel* model, const QModelIndex& idx, QTreeView* view)
+{
+    view->expand(idx);
+    int numRows = model->rowCount(idx);
+    for (int i = 0; i < numRows; i++) {
+        QModelIndex child = model->index(i, 0, idx);
+        expandSubtree(model, child, view);
+    }
+}
+
 FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                                std::unique_ptr<QNodeViewModel>&& eventView,
                                QWidget* parent)
@@ -116,7 +126,9 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     _scriptEditWidget->setColumnHidden(3, true);
     connect(_scriptEditWidget, &QWidget::customContextMenuRequested, this, &FirmwareWidget::nodeContextMenuRequested);
-    connect(_scriptEditModel.get(), &QCmdModel::cmdAdded, _scriptEditWidget, &QTreeView::expand);
+    connect(_scriptEditModel.get(), &QCmdModel::cmdAdded, this, [this](const QModelIndex& idx) {
+        expandSubtree(_scriptEditModel.get(), idx, _scriptEditWidget);
+    });
 
     connect(clearButton, &QPushButton::clicked, this,
             [=]()
@@ -182,7 +194,9 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _pvuScriptEditWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     _pvuScriptEditWidget->setColumnHidden(3, true);
 
-    connect(_pvuScriptEditModel.get(), &QCmdModel::cmdAdded, _pvuScriptEditWidget, &QTreeView::expand);
+    connect(_pvuScriptEditModel.get(), &QCmdModel::cmdAdded, this, [this](const QModelIndex& idx) {
+        expandSubtree(_pvuScriptEditModel.get(), idx, _pvuScriptEditWidget);
+    });
 
     _autostartPvuScript = new QCheckBox("Auto remove");
     _autoremovePvuScript = new QCheckBox("Auto start");

@@ -21,6 +21,7 @@
 class QTreeView;
 class QCheckBox;
 class QLineEdit;
+class QAbstractItemModel;
 
 namespace photongen {
 class Validator;
@@ -61,11 +62,14 @@ private:
 
 private slots:
     void nodeContextMenuRequested(const QPoint& pos);
+    void expandSubtree(const QAbstractItemModel* model, const QModelIndex& idx, QTreeView* view);
+
 signals:
     void unreliablePacketQueued(const PacketRequest& packet);
     void reliablePacketQueued(const PacketRequest& packet);
 
 private:
+
     QTreeView* _paramViewWidget;
     QTreeView* _eventViewWidget;
     QTreeView* _scriptEditWidget;
