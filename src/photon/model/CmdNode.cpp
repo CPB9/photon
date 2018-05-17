@@ -114,7 +114,7 @@ bool ScriptNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
     return true;
 }
 
-void ScriptNode::swapNodes(std::size_t i1, std::size_t i2)
+void ScriptNode::moveNode(std::size_t i1, std::size_t i2)
 {
     std::swap(_nodes[i1], _nodes[i2]);
 }

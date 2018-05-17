@@ -119,7 +119,7 @@ public:
 
     bmcl::StringView fieldName() const override;
 
-    void swapNodes(std::size_t i1, std::size_t i2);
+    void moveNode(std::size_t i1, std::size_t i2);
 
     void clear();
 

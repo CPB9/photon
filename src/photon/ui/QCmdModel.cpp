@@ -10,6 +10,7 @@
 #include "photon/model/CmdNode.h"
 
 #include <bmcl/OptionPtr.h>
+#include <bmcl/Logging.h>
 
 #include <QMimeData>
 
@@ -75,6 +76,10 @@ bmcl::OptionPtr<CmdNode> QCmdModel::decodeQCmdModelDrop(const QMimeData* data, c
 
 bool QCmdModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
 {
+    if (parent.internalPointer() != _cmds.get()) {
+        return false;
+    }
+
     if (decodeQModelDrop(data).isSome()) {
         return true;
     }
@@ -88,6 +93,10 @@ bool QCmdModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, in
 
 bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent)
 {
+    if (parent.internalPointer() != _cmds.get()) {
+        return false;
+    }
+
     bmcl::OptionPtr<CmdNode> node = decodeQModelDrop(data);
     if (node.isSome()) {
         auto newNode = node.unwrap()->clone(_cmds.get());
@@ -100,8 +109,11 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
 
     bmcl::OptionPtr<CmdNode> cmdNode = decodeQCmdModelDrop(data, parent);
     if (cmdNode.isSome()) {
+        if (_cmds->numChildren() <= 1) {
+            return false;;
+        }
         if (row == -1) {
-            row = 0;
+            row = _cmds->numChildren() - 1;
         }
         if (row > 0 && std::size_t(row) >= _cmds->numChildren()) {
             row = _cmds->numChildren() - 1;
@@ -111,7 +123,7 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
             return false;
         }
         beginMoveRows(parent, currentRow.unwrap(), currentRow.unwrap(), parent, row);
-        _cmds->swapNodes(currentRow.unwrap(), row);
+        _cmds->moveNode(currentRow.unwrap(), row);
         endMoveRows();
         return true;
     }
