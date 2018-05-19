@@ -19,14 +19,18 @@ enum State {
 }
 
 enum Frames {
-    BuildStateFrame         = 1,
-    BuildLogOutputFrame     = 2,
-    BuildLogErrorsFrame     = 3,
-    AppsInfoFrame           = 4,
-    CurrentAppFrame         = 5,
-    ProjectInfoFrame        = 6,
-    CurrentAppOutputFrame   = 7,
-    SystemInfoFrame         = 8,
+    BuildStateFrame                 =  1,
+    ApplicationsInfoFrame           =  2,
+    CurrentApplicationInfoFrame     =  3,
+    CurrentApplicationStateFrame    =  4,
+    ProjectInfoFrame                =  5,
+    SystemInfoFrame                 =  6,
+
+    BuildLogOutputFrame             =  7,
+    BuildLogErrorsFrame             =  8,
+    CurrentApplicationOutputFrame   =  9,
+    CurrentApplicationStatusFrame   = 10,
+    AppRemovingFrame                = 11,
 }
 
 struct BuildState {
@@ -44,7 +48,7 @@ type TextLinesList  = &[char;768];
 /// Date in Unix-time seconds
 type TimeStamp      = i64;
 
-struct AppsInfo {
+struct ApplicationsInfo {
     language        : LanguageCodes,
     appsList        : TextLinesList,
     appsFlags       : &[u8;384],
@@ -87,11 +91,17 @@ enum ApplicationState {
     Crashed     = 4,
 }
 
-struct CurrentApplication {
+/// Main info about current application
+struct CurrentApplicationInfo {
     language     : LanguageCodes,
     name         : TextLine,
     state        : ApplicationState,
     pid          : i64,
+}
+/// State of current application
+struct CurrentApplicationState {
+    language     : LanguageCodes,
+    state        : ApplicationState,
 }
 /// Info about installed project with specified name
 struct ProjectInfo {
@@ -108,31 +118,36 @@ struct ProjectInfo {
 
 component {
     variables {
-        buildState  : BuildState,
-        appsInfo    : AppsInfo,
-        currentApp  : CurrentApplication,
-        projectInfo : ProjectInfo,
-        systemInfo  : SystemInfo,
+        buildState              : BuildState,
+        applicationsInfo        : ApplicationsInfo,
+        currentApplicationInfo  : CurrentApplicationInfo,
+        currentApplicationState : CurrentApplicationState,
+        projectInfo             : ProjectInfo,
+        systemInfo              : SystemInfo,
     }
 
     statuses {
-        [buildState,    1, false]: {buildState},
-        [appsInfo,      1, false]: {appsInfo},
-        [currentApp,    1, false]: {currentApp},
-        [projectInfo,   1, false]: {projectInfo},
-        [systemInfo,    1, false]: {systemInfo},
+        [buildState,                1, false]: {buildState},
+        [applicationsInfo,          1, false]: {applicationsInfo},
+        [currentApplicationInfo,    1, false]: {currentApplicationInfo},
+        [currentApplicationState,   1, false]: {currentApplicationState},
+        [projectInfo,               1, false]: {projectInfo},
+        [systemInfo,                1, false]: {systemInfo},
     }
 
     events {
-        [buildLogOutput,    true]: {output : LogMessage},
-        [buildLogErrors,    true]: {errors : LogMessage},
-        [currentAppOutput,  true]: {output : LogMessage},
-        [currentAppStatus,  true]: {output : LogMessage},
-        [appRemoving,       true]: {state : State, project : TextLine, files : LogMessage},
+        [buildLogOutput,            true]: {output : LogMessage},
+        [buildLogErrors,            true]: {errors : LogMessage},
+        [currentApplicationOutput,  true]: {output : LogMessage},
+        [currentApplicationStatus,  true]: {output : LogMessage},
+        [appRemoving,               true]: {state : State, project : TextLine, files : LogMessage},
     }
 
     commands {
-        fn requestStatus(language : LanguageCodes, statusCode: u8)
+/// Request data frame
+        fn updateInfo(language : LanguageCodes, frame: Frames)
+/// Confirm receiving of data frame
+        fn confirmReceiving(frame: Frames)
 
         fn getFile(language : LanguageCodes, fileId: varuint)
         fn unpackFile(language : LanguageCodes)
