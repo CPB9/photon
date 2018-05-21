@@ -147,7 +147,7 @@ component {
 /// Request data frame
         fn updateInfo(language : LanguageCodes, frame: Frames)
 /// Confirm receiving of data frame
-        fn confirmReceiving(frame: Frames)
+        fn confirmReceiving(language : LanguageCodes, frame: Frames)
 
         fn getFile(language : LanguageCodes, fileId: varuint)
         fn unpackFile(language : LanguageCodes)
