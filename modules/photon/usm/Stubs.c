@@ -10,7 +10,12 @@ void PhotonUsm_Tick()
 {
 }
 
-PhotonError PhotonUsm_ExecCmd_RequestStatus(PhotonUsmLanguageCodes language, uint8_t statusCode)
+PhotonError PhotonUsm_ExecCmd_UpdateInfo(PhotonUsmLanguageCodes language, uint8_t statusCode)
+{
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonUsm_ExecCmd_ConfirmReceiving(PhotonUsmLanguageCodes language, PhotonUsmFrames frame)
 {
     return PhotonError_Ok;
 }
