@@ -130,6 +130,11 @@ bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
     if (!valueNode) {
         return false;
     }
+    auto it = std::find_if(_namedSubs.begin(), _namedSubs.end(), [path](const NamedSub& sub) {return sub.path == path; });
+    if (it != _namedSubs.end())
+    {
+        _namedSubs.erase(it); 
+    }
     _namedSubs.emplace_back(valueNode, path, dest);
     return true;
 }
