@@ -14,6 +14,7 @@
 #include "photon/groundcontrol/Packet.h"
 
 #include <bmcl/Fwd.h>
+#include <bmcl/Option.h>
 
 #include <caf/event_based_actor.hpp>
 #include <caf/response_promise.hpp>
@@ -65,6 +66,7 @@ struct StreamState {
     caf::actor client;
     StreamType type;
     std::size_t checkId;
+    bmcl::Option<uint16_t> lastSync;
 };
 
 class Exchange : public caf::event_based_actor {

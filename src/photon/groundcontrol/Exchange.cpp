@@ -277,6 +277,7 @@ bool Exchange::handlePayload(bmcl::Bytes data)
 
 void Exchange::handleReceipt(const PacketHeader& header, ReceiptType type, bmcl::Bytes payload, StreamState* state, QueuedPacket* packet)
 {
+    state->lastSync = bmcl::None;
     PacketResponse resp;
     resp.type = type;
     resp.counter = header.counter;
@@ -344,6 +345,12 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
         if (newCounter == state->currentReliableUplinkCounter) {
             return true;
         }
+        if (state->lastSync.isSome()) {
+            if (newCounter == state->lastSync.unwrap()) {
+                return true;
+            }
+        }
+        state->lastSync.emplace(newCounter);
         state->currentReliableUplinkCounter = newCounter;
         checkQueue(state);
         return true;
