@@ -1248,7 +1248,7 @@ bool NumericValueNode<T>::emplace(OnboardTime time, uintmax_t value)
 template <typename T>
 bool NumericValueNode<T>::emplace(OnboardTime time, double value)
 {
-    if (value >= std::numeric_limits<T>::min() && value <= std::numeric_limits<T>::max()) {
+    if (value >= std::numeric_limits<T>::lowest() && value <= std::numeric_limits<T>::max()) {
         _value.emplace(time, value);
         return true;
     }
