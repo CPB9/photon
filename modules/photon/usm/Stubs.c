@@ -6,7 +6,9 @@ void PhotonUsm_Init() {}
 void PhotonUsm_Tick() {}
 
 PhotonError PhotonUsm_ExecCmd_UpdateInfo(PhotonUsmLanguageCodes language, PhotonUsmFrames frame) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_UpdateInfoMultiple(PhotonUsmLanguageCodes language, uint64_t frames) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_ConfirmReceiving(PhotonUsmLanguageCodes language, PhotonUsmFrames frame) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_ConfirmReceivingMultiple(PhotonUsmLanguageCodes language, uint64_t frames) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_GetFile(PhotonUsmLanguageCodes language, uint64_t fileId) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_UnpackFile(PhotonUsmLanguageCodes language) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_BuildTarget(PhotonUsmLanguageCodes language) { return PhotonError_NotImplemented; }

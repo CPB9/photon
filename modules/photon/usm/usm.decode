@@ -19,18 +19,18 @@ enum State {
 }
 
 enum Frames {
-    BuildStateFrame                 =  1,
-    ApplicationsInfoFrame           =  2,
-    CurrentApplicationInfoFrame     =  3,
-    CurrentApplicationStateFrame    =  4,
-    ProjectInfoFrame                =  5,
-    SystemInfoFrame                 =  6,
+    BuildStateFrame                 =    1,
+    ApplicationsInfoFrame           =    2,
+    CurrentApplicationInfoFrame     =    4,
+    CurrentApplicationStateFrame    =    8,
+    ProjectInfoFrame                =   16,
+    SystemInfoFrame                 =   32,
 
-    BuildLogOutputFrame             =  7,
-    BuildLogErrorsFrame             =  8,
-    CurrentApplicationOutputFrame   =  9,
-    CurrentApplicationStatusFrame   = 10,
-    AppRemovingFrame                = 11,
+    BuildLogOutputFrame             =   64,
+    BuildLogErrorsFrame             =  128,
+    CurrentApplicationOutputFrame   =  256,
+    CurrentApplicationStatusFrame   =  512,
+    AppRemovingFrame                = 1024,
 }
 
 struct BuildState {
@@ -146,8 +146,12 @@ component {
     commands {
 /// Request data frame
         fn updateInfo(language : LanguageCodes, frame: Frames)
+/// Request many data frames
+        fn updateInfoMultiple(language : LanguageCodes, frames : varuint)
 /// Confirm receiving of data frame
         fn confirmReceiving(language : LanguageCodes, frame: Frames)
+/// Confirm receiving of many data frames
+        fn confirmReceivingMultiple(language : LanguageCodes, frames: varuint)
 
         fn getFile(language : LanguageCodes, fileId: varuint)
         fn unpackFile(language : LanguageCodes)
