@@ -42,8 +42,9 @@ Exchange::Exchange(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAd
     : caf::event_based_actor(cfg)
     , _fwtStream(StreamType::Firmware)
     , _cmdStream(StreamType::Cmd)
-    , _tmStream(StreamType::Telem)
     , _userStream(StreamType::User)
+    , _dfuStream(StreamType::Dfu)
+    , _tmStream(StreamType::Telem)
     , _gc(gc)
     , _sink(dataSink)
     , _handler(handler)
@@ -87,11 +88,14 @@ caf::behavior Exchange::make_behavior()
             case StreamType::Cmd:
                 state = &_cmdStream;
                 break;
-            case StreamType::Telem:
-                state = &_tmStream;
-                break;
             case StreamType::User:
                 state = &_userStream;
+                break;
+            case StreamType::Dfu:
+                state = &_dfuStream;
+                break;
+            case StreamType::Telem:
+                state = &_tmStream;
                 break;
             }
             if (state->queue.empty()) {
@@ -233,10 +237,13 @@ bool Exchange::handlePayload(bmcl::Bytes data)
         header.streamType = StreamType::Cmd;
         break;
     case 2:
-        header.streamType = StreamType::Telem;
+        header.streamType = StreamType::User;
         break;
     case 3:
-        header.streamType = StreamType::User;
+        header.streamType = StreamType::Dfu;
+        break;
+    case 4:
+        header.streamType = StreamType::Telem;
         break;
     default:
         reportError("recieved invalid packet type");
@@ -263,10 +270,12 @@ bool Exchange::handlePayload(bmcl::Bytes data)
         return acceptPacket(header, userData, &_fwtStream);
     case StreamType::Cmd:
         return acceptPacket(header, userData, &_cmdStream);
-    case StreamType::Telem:
-        return acceptPacket(header, userData, &_tmStream);
     case StreamType::User:
         return acceptPacket(header, userData, &_userStream);
+    case StreamType::Dfu:
+        return acceptPacket(header, userData, &_dfuStream);
+    case StreamType::Telem:
+        return acceptPacket(header, userData, &_tmStream);
     default:
         reportError("recieved invalid packet type: " + std::to_string(streamType));
         return false;
@@ -465,11 +474,14 @@ void Exchange::sendUnreliablePacket(const PacketRequest& req)
     case StreamType::Cmd:
         sendUnreliablePacket(req, &_cmdStream);
         return;
-    case StreamType::Telem:
-        sendUnreliablePacket(req, &_tmStream);
-        return;
     case StreamType::User:
         sendUnreliablePacket(req, &_userStream);
+        return;
+    case StreamType::Dfu:
+        sendUnreliablePacket(req, &_dfuStream);
+        return;
+    case StreamType::Telem:
+        sendUnreliablePacket(req, &_tmStream);
         return;
     }
 }
@@ -481,10 +493,12 @@ caf::response_promise Exchange::queueReliablePacket(const PacketRequest& req)
         return queueReliablePacket(req, &_fwtStream);
     case StreamType::Cmd:
         return queueReliablePacket(req, &_cmdStream);
-    case StreamType::Telem:
-        return queueReliablePacket(req, &_tmStream);
     case StreamType::User:
         return queueReliablePacket(req, &_userStream);
+    case StreamType::Dfu:
+        return queueReliablePacket(req, &_dfuStream);
+    case StreamType::Telem:
+        return queueReliablePacket(req, &_tmStream);
     }
     bmcl::panic("unreachable"); //TODO: add macro
 }

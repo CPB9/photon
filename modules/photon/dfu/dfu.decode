@@ -1,0 +1,32 @@
+module dfu
+
+import core::{Error, Reader, Writer}
+import exc::{DataHeader}
+
+enum SectorType {
+    Bootloader = 0,
+    SectorData = 1,
+    Firmware = 2,
+    UserData = 3,
+}
+
+struct SectorDesc {
+    start: u64,
+    size: varuint,
+    kind: SectorType,
+}
+
+type AllSectorsDesc = &[SectorDesc; 8];
+
+component {
+    variables {
+    }
+
+    impl {
+        fn init()
+        fn tick()
+        fn acceptCmd(header: *const DataHeader, src: *mut Reader, dest: *mut Writer) -> Error
+        fn genAnswer(dest: *mut Writer) -> Error
+        fn hasAnswers() -> bool
+    }
+}
