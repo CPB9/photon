@@ -1,0 +1,7 @@
+name = "dfu"
+decode = "dfu.decode"
+dest = "photon/dfu"
+id = 3
+sources = [
+  "Dfu.c",
+]

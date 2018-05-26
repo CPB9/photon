@@ -103,8 +103,9 @@ private:
 
     StreamState _fwtStream;
     StreamState _cmdStream;
-    StreamState _tmStream;
     StreamState _userStream;
+    StreamState _dfuStream;
+    StreamState _tmStream;
     caf::actor _gc;
     caf::actor _sink;
     caf::actor _handler;

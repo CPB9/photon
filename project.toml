@@ -18,6 +18,7 @@ module_dirs = [
   "modules/photon/usm",
   "modules/photon/param",
   "modules/photon/fcu",
+  "modules/photon/dfu",
 ]
 
 [component_numbers]
@@ -36,7 +37,7 @@ name = "master"
 id = 1
 cmd_targets = ["slave1", "master"]
 tm_sources = ["slave1", "master"]
-modules = ["test", "fl", "grp", "usm", "nav", "fcu"]
+modules = ["test", "fl", "grp", "usm", "nav", "fcu", "dfu"]
 
 [[devices]]
 name = "slave1"

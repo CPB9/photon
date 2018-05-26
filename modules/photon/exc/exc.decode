@@ -14,8 +14,9 @@ enum StreamDirection {
 enum StreamType {
     Firmware = 0,
     Cmd = 1,
-    Telem = 2,
-    User = 3,
+    User = 2,
+    Dfu = 3,
+    Telem = 4,
 }
 
 enum PacketType {
