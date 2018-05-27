@@ -12,6 +12,7 @@
 #include "photongen/onboard/exc/ReceiptType.h"
 #include "photon/exc/Utils.h"
 #include "photongen/onboard/pvu/Pvu.Component.h"
+#include "photongen/onboard/dfu/Dfu.Component.h"
 #include "photongen/onboard/tm/Tm.Component.h"
 #include "photongen/onboard/fwt/Fwt.Component.h"
 #include "photongen/onboard/clk/Clk.Component.h"
@@ -43,6 +44,7 @@ static void init(PhotonExcDevice* self, uint64_t address)
     initStream(&self->cmdStream);
     initStream(&self->telemStream);
     initStream(&self->fwtStream);
+    initStream(&self->dfuStream);
     initStream(&self->userStream);
     PhotonRingBuf_Init(&self->inRingBuf, self->inRingBufData, sizeof(self->inRingBufData));
 }
@@ -259,6 +261,12 @@ static PhotonError handleFwtPacket(const PhotonExcDataHeader* header, PhotonRead
     return PhotonFwt_AcceptCmd(header, reader, writer);
 }
 
+static PhotonError handleDfuPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
+{
+    (void)data;
+    return PhotonDfu_AcceptCmd(header, reader, writer);
+}
+
 static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)writer;
@@ -346,6 +354,15 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         }
         state = &self->telemStream;
         handler = handleTmPacket;
+        userData = self;
+        break;
+    case PhotonExcStreamType_Dfu:
+        if (self->deviceKind != PhotonExcDeviceKind_GroundControl) {
+            HANDLE_INVALID_PACKET(self, "Recieved dfu packet from device");
+            return true;
+        }
+        state = &self->dfuStream;
+        handler = handleDfuPacket;
         userData = self;
         break;
     case PhotonExcStreamType_User:
@@ -463,6 +480,12 @@ static PhotonError genFwt(void* data, PhotonWriter* dest)
     return PhotonFwt_GenAnswer(dest);
 }
 
+static PhotonError genDfu(void* data, PhotonWriter* dest)
+{
+    (void)data;
+    return PhotonDfu_GenAnswer(dest);
+}
+
 static PhotonError queueFwtPacket(PhotonExcDevice* self)
 {
     self->request.data = 0;
@@ -475,6 +498,22 @@ static PhotonError queueFwtPacket(PhotonExcDevice* self)
     self->request.header.destAddress = self->address;
 
     self->fwtStream.currentUnreliableDownlinkCounter++;
+    self->hasDataQueued = true;
+    return PhotonError_Ok;
+}
+
+static PhotonError queueDfuPacket(PhotonExcDevice* self)
+{
+    self->request.data = 0;
+    self->request.gen = genDfu;
+    self->request.header.streamDirection = PhotonExcStreamDirection_Downlink;
+    self->request.header.packetType = PhotonExcPacketType_Unreliable;
+    self->request.header.streamType = PhotonExcStreamType_Dfu;
+    self->request.header.counter = self->dfuStream.currentUnreliableDownlinkCounter;
+    self->request.header.srcAddress = PhotonExc_SelfAddress();
+    self->request.header.destAddress = self->address;
+
+    self->dfuStream.currentUnreliableDownlinkCounter++;
     self->hasDataQueued = true;
     return PhotonError_Ok;
 }
@@ -528,7 +567,10 @@ PhotonError PhotonExcDevice_GenNextPacket(PhotonExcDevice* self, PhotonWriter* d
         return e;
     }
     if (self->deviceKind == PhotonExcDeviceKind_GroundControl) {
-        if (PhotonFwt_HasAnswers()) {
+        if (PhotonDfu_HasAnswers()) {
+            queueDfuPacket(self);
+            return genPacket(self, dest);
+        } else if (PhotonFwt_HasAnswers()) {
             queueFwtPacket(self);
             return genPacket(self, dest);
         } else {
