@@ -96,6 +96,7 @@ struct Device {
     fwtStream: StreamState,
     cmdStream: StreamState,
     telemStream: StreamState,
+    dfuStream: StreamState,
     userStream: StreamState,
     deviceKind: DeviceKind,
 

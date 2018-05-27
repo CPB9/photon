@@ -16,10 +16,45 @@ struct SectorDesc {
     kind: SectorType,
 }
 
+struct SectorData {
+    magic: u64,
+    sectorToBool: u64,
+    loadSuccess: bool,
+}
+
+enum State {
+    Idle = 0,
+    Writing = 1,
+}
+
+enum Cmd {
+    GetInfo = 0,
+    BeginUpdate = 1,
+    WriteChunk = 2,
+    EndUpdate = 3,
+}
+
+enum Response {
+    GetInfo = 0,
+    BeginOk = 1,
+    WriteOk = 2,
+    EndOk = 3,
+    Error = 4,
+    None = 5,
+}
+
 type AllSectorsDesc = &[SectorDesc; 8];
 
 component {
     variables {
+        sectorData: SectorData,
+        allSectorsDesc: AllSectorsDesc,
+        state: State,
+        currentWriteOffset: varuint,
+        currentSector: varuint,
+        transferSize: varuint,
+        response: Response,
+        lastError: *const char,
     }
 
     impl {
@@ -28,5 +63,13 @@ component {
         fn acceptCmd(header: *const DataHeader, src: *mut Reader, dest: *mut Writer) -> Error
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool
+
+        fn handleBeginUpdate(sector: *const SectorDesc) -> Error
+        fn handleWriteChunk(data: *const void, offset: varuint, size: varuint) -> Error
+        fn handleEndUpdate(sector: *const SectorDesc) -> Error
+    }
+
+    statuses {
+        [all, 0, false]: {sectorData, allSectorsDesc, state, currentWriteOffset},
     }
 }

@@ -37,6 +37,7 @@ enum Error {
     ScriptNameConflict,
     InvalidDeviceId,
     NoDataAvailable,
+    InternalError,
     NotImplemented,
 }
 
