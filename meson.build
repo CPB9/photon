@@ -245,6 +245,7 @@ uitest_lib = static_library('photon-uitest',
 )
 
 client_tests = [
+  ['client', 'Client.cpp'],
   ['client-serial', 'ComTest.cpp'],
   ['client-udp', 'UdpTest.cpp'],
 ]
