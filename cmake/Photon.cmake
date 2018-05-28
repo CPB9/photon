@@ -225,6 +225,10 @@ macro(photon_init dir)
     _photon_add_ui_test(photon-client-udp
         ${_PHOTON_DIR}/tests/UdpTest.cpp
     )
+
+    _photon_add_ui_test(photon-client
+    ${_PHOTON_DIR}/tests/Client.cpp
+    )
 endmacro()
 
 macro(photon_generate_sources proj)
