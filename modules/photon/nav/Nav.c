@@ -14,7 +14,7 @@ static PhotonNavWaypoint tmpRoute[ROUTE_SIZE];
 
 void PhotonNav_Init()
 {
-    _photonNav.relativeAltitude.type = PhotonOptionF64Type_None;
+    _photonNav.relativeAltitude.type = PhotonNavOptionalF64Type_None;
 #ifdef PHOTON_STUB
     info.isEditing = false;
     info.id = 0;

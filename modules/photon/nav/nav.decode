@@ -1,7 +1,5 @@
 module nav
 
-import core::{Option}
-
 struct LatLon {
     latitude: f64,
     longitude: f64,
@@ -39,9 +37,14 @@ variant Action {
     Target,
 }
 
+variant OptionalF64 {
+    None,
+    Some { value: f64 },
+}
+
 struct Waypoint {
     position: Position,
-    speed: Option<f64>,
+    speed: OptionalF64,
     action: Action,
 }
 
@@ -63,14 +66,29 @@ struct GpsState {
     satellitesVisible : u8
 }
 
+variant RelativeAltitude {
+    None,
+    Some(f64),
+}
+
 type RouteId = varuint;
 type PointId = varuint;
+
+variant OptionalIndex {
+    None,
+    Some { index: varuint },
+}
+
+variant OptionalRouteId {
+    None,
+    Some { id : RouteId },
+}
 
 struct RouteInfo {
     id: RouteId,
     size: varuint,
     maxSize: varuint,
-    activePoint: Option<PointId>,
+    activePoint: OptionalIndex,
     isClosed: bool,
     isInverted: bool,
     isEditing: bool,
@@ -78,7 +96,7 @@ struct RouteInfo {
 
 struct AllRoutesInfo {
     info: &[RouteInfo; 10],
-    activeRoute: Option<RouteId>,
+    activeRoute: OptionalRouteId,
 }
 
 struct DeviceState {
@@ -91,7 +109,7 @@ component {
         latLon: LatLon,
         orientation: Orientation,
         altitude: f64,
-        relativeAltitude: Option<f64>,
+        relativeAltitude: OptionalF64,
         velocity: Vec3,
         gpsState: GpsState,
         deviceState: DeviceState,
@@ -108,8 +126,8 @@ component {
         fn clearRoute(routeId: RouteId)
         fn setRoutePoint(routeId: RouteId, pointIndex: PointId, waypoint: Waypoint)
         fn endRoute(routeId: RouteId)
-        fn setActiveRoute(routeId: Option<RouteId>)
-        fn setRouteActivePoint(routeId: RouteId, pointIndex: Option<PointId>)
+        fn setActiveRoute(routeId: OptionalRouteId)
+        fn setRouteActivePoint(routeId: RouteId, pointIndex: OptionalIndex)
         fn setRouteInverted(routeId: RouteId, isInverted: bool)
         fn setRouteClosed(routeId: RouteId, isClosed: bool)
         fn getRouteInfo(routeId: RouteId) -> RouteInfo
