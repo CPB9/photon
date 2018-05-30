@@ -67,6 +67,11 @@ caf::behavior TmState::make_behavior()
 {
     return caf::behavior{
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+            if (_project == update->project() && _dev == update->device())
+                return;
+            _project = update->project();
+            _dev = update->device();
+
             _model = new TmModel(update->device(), update->cache());
             Rc<NodeView> statusView = new NodeView(_model->statusesNode());
             Rc<NodeView> eventView = new NodeView(_model->eventsNode());
