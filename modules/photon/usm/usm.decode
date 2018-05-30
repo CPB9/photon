@@ -172,5 +172,6 @@ component {
     impl {
         fn init()
         fn tick()
+        fn setDir(path: *const char)
     }
 }
