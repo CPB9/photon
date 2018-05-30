@@ -12,6 +12,7 @@
 #include "photon/groundcontrol/AllowUnsafeMessageType.h"
 #include "photon/groundcontrol/Packet.h"
 #include "photon/groundcontrol/FwtState.h"
+#include "photon/groundcontrol/DfuState.h"
 #include "photon/groundcontrol/TmState.h"
 #include "photon/groundcontrol/ProjectUpdate.h"
 #include "photon/model/OnboardTime.h"
@@ -55,6 +56,7 @@ Exchange::Exchange(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAd
 {
     _fwtStream.client = spawn<FwtState, caf::linked>(this, _handler);
     _tmStream.client = spawn<TmState, caf::linked>(_handler);
+    _dfuStream.client = spawn<DfuState, caf::linked>(this, _handler);
 }
 
 Exchange::~Exchange()
@@ -68,6 +70,7 @@ void Exchange::sendAllStreams(A&&... args)
     send(_cmdStream.client, std::forward<A>(args)...);
     send(_tmStream.client, std::forward<A>(args)...);
     send(_userStream.client, std::forward<A>(args)...);
+    send(_dfuStream.client, std::forward<A>(args)...);
 }
 
 using CheckQueueAtom = caf::atom_constant<caf::atom("checkqu")>;

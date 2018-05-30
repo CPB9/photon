@@ -47,4 +47,6 @@ using FirmwareHashDownloadedEventAtom     = caf::atom_constant<caf::atom("fevent
 using FirmwareErrorEventAtom              = caf::atom_constant<caf::atom("feventerr")>;
 using FirmwareProgressEventAtom           = caf::atom_constant<caf::atom("feventprg")>;
 
+using RequestDfuStatus                    = caf::atom_constant<caf::atom("reqsfusta")>;
+
 }

@@ -11,14 +11,24 @@
 #include "photongen/onboard/exc/StreamHandler.h"
 #include "photongen/onboard/exc/ReceiptType.h"
 #include "photon/exc/Utils.h"
+#ifdef PHOTON_HAS_MODULE_PVU
 #include "photongen/onboard/pvu/Pvu.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_DFU
 #include "photongen/onboard/dfu/Dfu.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_TM
 #include "photongen/onboard/tm/Tm.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_FWT
 #include "photongen/onboard/fwt/Fwt.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_GRP
+#include "photongen/onboard/grp/Grp.Component.h"
+#endif
 #include "photongen/onboard/clk/Clk.Component.h"
 #include "photongen/onboard/exc/Exc.Constants.h"
 #include "photongen/onboard/exc/Exc.Component.h"
-#include "photongen/onboard/grp/Grp.Component.h"
 
 #include <string.h>
 
@@ -249,24 +259,31 @@ static bool findPacket(PhotonExcDevice* self, PhotonMemChunks* chunks)
     return handlePacket(self, expectedSize);
 }
 
+#ifdef PHOTON_HAS_MODULE_PVU
 static PhotonError handlePvuPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)data;
     return PhotonPvu_ExecuteFrom(header, reader, writer);
 }
+#endif
 
+#ifdef PHOTON_HAS_MODULE_FWT
 static PhotonError handleFwtPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)data;
     return PhotonFwt_AcceptCmd(header, reader, writer);
 }
+#endif
 
+#ifdef PHOTON_HAS_MODULE_DFU
 static PhotonError handleDfuPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)data;
     return PhotonDfu_AcceptCmd(header, reader, writer);
 }
+#endif
 
+#ifdef PHOTON_HAS_MODULE_TM
 static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReader* reader, PhotonWriter* writer, void* data)
 {
     (void)writer;
@@ -274,6 +291,7 @@ static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReade
     PhotonExcDevice* self = (PhotonExcDevice*)data;
     return Photon_DeserializeTelemetry(reader, self->tmHandler, self->tmUserData);
 }
+#endif
 
 static bool handlePacket(PhotonExcDevice* self, size_t size)
 {
@@ -330,24 +348,35 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     void* userData = 0;
     switch(self->incomingHeader.streamType) {
     case PhotonExcStreamType_Firmware: {
+#ifdef PHOTON_HAS_MODULE_FWT
         if (self->deviceKind != PhotonExcDeviceKind_GroundControl) {
             HANDLE_INVALID_PACKET(self, "Recieved fwt packet from uav");
             return true;
         }
         state = &self->fwtStream;
         handler = handleFwtPacket;
+#else
+        HANDLE_INVALID_PACKET(self, "Fwt packets not supported");
+        return true;
+#endif
         break;
     }
     case PhotonExcStreamType_Cmd: {
+#ifdef PHOTON_HAS_MODULE_PVU
         if (self->deviceKind == PhotonExcDeviceKind_Slave) {
             HANDLE_INVALID_PACKET(self, "Recieved cmd packet from slave");
             return true;
         }
         state = &self->cmdStream;
         handler = handlePvuPacket;
+#else
+        HANDLE_INVALID_PACKET(self, "Pvu packets not supported");
+        return true;
+#endif
         break;
     }
     case PhotonExcStreamType_Telem:
+#ifdef PHOTON_HAS_MODULE_TM
         if (self->deviceKind != PhotonExcDeviceKind_Slave) {
             HANDLE_INVALID_PACKET(self, "Recieved tm packet from device");
             return true;
@@ -355,8 +384,13 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         state = &self->telemStream;
         handler = handleTmPacket;
         userData = self;
+#else
+        HANDLE_INVALID_PACKET(self, "Tm packets not supported");
+        return true;
+#endif
         break;
     case PhotonExcStreamType_Dfu:
+#ifdef PHOTON_HAS_MODULE_DFU
         if (self->deviceKind != PhotonExcDeviceKind_GroundControl) {
             HANDLE_INVALID_PACKET(self, "Recieved dfu packet from device");
             return true;
@@ -364,6 +398,10 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         state = &self->dfuStream;
         handler = handleDfuPacket;
         userData = self;
+#else
+        HANDLE_INVALID_PACKET(self, "Dfu packets not supported");
+        return true;
+#endif
         break;
     case PhotonExcStreamType_User:
         HANDLE_INVALID_PACKET(self, "User packets not supported");
@@ -452,6 +490,7 @@ static PhotonError queueReceipt(PhotonExcDevice* self, const PhotonExcDataHeader
     return PhotonError_Ok;
 }
 
+#ifdef PHOTON_HAS_MODULE_TM
 static PhotonError genTm(void* data, PhotonWriter* dest)
 {
     (void)data;
@@ -473,18 +512,15 @@ static PhotonError queueTmPacket(PhotonExcDevice* self)
     self->hasDataQueued = true;
     return PhotonError_Ok;
 }
+#endif
 
+#ifdef PHOTON_HAS_MODULE_FWT
 static PhotonError genFwt(void* data, PhotonWriter* dest)
 {
     (void)data;
     return PhotonFwt_GenAnswer(dest);
 }
 
-static PhotonError genDfu(void* data, PhotonWriter* dest)
-{
-    (void)data;
-    return PhotonDfu_GenAnswer(dest);
-}
 
 static PhotonError queueFwtPacket(PhotonExcDevice* self)
 {
@@ -501,6 +537,15 @@ static PhotonError queueFwtPacket(PhotonExcDevice* self)
     self->hasDataQueued = true;
     return PhotonError_Ok;
 }
+#endif
+
+#ifdef PHOTON_HAS_MODULE_DFU
+static PhotonError genDfu(void* data, PhotonWriter* dest)
+{
+    (void)data;
+    return PhotonDfu_GenAnswer(dest);
+}
+
 
 static PhotonError queueDfuPacket(PhotonExcDevice* self)
 {
@@ -517,6 +562,7 @@ static PhotonError queueDfuPacket(PhotonExcDevice* self)
     self->hasDataQueued = true;
     return PhotonError_Ok;
 }
+#endif
 
 PhotonError PhotonExcDevice_QueueCustomCmdPacket(PhotonExcDevice* self, void* data, PhotonGenerator gen)
 {
@@ -567,16 +613,25 @@ PhotonError PhotonExcDevice_GenNextPacket(PhotonExcDevice* self, PhotonWriter* d
         return e;
     }
     if (self->deviceKind == PhotonExcDeviceKind_GroundControl) {
+#ifdef PHOTON_HAS_MODULE_DFU
         if (PhotonDfu_HasAnswers()) {
             queueDfuPacket(self);
             return genPacket(self, dest);
-        } else if (PhotonFwt_HasAnswers()) {
+        } else
+#endif
+#ifdef PHOTON_HAS_MODULE_FWT
+        if (PhotonFwt_HasAnswers()) {
             queueFwtPacket(self);
             return genPacket(self, dest);
-        } else {
+        } else
+#endif
+#ifdef PHOTON_HAS_MODULE_TM
+        {
             queueTmPacket(self);
             return genPacket(self, dest);
         }
+#endif
+    {}
     }
     return PhotonError_NoDataAvailable;
 }

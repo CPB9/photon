@@ -97,6 +97,8 @@ macro(photon_init dir)
         ${_PHOTON_DIR}/src/photon/groundcontrol/CmdState.h
         ${_PHOTON_DIR}/src/photon/groundcontrol/Crc.cpp
         ${_PHOTON_DIR}/src/photon/groundcontrol/Crc.h
+        ${_PHOTON_DIR}/src/photon/groundcontrol/DfuState.cpp
+        ${_PHOTON_DIR}/src/photon/groundcontrol/DfuState.h
         ${_PHOTON_DIR}/src/photon/groundcontrol/Exchange.cpp
         ${_PHOTON_DIR}/src/photon/groundcontrol/Exchange.h
         ${_PHOTON_DIR}/src/photon/groundcontrol/FwtState.cpp

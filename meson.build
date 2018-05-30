@@ -95,6 +95,8 @@ groundcontrol_src = [
   'src/photon/groundcontrol/CmdState.h',
   'src/photon/groundcontrol/Crc.cpp',
   'src/photon/groundcontrol/Crc.h',
+  'src/photon/groundcontrol/DfuState.cpp',
+  'src/photon/groundcontrol/DfuState.h',
   'src/photon/groundcontrol/Exchange.cpp',
   'src/photon/groundcontrol/Exchange.h',
   'src/photon/groundcontrol/FwtState.cpp',
