@@ -23,6 +23,25 @@ static void setError(const char* err)
 #define PHOTON_DFU_CURRENT_SECTOR 0
 #endif
 
+PhotonError PhotonDfu_HandleInitSectorData(PhotonDfuSectorData* data)
+{
+    data->sectorToBoot = 1;
+    data->loadSuccess = true;
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonDfu_HandleInitSectorDesc(PhotonDfuAllSectorsDesc* data)
+{
+    data->size = 2;
+    data->data[0].kind = PhotonDfuSectorType_Bootloader;
+    data->data[0].size = 100 * 1024;
+    data->data[0].start = 0x8000000;
+    data->data[1].kind = PhotonDfuSectorType_Firmware;
+    data->data[1].size = 200 * 1024;
+    data->data[1].start = 0x8000000 + 100 * 1024;
+    return PhotonError_Ok;
+}
+
 static uint8_t* stubFirmware = 0;
 
 PhotonError PhotonDfu_HandleBeginUpdate(const PhotonDfuSectorDesc* sector)
@@ -51,24 +70,25 @@ PhotonError PhotonDfu_HandleEndUpdate(const PhotonDfuSectorDesc* sector)
     return PhotonError_Ok;
 }
 
+PhotonError PhotonDfu_HandleReboot(uint64_t id)
+{
+    return PhotonError_Ok;
+}
+
 #endif
 
 void PhotonDfu_Init()
 {
     _photonDfu.state = PhotonDfuState_Idle;
+    _photonDfu.response = PhotonDfuResponse_None;
     _photonDfu.currentWriteOffset = 0;
     _photonDfu.lastError = "";
     _photonDfu.currentSector = 0;
+    PhotonDfu_HandleInitSectorData(&_photonDfu.sectorData);
+    PhotonDfu_HandleInitSectorDesc(&_photonDfu.allSectorsDesc);
 #ifdef PHOTON_STUB
     stubFirmware = 0;
-    _photonDfu.allSectorsDesc.size = 2;
-    _photonDfu.allSectorsDesc.data[0].kind = PhotonDfuSectorType_Bootloader;
-    _photonDfu.allSectorsDesc.data[0].size = 100 * 1024;
-    _photonDfu.allSectorsDesc.data[0].start = 0x8000000;
 
-    _photonDfu.allSectorsDesc.data[1].kind = PhotonDfuSectorType_Firmware;
-    _photonDfu.allSectorsDesc.data[1].size = 200 * 1024;
-    _photonDfu.allSectorsDesc.data[1].start = 0x8000000 + 100 * 1024;
 #endif
 }
 
@@ -184,10 +204,23 @@ static PhotonError writeChunk(PhotonReader* src)
     return PhotonError_Ok;
 }
 
-static DfuHandler handlers[2][4] = {
-//      getinfo,        beginupdate,         writechunk, endupdate
-    {reportInfo,        beginUpdate, reportInvalidState, endUpdate}, //idle
-    {reportInfo, reportInvalidState, writeChunk,         endUpdate}, //writing
+static PhotonError reboot(PhotonReader* src)
+{
+    uint64_t sectorId;
+    PHOTON_TRY(PhotonReader_ReadVaruint(src, &sectorId));
+
+    if (sectorId > _photonDfu.allSectorsDesc.size) {
+        setError("Invalid sector id");
+        return PhotonError_InvalidValue;
+    }
+
+    return PhotonDfu_HandleReboot(sectorId);
+}
+
+static DfuHandler handlers[2][5] = {
+//      getinfo,        beginupdate,         writechunk, endupdate  reboot
+    {reportInfo,        beginUpdate, reportInvalidState, endUpdate, reboot}, //idle
+    {reportInfo, reportInvalidState, writeChunk,         endUpdate, reportInvalidState}, //writing
 };
 
 PhotonError PhotonDfu_AcceptCmd(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* dest)

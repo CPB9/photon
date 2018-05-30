@@ -1,4 +1,12 @@
-#include "Photon.h"
+#ifdef PHOTON_HAS_MODULE_PVU
+#include "photongen/onboard/pvu/Pvu.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_TM
+#include "photongen/onboard/tm/Tm.Component.h"
+#endif
+#ifdef PHOTON_HAS_MODULE_FWT
+#include "photongen/onboard/fwt/Fwt.Component.h"
+#endif
 
 #include "photon/core/Logging.h"
 
@@ -9,9 +17,15 @@
 
 void PhotonExc_Init()
 {
+#ifdef PHOTON_HAS_MODULE_PVU
     PhotonPvu_Init();
+#endif
+#ifdef PHOTON_HAS_MODULE_TM
     PhotonTm_Init();
+#endif
+#ifdef PHOTON_HAS_MODULE_FWT
     PhotonFwt_Init();
+#endif
     _photonExc.address = 2;
     _photonExc.slaveAddress = PHOTON_DEVICE_ID;
 }

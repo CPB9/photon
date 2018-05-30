@@ -17,8 +17,7 @@ struct SectorDesc {
 }
 
 struct SectorData {
-    magic: u64,
-    sectorToBool: u64,
+    sectorToBoot: u64,
     loadSuccess: bool,
 }
 
@@ -32,6 +31,7 @@ enum Cmd {
     BeginUpdate = 1,
     WriteChunk = 2,
     EndUpdate = 3,
+    RebootIntoSector = 4,
 }
 
 enum Response {
@@ -64,9 +64,12 @@ component {
         fn genAnswer(dest: *mut Writer) -> Error
         fn hasAnswers() -> bool
 
+        fn handleInitSectorData(data: *mut SectorData) -> Error
+        fn handleInitSectorDesc(data: *mut AllSectorsDesc) -> Error
         fn handleBeginUpdate(sector: *const SectorDesc) -> Error
         fn handleWriteChunk(data: *const void, offset: varuint, size: varuint) -> Error
         fn handleEndUpdate(sector: *const SectorDesc) -> Error
+        fn handleReboot(sectorId: varuint) -> Error
     }
 
     statuses {

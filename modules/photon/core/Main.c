@@ -16,6 +16,9 @@
 #if defined(PHOTON_HAS_MODULE_TEST)
 # include "photongen/onboard/test/Test.Component.h"
 #endif
+#if defined(PHOTON_HAS_MODULE_DFU)
+# include "photongen/onboard/dfu/Dfu.Component.h"
+#endif
 #if defined(PHOTON_HAS_MODULE_NAV)
 # include "photongen/onboard/nav/Nav.Component.h"
 #endif
@@ -25,7 +28,6 @@
 #if defined(PHOTON_HAS_MODULE_GRP)
 # include "photongen/onboard/grp/Grp.Component.h"
 #endif
-
 #if defined(PHOTON_HAS_MODULE_ZCVM)
 # include "photongen/onboard/zcvm/Zcvm.Component.h"
 #endif
@@ -34,6 +36,9 @@ void Photon_Init()
 {
 #if defined(PHOTON_HAS_MODULE_CLK)
     PhotonClk_Init();
+#endif
+#if defined(PHOTON_HAS_MODULE_DFU)
+    PhotonDfu_Init();
 #endif
 #if defined(PHOTON_HAS_MODULE_TM)
     PhotonTm_Init();
@@ -68,6 +73,9 @@ void Photon_Tick()
 {
 #if defined(PHOTON_HAS_MODULE_CLK)
     PhotonClk_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_DFU)
+    PhotonDfu_Tick();
 #endif
 #if defined(PHOTON_HAS_MODULE_TM)
     PhotonTm_Tick();

@@ -1,0 +1,17 @@
+[project]
+name = "bootloader"
+master = "bootloader"
+common_modules = ["core", "exc", "clk"]
+mcc_id = 0
+module_dirs = [
+  "modules/photon/core",
+  "modules/photon/exc",
+  "modules/photon/clk",
+  "modules/photon/dfu",
+]
+
+[[devices]]
+name = "bootloader"
+id = 1
+modules = ["dfu"]
+
