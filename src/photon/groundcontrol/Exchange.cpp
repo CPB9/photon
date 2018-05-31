@@ -148,6 +148,12 @@ caf::behavior Exchange::make_behavior()
             (void)isEnabled;
             sendAllStreams(EnableLoggindAtom::value, isEnabled);
         },
+        [this](UpdateFirmware) {
+            send(_fwtStream.client, UpdateFirmware::value);
+        },
+        [this](RequestDfuStatus) {
+            return delegate(_dfuStream.client, RequestDfuStatus::value);
+        },
         [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
             sendAllStreams(SetProjectAtom::value, update);
             send(_gc, SetProjectAtom::value, update);

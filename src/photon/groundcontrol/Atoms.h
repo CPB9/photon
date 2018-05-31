@@ -21,6 +21,7 @@ using SendGcCommandAtom                   = caf::atom_constant<caf::atom("sendgc
 using SetProjectAtom                      = caf::atom_constant<caf::atom("setprojt")>;
 using RegisterClientAtom                  = caf::atom_constant<caf::atom("regclien")>;
 using SetTmViewAtom                       = caf::atom_constant<caf::atom("settmviw")>;
+using UpdateFirmware                      = caf::atom_constant<caf::atom("updfirmw")>;
 using UpdateTmViewAtom                    = caf::atom_constant<caf::atom("upsttmvi")>;
 using UpdateTmParams                      = caf::atom_constant<caf::atom("updtmprm")>;
 using PushTmUpdatesAtom                   = caf::atom_constant<caf::atom("pshtmupd")>;

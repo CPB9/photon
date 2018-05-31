@@ -27,6 +27,7 @@ PhotonError PhotonDfu_HandleInitSectorData(PhotonDfuSectorData* data)
 {
     data->sectorToBoot = 1;
     data->loadSuccess = true;
+    data->currentSector = PHOTON_DFU_CURRENT_SECTOR;
     return PhotonError_Ok;
 }
 
@@ -235,6 +236,7 @@ PhotonError PhotonDfu_AcceptCmd(const PhotonExcDataHeader* header, PhotonReader*
 
 static PhotonError writeInfo(PhotonWriter* dest)
 {
+    PHOTON_TRY(PhotonDfuResponse_Serialize(PhotonDfuResponse_GetInfo, dest));
     PHOTON_TRY(PhotonDfuSectorData_Serialize(&_photonDfu.sectorData, dest));
     PHOTON_TRY(PhotonDynArrayOfDfuSectorDescMaxSize8_Serialize(&_photonDfu.allSectorsDesc, dest));
     _photonDfu.response = PhotonDfuResponse_None;

@@ -1,7 +1,9 @@
 #include "UiTest.h"
-#include "UdpStream.h"
+#include "photon/groundcontrol/UdpStream.h"
 
 #include <photon/groundcontrol/AllowUnsafeMessageType.h>
+
+#include <bmcl/Logging.h>
 
 #include <tclap/CmdLine.h>
 

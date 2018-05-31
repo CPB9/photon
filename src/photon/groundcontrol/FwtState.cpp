@@ -99,6 +99,8 @@ caf::behavior FwtState::make_behavior()
         },
         [this](StartAtom) {
             _isRunning = true;
+        },
+        [this](UpdateFirmware) {
             startDownload();
         },
         [this](StopAtom) {
