@@ -11,6 +11,9 @@
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
 
+#include "photongen/groundcontrol/dfu/SectorData.hpp"
+#include "photongen/groundcontrol/dfu/AllSectorsDesc.hpp"
+
 #include <bmcl/Fwd.h>
 #include <bmcl/Buffer.h>
 
@@ -19,6 +22,11 @@
 namespace photon {
 
 class ProjectUpdate;
+
+struct DfuStatus : public RefCountable {
+    photongen::dfu::SectorData sectorData;
+    photongen::dfu::AllSectorsDesc sectorDesc;
+};
 
 class DfuState : public caf::event_based_actor {
 public:
@@ -30,10 +38,14 @@ public:
     void on_exit() override;
 
 private:
+    template <typename C, typename... A>
+    void sendCmd(C&& ser, A&&... args);
+
     caf::actor _exc;
     caf::actor _handler;
     Rc<const ProjectUpdate> _projectUpdate;
     bmcl::Buffer _temp;
+    std::vector<caf::response_promise> _statesPromises;
 };
 }
 

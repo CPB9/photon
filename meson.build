@@ -104,9 +104,15 @@ groundcontrol_src = [
   'src/photon/groundcontrol/MemIntervalSet.h',
   'src/photon/groundcontrol/ProjectUpdate.cpp',
   'src/photon/groundcontrol/ProjectUpdate.h',
+  'src/photon/groundcontrol/SerialStream.cpp',
+  'src/photon/groundcontrol/SerialStream.h',
+  'src/photon/groundcontrol/StreamFromString.cpp',
+  'src/photon/groundcontrol/StreamFromString.h',
   'src/photon/groundcontrol/TmParamUpdate.h',
   'src/photon/groundcontrol/TmState.cpp',
   'src/photon/groundcontrol/TmState.h',
+  'src/photon/groundcontrol/UdpStream.cpp',
+  'src/photon/groundcontrol/UdpStream.h',
 ]
 
 model_src = [
@@ -241,6 +247,7 @@ uitest_lib = static_library('photon-uitest',
 )
 
 client_tests = [
+  ['dfu', 'Dfu.cpp'],
   ['client', 'Client.cpp'],
   ['client-serial', 'ComTest.cpp'],
   ['client-udp', 'UdpTest.cpp'],

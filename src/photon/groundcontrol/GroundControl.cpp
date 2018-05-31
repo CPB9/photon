@@ -93,6 +93,12 @@ caf::behavior GroundControl::make_behavior()
         [this](EnableLoggindAtom, bool isEnabled) {
             send(_exc, EnableLoggindAtom::value, isEnabled);
         },
+        [this](UpdateFirmware) {
+            send(_exc, UpdateFirmware::value);
+        },
+        [this](RequestDfuStatus) {
+            return delegate(_exc, RequestDfuStatus::value);
+        },
     };
 }
 

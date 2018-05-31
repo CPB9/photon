@@ -18,6 +18,7 @@ struct SectorDesc {
 
 struct SectorData {
     sectorToBoot: u64,
+    currentSector: u64,
     loadSuccess: bool,
 }
 
