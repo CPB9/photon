@@ -77,6 +77,9 @@ modules_src = [
   'modules/photon/param/mod.toml',
   'modules/photon/param/param.decode',
   'modules/photon/param/Param.c',
+  'modules/photon/fcu/mod.toml',
+  'modules/photon/fcu/fcu.decode',
+  'modules/photon/fcu/Fcu.c',
 ] + get_option('additional_depends')
 
 groundcontrol_src = [
