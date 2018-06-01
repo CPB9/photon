@@ -1,0 +1,7 @@
+name = "fcu"
+decode = "fcu.decode"
+dest = "photon/fcu"
+id = 20
+sources = [
+  "Fcu.c"
+]

@@ -1,0 +1,212 @@
+module fcu
+
+struct Heartbeat {
+    baseMode : u8,
+    customMode: u32,
+    systemStatus : u8
+}
+
+enum LogLevel {
+    Emergency = 0,
+    Alert = 1,
+    Critical = 2,
+    Error = 3,
+    Warning = 4,
+    Notice = 5,
+    Info = 6,
+    Debug = 7
+}
+
+struct StatusText {
+    logLevel : LogLevel,
+    text : &[u8; 256]
+}
+
+struct AutopilotVersion {
+    capabilities: u64,
+    uid : u64,
+    flight_sw_version : u32,
+    middleware_sw_version : u32,
+    os_sw_version : u32,
+    board_version : u32,
+    vendor_id : u16,
+    product_id : u16,
+    flight_custom_version : [u8; 8],
+    middleware_custom_version : [u8; 8],
+    os_custom_version : [u8; 8]
+}
+
+struct SystemStatus {
+    batteryLevel : u8
+}
+
+struct RcChannels {
+    timeBootMs : u32,
+    chanCount : u8,
+    rssi : u8,
+    chanRaw : [u16; 18]
+}
+
+struct LastMessage {
+    id: u32,
+    seq: u8
+}
+
+enum Sensors {
+    Accelerometer,
+    Magnetometer,
+    Gyroscope,
+    Level,
+    Esc,
+    Radio,
+}
+
+enum Sides {
+    Down,
+    UpsideDown,
+    Left,
+    Right,
+    NoseDown,
+    TailDown,
+}
+struct CalibrationSideStatus {
+    done: bool,
+    visible: bool,
+    inProgress: bool,
+    rotate: bool,
+}
+
+enum CalibrationStatus {
+    NotStarted,
+    Failed,
+    Done,
+    CancelPending,
+    Cancelled,
+}
+
+struct CalibrationState {
+    sensor: Sensors,
+    status: CalibrationStatus,
+    calDownSide:       CalibrationSideStatus,
+    calUpsideDownSide: CalibrationSideStatus,
+    calLeftSide:       CalibrationSideStatus,
+    calRightSide:      CalibrationSideStatus,
+    calNoseDownSide:   CalibrationSideStatus,
+    calTailDownSide:   CalibrationSideStatus,
+    progress: u8,
+    nextEnabled: bool,
+    skipEnabled: bool
+}
+
+struct RcRatio {
+    rcMin: i16,
+    rcMax: i16,
+    trim: i16,
+    rev: bool
+}
+
+enum RcCalFunction {
+    Roll = 0,
+    Pitch = 1,
+    Yaw = 2,
+    Throttle = 3,
+}
+
+enum RcChannel {
+    Unassigned = 0,
+    Channel1 = 1,
+    Channel2 = 2,
+    Channel3 = 3,
+    Channel4 = 4,
+    Channel5 = 5,
+    Channel6 = 6,
+    Channel7 = 7,
+    Channel8 = 8,
+    Channel9 = 9,
+    Channel10 = 10,
+    Channel11 = 11,
+    Channel12 = 12,
+    Channel13 = 13,
+    Channel14 = 14,
+    Channel15 = 15,
+    Channel16 = 16,
+    Channel17 = 17,
+    Channel18 = 18,
+}
+
+enum FlightMode {
+    Unassigned = -1,
+    Manual = 0,
+    Altitude = 1,
+    Position = 2,
+    Mission = 3,
+    Hold = 4,
+    Return = 5,
+    Acro = 6,
+    Offboard = 7,
+    Stabilized = 8,
+    Rattitude = 9,
+    Takeoff = 10,
+    Land = 11,
+    FollowMe = 12
+}
+
+struct FlightModes {
+    modes: [FlightMode; 6],
+    killSwitchChannel: RcChannel,
+    offboardSwitchChannel: RcChannel,
+    returnSwitchChannel: RcChannel,
+    flightModeChannel: RcChannel
+}
+
+component {
+    variables {
+        heartbeat: Heartbeat,
+        version: AutopilotVersion,
+        systemStatus: SystemStatus,
+        rcChannels: RcChannels,
+        lastMessage: LastMessage,
+        calibrationState: CalibrationState,
+        flightModes: FlightModes,
+    }
+
+    statuses {
+        [heartbeat, 0, true]:       { heartbeat        }
+        [systemStatus, 0, true]:    { systemStatus     }
+        [rcChannels, 0, false]:     { rcChannels       }
+        [lastMessage, 0, true]:     { lastMessage      }
+        [calibration, 0, false]:    { calibrationState }
+        [flightModes, 0, false]:    { flightModes      }
+    }
+
+    events {
+        [scriptMessage, true]: {text: &[char; 128]},
+        [unsupportedFcuVersion, true]: {version: u8},
+        [unknownSensor, true]: {sensor: &[char; 128]},
+        [failedToParse, true]: {msg: &[char; 256]},
+        [calibrationStarted, true]: {sensor: Sensors},
+        [calibrationDone, true]: {sensor: Sensors},
+        [calibrationFailed, true]: {sensor: Sensors},
+        [calibrationCancelled, true]: {sensor: Sensors},
+        [calibrationSideStarted, true]: {sensor: Sensors, side: Sides}
+        [calibrationSideDone, true]: {sensor: Sensors, side: Sides}
+        [radioCalibrationValidationFailed, true]: {}
+    }
+    
+    commands {
+        fn arm()
+        fn disarm()
+        fn startSensorCalibration(sensor: Sensors)
+        fn cancelSensorCalibration()
+        fn writeRadioCalibrationRatios(rcRatios: [RcRatio; 18], calFunctions: [RcCalFunction; 4])
+        fn setActive(active: bool)
+        fn takeOff()
+        fn land()
+        fn setMode(mode: &[char; 256])
+    }
+
+    impl {
+        fn init()
+        fn tick()
+    }
+}
