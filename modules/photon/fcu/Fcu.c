@@ -1,8 +1,8 @@
-#include "photongen/onboard/px4/Px4.Component.h"
+#include "photongen/onboard/fcu/Fcu.Component.h"
 
 #include "photon/core/Logging.h"
 
-#define _PHOTON_FNAME "px4/Px4.c"
+#define _PHOTON_FNAME "fcu/Fcu.c"
 
 extern void setArmed();
 
