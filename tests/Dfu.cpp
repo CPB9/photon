@@ -5,12 +5,15 @@
 #include <photon/groundcontrol/DfuState.h>
 
 #include <decode/core/Foreach.h>
+#include <decode/core/DataReader.h>
 
 #include <bmcl/String.h>
 #include <bmcl/Result.h>
 #include <bmcl/Logging.h>
 #include <bmcl/StringView.h>
 #include <bmcl/ColorStream.h>
+#include <bmcl/SharedBytes.h>
+#include <bmcl/FileUtils.h>
 
 #include <tclap/CmdLine.h>
 
@@ -22,9 +25,21 @@
 #include <caf/actor_ostream.hpp>
 
 #include <cstdint>
+#include <cinttypes>
 
 using namespace photon;
 
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::DataReader::Pointer);
+
+static bmcl::Result<std::uintmax_t, void> uintFromString(bmcl::StringView str, int base)
+{
+    char* end = 0;
+    std::uintmax_t value = std::strtoumax(str.begin(), &end, base);
+    if (end == str.end()) {
+        return bmcl::Result<std::uintmax_t, void>(value);
+    }
+    return bmcl::Result<std::uintmax_t, void>();
+}
 
 class DfuActor : public caf::event_based_actor {
 public:
@@ -37,6 +52,96 @@ public:
     {
     }
 
+    std::string joinCmds(const std::vector<std::string>& cmds)
+    {
+        std::string joined;
+        decode::foreachList(cmds, [&](const std::string& s) {
+            joined += s;
+        }, [&](const std::string&) {
+            joined += ' ';
+        });
+        return joined;
+    }
+
+    void execRequestStatus(const std::vector<std::string>& cmds)
+    {
+        if (cmds.size() != 1) {
+            exitWithError("status cmd requires no arguments");
+            return;
+        }
+        printCommandMsg("Requesting status");
+        request(_gc, caf::infinite, RequestDfuStatus::value).then([this](const Rc<const DfuStatus>& status) {
+            printStatus(status.get());
+            quit();
+        });
+    }
+
+    void execWrite(const std::vector<std::string>& cmds)
+    {
+        if (cmds.size() != 3) {
+            exitWithError("write command requires 2 arguments, file and sector id");
+            return;
+        }
+        const std::string& pathStr = cmds[1];
+
+        bmcl::Result<bmcl::SharedBytes, int> rv = bmcl::readFileIntoBytes(pathStr.c_str());
+        if (rv.isErr()) {
+            exitWithError("could not read file " + pathStr);
+            return;
+        }
+
+        bmcl::SharedBytes file = rv.take();
+
+        const std::string& idStr = cmds[2];
+        bmcl::Result<std::uintmax_t, void> rv2 = uintFromString(idStr, 10);
+        if (rv2.isErr()) {
+            exitWithError("failed to parse sector id " + idStr);
+            return;
+        }
+        std::uintmax_t id = rv2.unwrap();
+
+        printCommandMsg("Requesting status");
+        request(_gc, caf::infinite, RequestDfuStatus::value).then([=](const Rc<const DfuStatus>& status) {
+            printStatus(status.get());
+
+            if (id >= status->sectorDesc.size()) {
+                exitWithError("invalid sector id " + std::to_string(id));
+                return;
+            }
+
+            if (file.size() > status->sectorDesc[id].size()) {
+                exitWithError("firmware size > sector size");
+                return;
+            }
+
+            Rc<decode::DataReader> reader = new decode::MemDataReader(file);
+
+            request(_gc, caf::infinite, FlashDfuFirmware::value, id, reader).then([=](const std::string& status) {
+                quit();
+            });
+        });
+    }
+
+    void execCmd(const std::vector<std::string>& cmds)
+    {
+        if (cmds.empty()) {
+            exitWithError("no command specified");
+            return;
+        }
+
+        if (cmds[0] == "status") {
+            execRequestStatus(cmds);
+            return;
+        }
+
+        if (cmds[0] == "write") {
+            execWrite(cmds);
+            return;
+        }
+
+        exitWithError("unknown cmd (" + joinCmds(cmds) + ")");
+    }
+
     caf::behavior make_behavior() override
     {
         return caf::behavior{
@@ -44,27 +149,7 @@ public:
                 _gc = gc;
             },
             [this](ExecCmd, const std::vector<std::string>& cmds) {
-                if (cmds.empty()) {
-                    exitWithError("no command specified");
-                    return;
-                }
-
-                if (cmds[0] == "status" && cmds.size() == 1) {
-                    printCommandMsg("Requesting status");
-                    request(_gc, caf::infinite, RequestDfuStatus::value).then([this](const Rc<const DfuStatus>& status) {
-                        printStatus(status.get());
-                        quit();
-                    });
-                    return;
-                }
-
-                std::string joined;
-                decode::foreachList(cmds, [&](const std::string& s) {
-                    joined += s;
-                }, [&](const std::string&) {
-                    joined += ' ';
-                });
-                exitWithError("unknown cmd (" + joined + ")");
+                execCmd(cmds);
             },
         };
     }

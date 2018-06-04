@@ -33,13 +33,19 @@ PhotonError PhotonDfu_HandleInitSectorData(PhotonDfuSectorData* data)
 
 PhotonError PhotonDfu_HandleInitSectorDesc(PhotonDfuAllSectorsDesc* data)
 {
-    data->size = 2;
+    data->size = 4;
     data->data[0].kind = PhotonDfuSectorType_Bootloader;
-    data->data[0].size = 100 * 1024;
     data->data[0].start = 0x8000000;
-    data->data[1].kind = PhotonDfuSectorType_Firmware;
-    data->data[1].size = 200 * 1024;
-    data->data[1].start = 0x8000000 + 100 * 1024;
+    data->data[0].size = 99 * 1024;
+    data->data[1].kind = PhotonDfuSectorType_SectorData;
+    data->data[1].start = 0x8000000 + 99 * 1024;
+    data->data[1].size = 1 * 1024;
+    data->data[2].kind = PhotonDfuSectorType_UserData;
+    data->data[2].start = 0x8000000 + 100 * 1024;
+    data->data[2].size = 200 * 1024;
+    data->data[3].kind = PhotonDfuSectorType_Firmware;
+    data->data[3].start = 0x8000000 + 300 * 1024;
+    data->data[3].size = 16 * 1024;
     return PhotonError_Ok;
 }
 
@@ -151,15 +157,22 @@ static PhotonError beginUpdate(PhotonReader* src)
 
 static PhotonError endUpdate(PhotonReader* src)
 {
+    uint64_t sectorId;
+    PHOTON_TRY(PhotonReader_ReadVaruint(src, &sectorId));
+    if (sectorId != _photonDfu.currentSector) {
+        setError("Sector id does not match");
+        return PhotonError_InvalidValue;
+    }
+
     uint64_t totalSize;
     PHOTON_TRY(PhotonReader_ReadVaruint(src, &totalSize));
     //TODO: check sector id
-    PhotonDfuSectorDesc* sector = &_photonDfu.allSectorsDesc.data[_photonDfu.currentSector];
-    if (totalSize != sector->size) {
+    if (totalSize != _photonDfu.transferSize) {
         setError("Invalid total size");
         return PhotonError_InvalidValue;
     }
 
+    PhotonDfuSectorDesc* sector = &_photonDfu.allSectorsDesc.data[_photonDfu.currentSector];
     PHOTON_TRY(PhotonDfu_HandleEndUpdate(sector));
     _photonDfu.response = PhotonDfuResponse_EndOk;
 
@@ -200,7 +213,7 @@ static PhotonError writeChunk(PhotonReader* src)
 
     PHOTON_TRY(PhotonDfu_HandleWriteChunk(PhotonReader_CurrentPtr(src), offset, size));
 
-    _photonDfu.currentWriteOffset += offset;
+    _photonDfu.currentWriteOffset += size;
     _photonDfu.response = PhotonDfuResponse_WriteOk;
     return PhotonError_Ok;
 }
@@ -219,9 +232,9 @@ static PhotonError reboot(PhotonReader* src)
 }
 
 static DfuHandler handlers[2][5] = {
-//      getinfo,        beginupdate,         writechunk, endupdate  reboot
-    {reportInfo,        beginUpdate, reportInvalidState, endUpdate, reboot}, //idle
-    {reportInfo, reportInvalidState, writeChunk,         endUpdate, reportInvalidState}, //writing
+//      getinfo, beginupdate,         writechunk, endupdate  reboot
+    {reportInfo, beginUpdate, reportInvalidState, endUpdate, reboot}, //idle
+    {reportInfo, beginUpdate, writeChunk,         endUpdate, reportInvalidState}, //writing
 };
 
 PhotonError PhotonDfu_AcceptCmd(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* dest)
@@ -246,6 +259,7 @@ static PhotonError writeInfo(PhotonWriter* dest)
 static PhotonError writeBeginOk(PhotonWriter* dest)
 {
     PHOTON_TRY(PhotonDfuResponse_Serialize(PhotonDfuResponse_BeginOk, dest));
+    PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _photonDfu.currentSector));
     PHOTON_TRY(PhotonWriter_WriteVaruint(dest, _photonDfu.transferSize));
     _photonDfu.response = PhotonDfuResponse_None;
     return PhotonError_Ok;

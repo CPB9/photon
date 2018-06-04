@@ -19,6 +19,10 @@
 
 #include <caf/event_based_actor.hpp>
 
+namespace decode {
+class DataReader;
+}
+
 namespace photon {
 
 class ProjectUpdate;
@@ -41,11 +45,24 @@ private:
     template <typename C, typename... A>
     void sendCmd(C&& ser, A&&... args);
 
+    void handleReportInfo(bmcl::MemReader* reader, CoderState* state);
+    void handleBegin(bmcl::MemReader* reader, CoderState* state);
+    void handleWrite(bmcl::MemReader* reader, CoderState* state);
+    void handleEnd(bmcl::MemReader* reader, CoderState* state);
+    void handleError(bmcl::MemReader* reader, CoderState* state);
+
+    void beginUpload();
+    void sendNextChunk();
+    void endFlash();
+
     caf::actor _exc;
     caf::actor _handler;
     Rc<const ProjectUpdate> _projectUpdate;
     bmcl::Buffer _temp;
     std::vector<caf::response_promise> _statesPromises;
+    Rc<decode::DataReader> _fwReader;
+    std::uintmax_t _sectorId;
+    caf::response_promise _flashPromise;
 };
 }
 
