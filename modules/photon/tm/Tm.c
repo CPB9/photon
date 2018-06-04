@@ -110,6 +110,10 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         PhotonRingBuf_Peek(&_eventRingBuf, &currentSize, 2, 0);
         //TODO: check available size before peak
         if (currentSize > PhotonWriter_WritableSize(dest)) {
+            if (totalMessages == 0) {
+                PHOTON_CRITICAL("unable to fit event, skipping");
+                PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
+            }
             break;
         }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
@@ -117,6 +121,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         PhotonWriter_SetCurrentPtr(dest, current + currentSize);
         PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
         _photonTm.storedEvents--;
+        totalMessages++;
     }
 
     if (_photonTm.onceRequestsNum > TM_MAX_ONCE_REQUESTS) {
@@ -144,6 +149,9 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         } else if (rv == PhotonError_NotEnoughSpace) {
             PhotonWriter_SetCurrentPtr(dest, current);
             if (totalMessages == 0) {
+                PHOTON_CRITICAL("unable to fit once request (%u, %u), skipping",
+                                (unsigned)_messageDesc[currentId].compNum,
+                                (unsigned)_messageDesc[currentId].msgNum);
                 popOnceRequests(i);
                 return PhotonError_NotEnoughSpace;
             }
@@ -169,6 +177,10 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         } else if (rv == PhotonError_NotEnoughSpace) {
             PhotonWriter_SetCurrentPtr(dest, current);
             if (totalMessages == 0) {
+                PHOTON_CRITICAL("unable to fit status (%u, %u), skipping",
+                                (unsigned)currentDesc()->compNum,
+                                (unsigned)currentDesc()->msgNum);
+                selectNextMessage();
                 return PhotonError_NotEnoughSpace;
             }
             return PhotonError_Ok;
