@@ -69,6 +69,16 @@ enum Sides {
     NoseDown,
     TailDown,
 }
+
+struct CommonCalibrationState {
+    accelerometer: bool,
+    magnetometer: bool,
+    gyroscope: bool,
+    level: bool,
+    esc: bool,
+    radio: bool
+}
+
 struct CalibrationSideStatus {
     done: bool,
     visible: bool,
@@ -167,16 +177,18 @@ component {
         rcChannels: RcChannels,
         lastMessage: LastMessage,
         calibrationState: CalibrationState,
+        commonCalibrationState: CommonCalibrationState,
         flightModes: FlightModes,
     }
 
     statuses {
-        [heartbeat, 0, true]:       { heartbeat        }
-        [systemStatus, 0, true]:    { systemStatus     }
-        [rcChannels, 0, false]:     { rcChannels       }
-        [lastMessage, 0, true]:     { lastMessage      }
-        [calibration, 0, false]:    { calibrationState }
-        [flightModes, 0, false]:    { flightModes      }
+        [heartbeat, 0, true]:         { heartbeat               }
+        [systemStatus, 0, true]:      { systemStatus            }
+        [rcChannels, 0, false]:       { rcChannels              }
+        [lastMessage, 0, true]:       { lastMessage             }
+        [commonCalibration, 0, true]: { commonCalibrationState  }
+        [calibration, 0, false]:      { calibrationState        }
+        [flightModes, 0, false]:      { flightModes             }
     }
 
     events {
