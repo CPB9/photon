@@ -9,6 +9,7 @@
 #include "photon/groundcontrol/GroundControl.h"
 #include "photon/groundcontrol/Exchange.h"
 #include "decode/parser/Project.h"
+#include "decode/core/DataReader.h"
 #include "photon/model/Value.h"
 #include "photon/groundcontrol/Atoms.h"
 #include "photon/groundcontrol/AllowUnsafeMessageType.h"
@@ -29,6 +30,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketResponse);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::DataReader::Pointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::GcCmd);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
@@ -98,6 +100,9 @@ caf::behavior GroundControl::make_behavior()
         },
         [this](RequestDfuStatus) {
             return delegate(_exc, RequestDfuStatus::value);
+        },
+        [this](FlashDfuFirmware atom, std::uintmax_t id, const Rc<decode::DataReader>& reader) {
+            return delegate(_exc, atom, id, reader);
         },
     };
 }

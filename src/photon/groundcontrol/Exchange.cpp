@@ -17,6 +17,7 @@
 #include "photon/groundcontrol/ProjectUpdate.h"
 #include "photon/model/OnboardTime.h"
 #include "decode/parser/Project.h"
+#include "decode/core/DataReader.h"
 
 #include <bmcl/Logging.h>
 #include <bmcl/MemWriter.h>
@@ -33,6 +34,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketHeader);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Project::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
+DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::DataReader::Pointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::StreamState*);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 
@@ -130,6 +132,9 @@ caf::behavior Exchange::make_behavior()
         },
         [this](SubscribeNumberedTmAtom atom, const NumberedSub& sub, const caf::actor& dest) {
             return delegate(_tmStream.client, atom, sub, dest);
+        },
+        [this](FlashDfuFirmware atom, std::uintmax_t id, const Rc<decode::DataReader>& reader) {
+            return delegate(_dfuStream.client, atom, id, reader);
         },
         [this](SubscribeNamedTmAtom atom, const std::string& path, const caf::actor& dest) {
             return delegate(_tmStream.client, atom, path, dest);
