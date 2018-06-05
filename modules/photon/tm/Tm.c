@@ -130,16 +130,19 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
     }
 
     if (_photonTm.allowedMsgCount == 0) {
-        return PhotonError_NoDataAvailable;
+        if (totalMessages == 0) {
+            return PhotonError_NoDataAvailable;
+        } else {
+            return PhotonError_Ok;
+        }
     }
 
     size_t i;
     for (i = 0; i < _photonTm.onceRequestsNum; i++) {
         size_t currentId = _onceRequests[i];
         if (currentId >= _PHOTON_TM_MSG_COUNT) {
-            i++;
+            PHOTON_CRITICAL("invalid msg id in once requests (%u)", currentId);
             continue;
-            //TODO: report error
         }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = _messageDesc[currentId].func(dest);
@@ -147,19 +150,23 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             totalMessages++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
-            PhotonWriter_SetCurrentPtr(dest, current);
             if (totalMessages == 0) {
+                PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit once request (%u, %u), skipping",
                                 (unsigned)_messageDesc[currentId].compNum,
                                 (unsigned)_messageDesc[currentId].msgNum);
-                popOnceRequests(i);
-                return PhotonError_NotEnoughSpace;
+                continue;
             }
             popOnceRequests(i);
             return PhotonError_Ok;
         } else {
-            popOnceRequests(i);
-            return rv;
+            //error, skipping
+            //TODO: report error
+            PhotonWriter_SetCurrentPtr(dest, current);
+            PHOTON_CRITICAL("unable to serialize request (%u, %u), skipping",
+                            (unsigned)_messageDesc[currentId].compNum,
+                            (unsigned)_messageDesc[currentId].msgNum);
+            continue;
         }
     }
     popOnceRequests(i);
@@ -175,8 +182,8 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             totalMessages++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
-            PhotonWriter_SetCurrentPtr(dest, current);
             if (totalMessages == 0) {
+                PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit status (%u, %u), skipping",
                                 (unsigned)currentDesc()->compNum,
                                 (unsigned)currentDesc()->msgNum);
@@ -185,8 +192,12 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             }
             return PhotonError_Ok;
         } else {
+            PhotonWriter_SetCurrentPtr(dest, current);
+            PHOTON_CRITICAL("unable to serialize status (%u, %u), skipping",
+                            (unsigned)currentDesc()->compNum,
+                            (unsigned)currentDesc()->msgNum);
             selectNextMessage();
-            return rv;
+            continue;
         }
     }
 }
