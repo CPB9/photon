@@ -143,9 +143,6 @@ static PhotonError collectOnceRequests(PhotonWriter* dest, unsigned* totalMessag
             continue;
         }
         PhotonTmMessageDesc* desc = &_messageDesc[currentId];
-        if (!desc->isEnabled) {
-            continue;
-        }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = desc->func(dest);
         if (rv == PhotonError_Ok) {
