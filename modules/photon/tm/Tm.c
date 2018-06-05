@@ -5,6 +5,7 @@
 #include "photongen/onboard/core/Writer.h"
 #include "photongen/onboard/core/RingBuf.h"
 #include "photon/core/Logging.h"
+#include "photon/core/Try.h"
 #include "photongen/onboard/tm/MessageDesc.h"
 #include "photongen/onboard/tm/StatusMessage.h"
 
@@ -98,10 +99,8 @@ static void popOnceRequests(size_t num)
     _photonTm.onceRequestsNum -= num;
 }
 
-PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
+static PhotonError collectEvents(PhotonWriter* dest, unsigned* totalMessages)
 {
-    unsigned totalMessages = 0;
-
     while (true) {
         if (PhotonRingBuf_ReadableSize(&_eventRingBuf) == 0) {
             break;
@@ -110,7 +109,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         PhotonRingBuf_Peek(&_eventRingBuf, &currentSize, 2, 0);
         //TODO: check available size before peak
         if (currentSize > PhotonWriter_WritableSize(dest)) {
-            if (totalMessages == 0) {
+            if (*totalMessages == 0) {
                 PHOTON_CRITICAL("unable to fit event, skipping");
                 PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
             }
@@ -121,20 +120,16 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
         PhotonWriter_SetCurrentPtr(dest, current + currentSize);
         PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
         _photonTm.storedEvents--;
-        totalMessages++;
+        (*totalMessages)++;
     }
+    return PhotonError_Ok;
+}
 
+static PhotonError collectOnceRequests(PhotonWriter* dest, unsigned* totalMessages)
+{
     if (_photonTm.onceRequestsNum > TM_MAX_ONCE_REQUESTS) {
         _photonTm.onceRequestsNum = TM_MAX_ONCE_REQUESTS;
-        //TODO: report error
-    }
-
-    if (_photonTm.allowedMsgCount == 0) {
-        if (totalMessages == 0) {
-            return PhotonError_NoDataAvailable;
-        } else {
-            return PhotonError_Ok;
-        }
+        PHOTON_CRITICAL("once requests overflow");
     }
 
     size_t i;
@@ -144,51 +139,61 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             PHOTON_CRITICAL("invalid msg id in once requests (%u)", currentId);
             continue;
         }
+        PhotonTmMessageDesc* desc = &_messageDesc[currentId];
+        if (!desc->isEnabled) {
+            continue;
+        }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
-        PhotonError rv = _messageDesc[currentId].func(dest);
+        PhotonError rv = desc->func(dest);
         if (rv == PhotonError_Ok) {
-            totalMessages++;
+            (*totalMessages)++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
-            if (totalMessages == 0) {
+            if (*totalMessages == 0) {
                 PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit once request (%u, %u), skipping",
-                                (unsigned)_messageDesc[currentId].compNum,
-                                (unsigned)_messageDesc[currentId].msgNum);
+                                (unsigned)desc->compNum,
+                                (unsigned)desc->msgNum);
                 continue;
             }
-            popOnceRequests(i);
-            return PhotonError_Ok;
+            break;
         } else {
-            //error, skipping
-            //TODO: report error
             PhotonWriter_SetCurrentPtr(dest, current);
             PHOTON_CRITICAL("unable to serialize request (%u, %u), skipping",
-                            (unsigned)_messageDesc[currentId].compNum,
-                            (unsigned)_messageDesc[currentId].msgNum);
+                            (unsigned)desc->compNum,
+                            (unsigned)desc->msgNum);
             continue;
         }
     }
     popOnceRequests(i);
+    return PhotonError_Ok;
+}
 
-    while (true) {
-        while (!currentDesc()->isEnabled) {
+static PhotonError collectStatuses(PhotonWriter* dest, unsigned* totalMessages)
+{
+    if (_photonTm.allowedMsgCount == 0) {
+        return PhotonError_Ok;
+    }
+
+    for (size_t i = 0; i < _PHOTON_TM_MSG_COUNT; i++) {
+        if (!currentDesc()->isEnabled) {
             selectNextMessage();
+            continue;
         }
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = currentDesc()->func(dest);
         if (rv == PhotonError_Ok) {
             selectNextMessage();
-            totalMessages++;
+            (*totalMessages)++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
-            if (totalMessages == 0) {
+            if (*totalMessages == 0) {
                 PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit status (%u, %u), skipping",
                                 (unsigned)currentDesc()->compNum,
                                 (unsigned)currentDesc()->msgNum);
                 selectNextMessage();
-                return PhotonError_NotEnoughSpace;
+                continue;
             }
             return PhotonError_Ok;
         } else {
@@ -200,11 +205,48 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
             continue;
         }
     }
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
+{
+    static unsigned tick = 0;
+
+    unsigned totalMessages = 0;
+
+    switch (tick) {
+    case 0:
+        PHOTON_TRY(collectEvents(dest, &totalMessages));
+        PHOTON_TRY(collectOnceRequests(dest, &totalMessages));
+        PHOTON_TRY(collectStatuses(dest, &totalMessages));
+        tick = 1;
+        break;
+    case 1:
+        PHOTON_TRY(collectStatuses(dest, &totalMessages));
+        PHOTON_TRY(collectEvents(dest, &totalMessages));
+        PHOTON_TRY(collectOnceRequests(dest, &totalMessages));
+        tick = 2;
+        break;
+    case 2:
+        PHOTON_TRY(collectOnceRequests(dest, &totalMessages));
+        PHOTON_TRY(collectStatuses(dest, &totalMessages));
+        PHOTON_TRY(collectEvents(dest, &totalMessages));
+        tick = 0;
+        break;
+    default:
+        //error
+        tick = 0;
+    }
+
+    if (totalMessages == 0) {
+        return PhotonError_NoDataAvailable;
+    }
+    return PhotonError_Ok;
 }
 
 bool PhotonTm_HasMessages()
 {
-    return _photonTm.allowedMsgCount != 0;
+    return _photonTm.allowedMsgCount != 0 && PhotonRingBuf_ReadableSize(&_eventRingBuf) != 0;
 }
 
 PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
