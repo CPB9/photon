@@ -26,7 +26,7 @@ void PhotonFcu_Tick()
     _photonFcu.commonCalibrationState.radio = (    _photonPx4_autogen._Radio_Calibration.RC_MAP_ROLL != 0 &&
                                                    _photonPx4_autogen._Radio_Calibration.RC_MAP_PITCH != 0 &&
                                                    _photonPx4_autogen._Radio_Calibration.RC_MAP_YAW != 0 &&
-                                                   _photonPx4_autogen._Radio_Calibration.RC_MAP_THROTTLE != 0));
+                                                   _photonPx4_autogen._Radio_Calibration.RC_MAP_THROTTLE != 0);
 #endif
 }
 
