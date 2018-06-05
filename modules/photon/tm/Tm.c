@@ -232,7 +232,15 @@ PhotonError PhotonTm_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
     }
     for (PhotonTmMessageDesc* it = TM_MSG_BEGIN; it < TM_MSG_END; it++) {
         if (it->compNum == compNum && it->msgNum == msgNum) {
-            _onceRequests[_photonTm.onceRequestsNum] = it - TM_MSG_BEGIN;
+            size_t id = it - TM_MSG_BEGIN;
+            for (size_t i = 0; i < _photonTm.onceRequestsNum; i++) {
+                if (_onceRequests[i] == id) {
+                    PHOTON_DEBUG("once request already set (%u, %u)", (unsigned)it->compNum, (unsigned)it->msgNum);
+                    return PhotonError_Ok;
+                }
+            }
+            PHOTON_DEBUG("setting once request (%u, %u)", (unsigned)it->compNum, (unsigned)it->msgNum);
+            _onceRequests[_photonTm.onceRequestsNum] = id;
             _photonTm.onceRequestsNum++;
             return PhotonError_Ok;
         }
