@@ -19,7 +19,7 @@
 #define TM_MAX_ONCE_REQUESTS 16 // TODO: generate
 
 static uint16_t _onceRequests[TM_MAX_ONCE_REQUESTS];
-static uint8_t eventTmp[512];
+static uint8_t eventTmp[1024];
 static PhotonWriter eventWriter;
 static uint8_t _eventData[2048];
 static PhotonRingBuf _eventRingBuf;
@@ -59,13 +59,14 @@ void PhotonTm_EndEventMsg()
     uint16_t msgSize = eventWriter.current - eventWriter.start;
     size_t writableSize = PhotonRingBuf_WritableSize(&_eventRingBuf);
     while ((msgSize + 2u) > writableSize) {
+        PHOTON_DEBUG("removing event to fit new");
         _photonTm.lostEvents++;
         _photonTm.storedEvents--;
         uint16_t currentSize;
-        PhotonRingBuf_Read(&_eventRingBuf, &currentSize, 2);
+        PhotonRingBuf_Peek(&_eventRingBuf, &currentSize, 2, 0);
         //TODO: check available size before erase
-        PhotonRingBuf_Erase(&_eventRingBuf, currentSize);
-        writableSize -= currentSize + 2;
+        PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
+        writableSize = PhotonRingBuf_WritableSize(&_eventRingBuf);
     }
     PhotonRingBuf_Write(&_eventRingBuf, &msgSize, 2);
     PhotonRingBuf_Write(&_eventRingBuf, eventWriter.start, msgSize);
@@ -112,6 +113,8 @@ static PhotonError collectEvents(PhotonWriter* dest, unsigned* totalMessages)
             if (*totalMessages == 0) {
                 PHOTON_CRITICAL("unable to fit event, skipping");
                 PhotonRingBuf_Erase(&_eventRingBuf, currentSize + 2);
+                _photonTm.storedEvents--;
+                _photonTm.lostEvents++;
             }
             break;
         }
