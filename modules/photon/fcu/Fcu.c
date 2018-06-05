@@ -8,10 +8,26 @@ extern void setArmed(bool flag);
 
 void PhotonFcu_Init()
 {
+    _photonFcu.commonCalibrationState.accelerometer = false;
+    _photonFcu.commonCalibrationState.magnetometer = false;
+    _photonFcu.commonCalibrationState.gyroscope = false;
+    _photonFcu.commonCalibrationState.level = false;
+    _photonFcu.commonCalibrationState.esc = false;
+    _photonFcu.commonCalibrationState.radio = false;
 }
 
 void PhotonFcu_Tick()
 {
+#ifndef PHOTON_STUB
+    _photonFcu.commonCalibrationState.magnetometer = (_photonPx4_autogen._Sensor_Calibration.CAL_MAG0_ID != 0);
+    _photonFcu.commonCalibrationState.accelerometer = (_photonPx4_autogen._Sensor_Calibration.CAL_ACC0_ID != 0);
+    _photonFcu.commonCalibrationState.gyroscope = (_photonPx4_autogen._Sensor_Calibration.CAL_GYRO0_ID != 0);
+    _photonFcu.commonCalibrationState.level = (_photonPx4_autogen._Sensor_Calibration.SENS_BOARD_X_OFF != 0);
+    _photonFcu.commonCalibrationState.radio = (    _photonPx4_autogen._Radio_Calibration.RC_MAP_ROLL != 0 &&
+                                                   _photonPx4_autogen._Radio_Calibration.RC_MAP_PITCH != 0 &&
+                                                   _photonPx4_autogen._Radio_Calibration.RC_MAP_YAW != 0 &&
+                                                   _photonPx4_autogen._Radio_Calibration.RC_MAP_THROTTLE != 0);
+#endif
 }
 
 PhotonError PhotonFcu_ExecCmd_Arm()

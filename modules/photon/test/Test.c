@@ -39,17 +39,17 @@ void PhotonTest_Init()
     }
 }
 
-static int testEventsLeft = 0;
+static uint64_t testEventsLeft = 0;
 
 void PhotonTest_Tick()
 {
-    if (testEventsLeft > 0) {
+    for (size_t i = 0; i < testEventsLeft; i++) {
         PhotonTestParamStruct s;
         s.parama = testEventsLeft;
         s.paramb = testEventsLeft;
          PhotonTest_QueueEvent_Event1(testEventsLeft, &s);
-         testEventsLeft--;
     }
+         testEventsLeft = 0;
     //_photonTest.dynArrayParam.size++;
     //if (_photonTest.dynArrayParam.size > 10) {
     //    _photonTest.dynArrayParam.size = 0;
@@ -289,7 +289,7 @@ PhotonError PhotonTest_ExecCmd_TestCmdCall(PhotonTestParamStruct p1, const Photo
     return PhotonError_Ok;
 }
 
-PhotonError PhotonTest_ExecCmd_TestEvents(uint8_t count)
+PhotonError PhotonTest_ExecCmd_TestEvents(uint64_t count)
 {
     testEventsLeft = count;
     return PhotonError_Ok;
@@ -298,6 +298,14 @@ PhotonError PhotonTest_ExecCmd_TestEvents(uint8_t count)
 PhotonError PhotonTest_ExecCmd_TestError(PhotonError value)
 {
     return value;
+}
+
+PhotonError PhotonTest_ExecCmd_GenBigEvent()
+{
+    PhotonDynArrayOfU8MaxSize1024 s;
+    s.size = 980;
+    PhotonTest_QueueEvent_Big(&s);
+    return PhotonError_Ok;
 }
 
 PhotonError PhotonTest_ExecCmd_GenTestEvent()

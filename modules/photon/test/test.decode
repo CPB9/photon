@@ -156,6 +156,7 @@ component {
     events {
         [event0, true]: {},
         [event1, true]: {param1: u8, param2: ParamStruct},
+        [big, true]: {param1: &[u8; 1024]},
     }
 
     impl {
@@ -214,8 +215,9 @@ component {
         #[cmdcall(p1=value, p2=alloc, p3=ptr)]
         fn testCmdCall(p1: ParamStruct, p2: &[u32; 10], p3: EnumParam)
 
-        fn testEvents(count : u8)
+        fn testEvents(count: varuint)
         fn genTestEvent()
+        fn genBigEvent()
 
         fn testPvuScript(name: &[char; 16])
     }
