@@ -48,10 +48,29 @@ type TextLinesList  = &[char;768];
 /// Date in Unix-time seconds
 type TimeStamp      = i64;
 
+enum ApplicationState {
+    NotRunning  = 0,
+    Starting    = 1,
+    Running     = 2,
+    Finished    = 3,
+    Crashed     = 4,
+}
+
 struct ApplicationsInfo {
     language        : LanguageCodes,
     appsList        : TextLinesList,
     appsFlags       : &[u8;384],
+}
+
+struct ApplicationData {
+    name            : FileName,
+    autostart       : bool,
+    state           : ApplicationState,
+}
+
+struct ApplicationsInformation {
+    language        : LanguageCodes,
+    applications    : &[ApplicationData;10],
 }
 
 /// System loading information
@@ -81,14 +100,6 @@ struct LogMessage {
     fragmentOffset  : u16,
     /// Text with '\n' delimiters (if first byte is zero text was compressed by z-lib)
     data            : TextLinesList,
-}
-
-enum ApplicationState {
-    NotRunning  = 0,
-    Starting    = 1,
-    Running     = 2,
-    Finished    = 3,
-    Crashed     = 4,
 }
 
 /// Main info about current application
