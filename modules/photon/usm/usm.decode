@@ -41,8 +41,8 @@ struct BuildState {
     uninstallState  : State,
 }
 
-/// Text data. If first byte is 0 text was compressed by z-lib
-type TextLine       = &[char;255];
+/// Project name
+type ProjName = &[char;16];
 /// Array of text strings with '\n' delimiters. If first byte is 0 text was compressed by z-lib
 type TextLinesList  = &[char;768];
 /// Date in Unix-time seconds
@@ -94,7 +94,7 @@ enum ApplicationState {
 /// Main info about current application
 struct CurrentApplicationInfo {
     language     : LanguageCodes,
-    name         : TextLine,
+    name         : ProjName,
     state        : ApplicationState,
     pid          : i64,
 }
@@ -107,7 +107,7 @@ struct CurrentApplicationState {
 struct ProjectInfo {
     language        : LanguageCodes,
     /// Project name
-    name            : TextLine,
+    name            : ProjName,
     /// Installed files
     filesList       : TextLinesList,
     /// Overall size at disk in bytes
@@ -140,7 +140,7 @@ component {
         [buildLogErrors,            true]: {errors : LogMessage},
         [currentApplicationOutput,  true]: {output : LogMessage},
         [currentApplicationStatus,  true]: {output : LogMessage},
-        [appRemoving,               true]: {state : State, project : TextLine, files : LogMessage},
+        [appRemoving,               true]: {state : State, project : ProjName, files : LogMessage},
     }
 
     commands {
@@ -159,14 +159,14 @@ component {
         fn installTarget(language : LanguageCodes)
         fn stopBuildProcess(language : LanguageCodes, kill : bool)
 
-        fn uninstallApplication(language : LanguageCodes, appName : TextLine)
+        fn uninstallApplication(language : LanguageCodes, appName : ProjName)
 
-        fn runApplication(language : LanguageCodes, appNameWithArguments : TextLinesList)
-        fn stopApplication(language : LanguageCodes, appName : TextLine)
-        fn killApplication(language : LanguageCodes, appName : TextLine)
+        fn runApplication(language : LanguageCodes, appName : ProjName, args : TextLinesList)
+        fn stopApplication(language : LanguageCodes, appName : ProjName)
+        fn killApplication(language : LanguageCodes, appName : ProjName)
 
-        fn requestApplicationStatus(language : LanguageCodes, appName : TextLine)
-        fn requestProjectOfApplication(language : LanguageCodes, appName : TextLine)
+        fn requestApplicationStatus(language : LanguageCodes, appName : ProjName)
+        fn requestProjectOfApplication(language : LanguageCodes, appName : ProjName)
     }
 
     impl {
