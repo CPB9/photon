@@ -64,7 +64,6 @@ struct ApplicationsInfo {
 
 struct ApplicationData {
     name            : FileName,
-    autostart       : bool,
     state           : ApplicationState,
 }
 
@@ -107,7 +106,7 @@ struct CurrentApplicationInfo {
     language     : LanguageCodes,
     name         : FileName,
     state        : ApplicationState,
-    pid          : i64,
+    pid          : varint,
 }
 /// State of current application
 struct CurrentApplicationState {
@@ -152,11 +151,11 @@ component {
         [applicationsInfoCpp,           1, true]:  {applicationsInfoCpp},
         [applicationsInfoPython,        1, true]:  {applicationsInfoPython},
 
-        [currentApplicationInfoCpp,     1, false]: {currentApplicationInfoCpp},
-        [currentApplicationInfoPython,  1, false]: {currentApplicationInfoPython},
+        [currentApplicationInfoCpp,     1, true]: {currentApplicationInfoCpp},
+        [currentApplicationInfoPython,  1, true]: {currentApplicationInfoPython},
 
-        [currentApplicationStateCpp,    1, true]:  {currentApplicationStateCpp},
-        [currentApplicationStatePython, 1, true]:  {currentApplicationStatePython},
+        [currentApplicationStateCpp,    1, false]:  {currentApplicationStateCpp},
+        [currentApplicationStatePython, 1, false]:  {currentApplicationStatePython},
 
         [projectInfo,                   1, false]: {projectInfo},
         [systemInfo,                    1, false]: {systemInfo},
