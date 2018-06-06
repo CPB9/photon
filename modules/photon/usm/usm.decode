@@ -129,21 +129,37 @@ struct ProjectInfo {
 
 component {
     variables {
-        buildState              : BuildState,
-        applicationsInfo        : ApplicationsInfo,
-        currentApplicationInfo  : CurrentApplicationInfo,
-        currentApplicationState : CurrentApplicationState,
-        projectInfo             : ProjectInfo,
-        systemInfo              : SystemInfo,
+        buildStateCpp                   : BuildState,
+        buildStatePython                : BuildState,
+
+        applicationsInfoCpp             : ApplicationsInfo,
+        applicationsInfoPython          : ApplicationsInfo,
+
+        currentApplicationInfoCpp       : CurrentApplicationInfo,
+        currentApplicationInfoPython    : CurrentApplicationInfo,
+
+        currentApplicationStateCpp      : CurrentApplicationState,
+        currentApplicationStatePython   : CurrentApplicationState,
+
+        projectInfo                     : ProjectInfo,
+        systemInfo                      : SystemInfo,
     }
 
     statuses {
-        [buildState,                1, false]: {buildState},
-        [applicationsInfo,          1, false]: {applicationsInfo},
-        [currentApplicationInfo,    1, false]: {currentApplicationInfo},
-        [currentApplicationState,   1, false]: {currentApplicationState},
-        [projectInfo,               1, false]: {projectInfo},
-        [systemInfo,                1, false]: {systemInfo},
+        [buildStateCpp,                 1, true] : {buildStateCpp},
+        [buildStatePython,              1, true] : {buildStatePython},
+
+        [applicationsInfoCpp,           1, true]:  {applicationsInfoCpp},
+        [applicationsInfoPython,        1, true]:  {applicationsInfoPython},
+
+        [currentApplicationInfoCpp,     1, false]: {currentApplicationInfoCpp},
+        [currentApplicationInfoPython,  1, false]: {currentApplicationInfoPython},
+
+        [currentApplicationStateCpp,    1, true]:  {currentApplicationStateCpp},
+        [currentApplicationStatePython, 1, true]:  {currentApplicationStatePython},
+
+        [projectInfo,                   1, false]: {projectInfo},
+        [systemInfo,                    1, false]: {systemInfo},
     }
 
     events {
