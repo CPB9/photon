@@ -53,14 +53,9 @@ enum ApplicationState {
     Crashed     = 4,
 }
 
-struct ApplicationData {
-    name            : FileName,
-    state           : ApplicationState,
-}
-
 struct ApplicationsInfo {
     language        : LanguageCodes,
-    applications    : &[ApplicationData;10],
+    applications    : &[FileName;16],
 }
 
 /// System loading information
