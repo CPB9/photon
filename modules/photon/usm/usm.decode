@@ -22,15 +22,14 @@ enum Frames {
     BuildStateFrame                 =    1,
     ApplicationsInfoFrame           =    2,
     CurrentApplicationInfoFrame     =    4,
-    CurrentApplicationStateFrame    =    8,
-    ProjectInfoFrame                =   16,
-    SystemInfoFrame                 =   32,
+    ProjectInfoFrame                =    8,
+    SystemInfoFrame                 =   16,
 
-    BuildLogOutputFrame             =   64,
-    BuildLogErrorsFrame             =  128,
-    CurrentApplicationOutputFrame   =  256,
-    CurrentApplicationStatusFrame   =  512,
-    AppRemovingFrame                = 1024,
+    BuildLogOutputFrame             =   32,
+    BuildLogErrorsFrame             =   64,
+    CurrentApplicationOutputFrame   =  128,
+    CurrentApplicationStatusFrame   =  256,
+    AppRemovingFrame                =  512,
 }
 
 struct BuildState {
@@ -59,7 +58,7 @@ enum ApplicationState {
 struct ApplicationsInfo {
     language        : LanguageCodes,
     appsList        : TextLinesList,
-    appsFlags       : &[u8;384],
+    appsFlags       : &[u8;10],
 }
 
 struct ApplicationData {
@@ -108,11 +107,6 @@ struct CurrentApplicationInfo {
     state        : ApplicationState,
     pid          : varint,
 }
-/// State of current application
-struct CurrentApplicationState {
-    language     : LanguageCodes,
-    state        : ApplicationState,
-}
 /// Info about installed project with specified name
 struct ProjectInfo {
     language        : LanguageCodes,
@@ -137,9 +131,6 @@ component {
         currentApplicationInfoCpp       : CurrentApplicationInfo,
         currentApplicationInfoPython    : CurrentApplicationInfo,
 
-        currentApplicationStateCpp      : CurrentApplicationState,
-        currentApplicationStatePython   : CurrentApplicationState,
-
         projectInfo                     : ProjectInfo,
         systemInfo                      : SystemInfo,
     }
@@ -148,14 +139,11 @@ component {
         [buildStateCpp,                 1, true] : {buildStateCpp},
         [buildStatePython,              1, true] : {buildStatePython},
 
-        [applicationsInfoCpp,           1, true]:  {applicationsInfoCpp},
-        [applicationsInfoPython,        1, true]:  {applicationsInfoPython},
+        [applicationsInfoCpp,           1, true] : {applicationsInfoCpp},
+        [applicationsInfoPython,        1, true] : {applicationsInfoPython},
 
-        [currentApplicationInfoCpp,     1, true]: {currentApplicationInfoCpp},
-        [currentApplicationInfoPython,  1, true]: {currentApplicationInfoPython},
-
-        [currentApplicationStateCpp,    1, false]:  {currentApplicationStateCpp},
-        [currentApplicationStatePython, 1, false]:  {currentApplicationStatePython},
+        [currentApplicationInfoCpp,     1, true] : {currentApplicationInfoCpp},
+        [currentApplicationInfoPython,  1, true] : {currentApplicationInfoPython},
 
         [projectInfo,                   1, false]: {projectInfo},
         [systemInfo,                    1, false]: {systemInfo},
