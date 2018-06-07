@@ -6,11 +6,6 @@ enum LanguageCodes {
     LanguagePython  = 2,
 }
 
-enum ApplicationFlags {
-    AutolaunchFlag  = 1,
-    RunningFlag     = 64,
-}
-
 enum State {
     Empty       = 0,
     Proccessing = 1,
@@ -45,7 +40,7 @@ type FileName       = &[char;32];
 /// Array of text strings with '\n' delimiters. If first byte is 0 text was compressed by z-lib
 type TextLinesList  = &[char;768];
 /// Date in Unix-time seconds
-type TimeStamp      = i64;
+type TimeStamp      = varint;
 
 enum ApplicationState {
     NotRunning  = 0,
@@ -80,13 +75,13 @@ struct SystemInfo {
 /// Load of each CPU core in percentages
     cpuCoresLoad    : &[u8;128],
 /// Used memory in bytes
-    memoryLoad      : u64,
+    memoryLoad      : varuint,
 /// Whole memory size in bytes
-    memorySize      : u64,
+    memorySize      : varuint,
 /// Used disk size in bytes
-    diskLoad        : u64,
+    diskLoad        : varuint,
 /// Whole disk size in bytes
-    diskSize        : u64,
+    diskSize        : varuint,
 }
 
 struct LogMessage {
@@ -115,7 +110,7 @@ struct ProjectInfo {
     /// Installed files
     filesList       : TextLinesList,
     /// Overall size at disk in bytes
-    size            : u64,
+    size            : varuint,
     /// Last project update date
     updated         : TimeStamp,
 }
