@@ -71,11 +71,15 @@ PhotonClkTimePoint PhotonClk_GetTime()
 
 PhotonError PhotonClk_ExecCmd_SetTimeCorrection(int64_t delta)
 {
+#ifdef PHOTON_HAS_MODULE_TM
     PhotonClkDuration rawTime = PhotonClk_GetRawSystemTime();
     PhotonClkTimePoint oldTime = rawTime + _photonClk.correction;
     PhotonClkTimePoint newTime = rawTime + delta;
     _photonClk.correction = delta;
     PhotonClk_QueueEvent_TimeCorrected(rawTime, oldTime, newTime); //TODO: handle error
+#else
+    _photonClk.correction = delta;
+#endif
     return PhotonError_Ok;
 }
 

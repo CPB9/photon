@@ -12,6 +12,6 @@ module_dirs = [
 
 [[devices]]
 name = "bootloader"
-id = 1
+id = 2
 modules = ["dfu"]
 
