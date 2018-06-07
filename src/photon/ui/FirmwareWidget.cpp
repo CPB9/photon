@@ -342,12 +342,7 @@ void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
 
 void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremove, bool autostart, const bmcl::Buffer& scriptBuffer)
 {
-    std::vector<char> charName;
-    charName.resize(name.size());
-    memcpy(charName.data(), name.data(), name.size());
-
-    photongen::pvu::ScriptDesc desc(charName, autoremove, autostart);
-    desc.setName(charName); //HACK
+    photongen::pvu::ScriptDesc desc(name, autoremove, autostart);
     photongen::pvu::ScriptBody scriptBody;
     scriptBody.resize(scriptBuffer.size());
     memcpy(scriptBody.data(), scriptBuffer.data(), scriptBuffer.size());
