@@ -1,16 +1,18 @@
 /// SDK module
 module usm
 
+import core::{Option}
+
+/// Application or project name
+type FileName       = &[char;32];
+/// Array of text strings with '\n' delimiters. If first byte is 0 text was compressed by z-lib
+type TextLinesList  = &[char;768];
+/// Date in Unix-time seconds
+type TimeStamp      = varint;
+
 enum LanguageCodes {
     LanguageCpp     = 1,
     LanguagePython  = 2,
-}
-
-enum State {
-    Empty       = 0,
-    Proccessing = 1,
-    Executed    = 2,
-    NotExecuted = 4,
 }
 
 enum Frames {
@@ -27,20 +29,21 @@ enum Frames {
     AppRemovingFrame                =  512,
 }
 
+enum State {
+    Empty       = 0,
+    Proccessing = 1,
+    Executed    = 2,
+    NotExecuted = 4,
+}
+
 struct BuildState {
+    file            : FileName
     language        : LanguageCodes,
     unpackState     : State,
     buildState      : State,
     installState    : State,
     uninstallState  : State,
 }
-
-/// Application or project name
-type FileName       = &[char;32];
-/// Array of text strings with '\n' delimiters. If first byte is 0 text was compressed by z-lib
-type TextLinesList  = &[char;768];
-/// Date in Unix-time seconds
-type TimeStamp      = varint;
 
 enum ApplicationState {
     NotRunning  = 0,
@@ -50,37 +53,31 @@ enum ApplicationState {
     Crashed     = 4,
 }
 
-struct ApplicationsInfo {
-    language        : LanguageCodes,
-    appsList        : TextLinesList,
-    appsFlags       : &[u8;10],
-}
-
 struct ApplicationData {
     name            : FileName,
     state           : ApplicationState,
 }
 
-struct ApplicationsInformation {
+struct ApplicationsInfo {
     language        : LanguageCodes,
     applications    : &[ApplicationData;10],
 }
 
 /// System loading information
 struct SystemInfo {
-/// CPU load in percentages
-    cpuLoad         : f32,
-/// Amount of CPU cores
+    /// CPU load in percentages
+    cpuLoad         : u8,
+    /// Amount of CPU cores
     cpuCores        : u8,
-/// Load of each CPU core in percentages
+    /// Load of each CPU core in percentages
     cpuCoresLoad    : &[u8;128],
-/// Used memory in bytes
+    /// Used memory in bytes
     memoryLoad      : varuint,
-/// Whole memory size in bytes
+    /// Whole memory size in bytes
     memorySize      : varuint,
-/// Used disk size in bytes
+    /// Used disk size in bytes
     diskLoad        : varuint,
-/// Whole disk size in bytes
+    /// Whole disk size in bytes
     diskSize        : varuint,
 }
 
@@ -100,7 +97,7 @@ struct CurrentApplicationInfo {
     language     : LanguageCodes,
     name         : FileName,
     state        : ApplicationState,
-    pid          : varint,
+    pid          : Option<varuint>,
 }
 /// Info about installed project with specified name
 struct ProjectInfo {
@@ -108,7 +105,7 @@ struct ProjectInfo {
     /// Project name
     name            : FileName,
     /// Installed files
-    filesList       : TextLinesList,
+    filesList       : &[FileName;128],
     /// Overall size at disk in bytes
     size            : varuint,
     /// Last project update date
@@ -153,13 +150,13 @@ component {
     }
 
     commands {
-/// Request data frame
+        /// Request data frame
         fn updateInfo(language : LanguageCodes, frame: Frames)
-/// Request many data frames
+        /// Request many data frames
         fn updateInfoMultiple(language : LanguageCodes, frames : varuint)
-/// Confirm receiving of data frame
+        /// Confirm receiving of data frame
         fn confirmReceiving(language : LanguageCodes, frame: Frames)
-/// Confirm receiving of many data frames
+        /// Confirm receiving of many data frames
         fn confirmReceivingMultiple(language : LanguageCodes, frames: varuint)
 
         fn getFile(language : LanguageCodes, fileId: varuint)
