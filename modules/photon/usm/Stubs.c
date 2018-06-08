@@ -15,11 +15,11 @@ PhotonError PhotonUsm_ExecCmd_UnpackFile(PhotonUsmLanguageCodes language) { retu
 PhotonError PhotonUsm_ExecCmd_BuildTarget(PhotonUsmLanguageCodes language) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_InstallTarget(PhotonUsmLanguageCodes language) { return PhotonError_NotImplemented; }
 PhotonError PhotonUsm_ExecCmd_StopBuildProcess(PhotonUsmLanguageCodes language, bool kill) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_UninstallApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_RunApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName, const PhotonDynArrayOfCharMaxSize768* appNameWithArguments) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_StopApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_KillApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_RequestApplicationStatus(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName) { return PhotonError_NotImplemented; }
-PhotonError PhotonUsm_ExecCmd_RequestProjectOfApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize16* appName) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_UninstallApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_RunApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName, const PhotonDynArrayOfCharMaxSize768* appNameWithArguments) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_StopApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_KillApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_RequestApplicationStatus(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName) { return PhotonError_NotImplemented; }
+PhotonError PhotonUsm_ExecCmd_RequestProjectOfApplication(PhotonUsmLanguageCodes language, const PhotonDynArrayOfCharMaxSize32* appName) { return PhotonError_NotImplemented; }
 
 #endif
