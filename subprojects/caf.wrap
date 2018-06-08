@@ -1,6 +1,6 @@
 [wrap-file]
-directory = actor-framework-0.15.5-mesonwrap
+directory = actor-framework-0.15.7-mesonwrap
 
-source_url = https://github.com/acsl-mipt/actor-framework/archive/0.15.5-mesonwrap.zip
-source_filename = 0.15.5-mesonwrap.zip
-source_hash = 9f3ef69b0e5b4fb07b086841437e3cff5415cd30902ff88e194780c02fa75457
+source_url = https://github.com/acsl-mipt/actor-framework/archive/0.15.7-mesonwrap.zip
+source_filename = 0.15.7-mesonwrap.zip
+source_hash = eaddf5291ee593fe15d5588c2681d0ad0816df6dbbb17149f0aa90b9bd243938
