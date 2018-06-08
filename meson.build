@@ -4,7 +4,7 @@ cc = meson.get_compiler('c')
 
 c_args = []
 if cc.get_id() == 'clang' or cc.get_id() == 'gcc'
-  c_args = ['-Werror=implicit-function-declaration']
+  c_args = ['-Werror=implicit-function-declaration', '-Wno-unused-lambda-capture']
 endif
 
 add_project_arguments(c_args, language : 'c')

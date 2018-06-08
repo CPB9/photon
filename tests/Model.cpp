@@ -63,9 +63,9 @@ int main(int argc, char* argv[])
         printf("Error initializing winsock2: %d", WSAGetLastError());
         return -1;
     }
-#endif
 
 begin:
+#endif
 
     uint16_t port = portArg.getValue();
     struct sockaddr_in host;
@@ -139,6 +139,7 @@ begin:
         PhotonWriter writer;
         PhotonWriter_Init(&writer, _temp, sizeof(_temp));
         PhotonError err = PhotonExcDevice_GenNextPacket(dev, &writer);
+        (void)err;
         const void* data = writer.start;
         std::size_t size = writer.current - writer.start;
 

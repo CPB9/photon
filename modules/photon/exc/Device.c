@@ -103,7 +103,7 @@ static void handleJunk(PhotonExcDevice* self, const uint8_t* data, size_t size)
 static inline uint8_t* findByte(uint8_t* begin, uint8_t* end, uint8_t value)
 {
     while (begin < end) {
-        if (*begin == value) return begin; begin++;
+        if (*begin == value) { return begin; } begin++;
         //if (*begin == value) return begin; begin++;
         //if (*begin == value) return begin; begin++;
         //if (*begin == value) return begin; begin++;
@@ -131,6 +131,7 @@ void PhotonExcDevice_AcceptInput(PhotonExcDevice* self, const void* src, size_t 
             size = maxSize;
         } else {
             size_t delta = size - writableSize;
+            (void)delta;
             PHOTON_WARNING("input ringbuf overflow: %u, %u, %u", (unsigned)size, (unsigned)writableSize, (unsigned)delta);
         }
     }

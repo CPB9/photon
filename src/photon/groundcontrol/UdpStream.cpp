@@ -35,6 +35,7 @@ void UdpStream::act()
 {
     asio::error_code err;
     std::size_t size = _socket.send_to(asio::buffer("", 0), _endpoint, 0, err);
+    (void)size;
     do {
         if (has_next_message()) {
             receive(
