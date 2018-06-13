@@ -210,7 +210,7 @@ component {
         fn disarm()
         fn startSensorCalibration(sensor: Sensors)
         fn cancelSensorCalibration()
-        fn writeRadioCalibrationRatios(rcRatios: [RcRatio; 18], calFunctions: [RcCalFunction; 4])
+        fn writeRadioCalibrationRatios(rcRatios: [RcRatio; 18], rollChannel: u8, pitchChannel: u8, yawChannel: u8, throttleChannel: u8)
         fn setActive(active: bool)
         fn takeOff()
         fn land()
