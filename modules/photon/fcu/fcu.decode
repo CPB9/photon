@@ -211,6 +211,7 @@ component {
         fn startSensorCalibration(sensor: Sensors)
         fn cancelSensorCalibration()
         fn writeRadioCalibrationRatios(rcRatios: [RcRatio; 18], rollChannel: u8, pitchChannel: u8, yawChannel: u8, throttleChannel: u8)
+        fn setSimpleFlightModes(modeChannel: RcChannel, returnChannel: RcChannel, killSwitchChannel: RcChannel, offboardSwitchChannel: RcChannel, flightModes: [FlightMode;6])
         fn setActive(active: bool)
         fn takeOff()
         fn land()
