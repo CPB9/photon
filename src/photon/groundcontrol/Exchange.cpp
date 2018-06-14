@@ -251,13 +251,13 @@ bool Exchange::handlePayload(bmcl::Bytes data)
         header.streamType = StreamType::Cmd;
         break;
     case 2:
-        header.streamType = StreamType::User;
+        header.streamType = StreamType::Telem;
         break;
     case 3:
-        header.streamType = StreamType::Dfu;
+        header.streamType = StreamType::User;
         break;
     case 4:
-        header.streamType = StreamType::Telem;
+        header.streamType = StreamType::Dfu;
         break;
     default:
         reportError("recieved invalid packet type");

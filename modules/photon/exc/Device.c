@@ -19,6 +19,7 @@
 #endif
 #ifdef PHOTON_HAS_MODULE_TM
 #include "photongen/onboard/tm/Tm.Component.h"
+#include "photongen/onboard/StatusDecoder.h"
 #endif
 #ifdef PHOTON_HAS_MODULE_FWT
 #include "photongen/onboard/fwt/Fwt.Component.h"
@@ -31,6 +32,7 @@
 #include "photongen/onboard/exc/Exc.Component.h"
 
 #include <string.h>
+#include <inttypes.h>
 
 #define _PHOTON_FNAME "exc/Device.c"
 
