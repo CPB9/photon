@@ -59,7 +59,7 @@ PhotonError PhotonFcu_ExecCmd_CancelSensorCalibration()
     return PhotonError_Ok;
 }
 
-PhotonError PhotonFcu_ExecCmd_WriteRadioCalibrationRatios(PhotonFcuRcRatio rcRatios[18], PhotonFcuRcCalFunction calFunctions[4])
+PhotonError PhotonFcu_ExecCmd_WriteRadioCalibrationRatios(PhotonFcuRcRatio rcRatios[18], uint8_t rollChannel, uint8_t pitchChannel, uint8_t yawChannel, uint8_t throttleChannel)
 {
     return PhotonError_Ok;
 }
@@ -80,6 +80,11 @@ PhotonError PhotonFcu_ExecCmd_Land()
 }
 
 PhotonError PhotonFcu_ExecCmd_SetMode(const PhotonDynArrayOfCharMaxSize256* mode)
+{
+    return PhotonError_Ok;
+}
+
+PhotonError PhotonFcu_ExecCmd_SetSimpleFlightModes(PhotonFcuRcChannel modeChannel, PhotonFcuRcChannel returnChannel, PhotonFcuRcChannel killSwitchChannel, PhotonFcuRcChannel offboardSwitchChannel, PhotonFcuFlightMode flightModes[6])
 {
     return PhotonError_Ok;
 }
