@@ -2,7 +2,7 @@
 .kdev_include_paths
 build*
 
-subprojects/PEGTL-2.3.3-mesonwrap/
+subprojects/PEGTL-2.5.2-mesonwrap/
 subprojects/actor-framework-0.15.7-mesonwrap/
 subprojects/asio-asio-1-11-0-mesonwrap2/
 subprojects/bmcl/
