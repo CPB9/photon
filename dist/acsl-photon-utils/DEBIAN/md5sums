@@ -1,0 +1,8 @@
+%%%% HASHDEEP-1.0
+%%%% size,md5,filename
+## Invoked from: /home/sergey/src/photon/dist
+## $ hashdeep -c MD5 -l -o f -r ./acsl-photon-utils/opt/
+## 
+7188736,35d06fa5ef3bb53237449d65951ab0e6,./acsl-photon-utils/opt/acsl/bin/photon-client-udp
+7184640,b35c39e3451cef9a8ad2f01d60fe9bc9,./acsl-photon-utils/opt/acsl/bin/photon-client-serial
+7229728,ca344554e51ee85b06ac2656aa2ae41d,./acsl-photon-utils/opt/acsl/bin/photon-client
