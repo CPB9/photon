@@ -93,7 +93,7 @@ correct:
     current->readOffset = reader.current - reader.start;
 }
 
-void removeScript(size_t deletedIndex)
+static void removeScript(size_t deletedIndex)
 {
     size_t moveSize = 0;
     for (size_t i = deletedIndex; i < _photonPvu.scripts.size; i++) {
