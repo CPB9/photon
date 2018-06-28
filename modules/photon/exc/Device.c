@@ -51,6 +51,7 @@ static void initStream(PhotonExcStreamState* self)
 
 static void init(PhotonExcDevice* self, uint64_t address)
 {
+    self->skippedBytes = 0;
     self->address = address;
     self->hasDataQueued = false;
     initStream(&self->cmdStream);
@@ -90,6 +91,7 @@ void PhotonExcDevice_InitSlave(PhotonExcDevice* self, uint64_t address, PhotonEx
         PHOTON_WARNING(__VA_ARGS__);                          \
         PHOTON_DEBUG("Continuing search with 1 byte offset"); \
         PhotonRingBuf_Erase(&self->inRingBuf, 1);             \
+        self->skippedBytes++;                                 \
     } while(0);
 
 static void handleJunk(PhotonExcDevice* self, const uint8_t* data, size_t size)
@@ -174,6 +176,7 @@ static bool findSep(PhotonExcDevice* self)
                 size_t skippedSize = it - chunks.first.data;
                 handleJunk(self, chunks.first.data, skippedSize);
                 PhotonRingBuf_Erase(&self->inRingBuf, skippedSize);
+                self->skippedBytes += skippedSize;
                 chunks.first.size = 0;
                 chunks.second.data += 1;
                 chunks.second.size -= 1;
@@ -185,6 +188,7 @@ static bool findSep(PhotonExcDevice* self)
             size_t skippedSize = it - chunks.first.data;
             handleJunk(self, chunks.first.data, skippedSize);
             PhotonRingBuf_Erase(&self->inRingBuf, skippedSize);
+            self->skippedBytes += skippedSize;
             PHOTON_ASSERT(chunks.first.size >= (skippedSize + 2));
             chunks.first.data += skippedSize + 2;
             chunks.first.size -= skippedSize + 2;
@@ -209,6 +213,7 @@ static bool findSep(PhotonExcDevice* self)
             handleJunk(self, chunks.first.data, chunks.first.size);
             handleJunk(self, chunks.second.data, skippedSize);
             PhotonRingBuf_Erase(&self->inRingBuf, chunks.first.size + skippedSize);
+            self->skippedBytes += chunks.first.size + skippedSize;
             chunks.first.size = 0;
             PHOTON_ASSERT(chunks.second.size >= (skippedSize + 2));
             chunks.second.data += skippedSize + 2;

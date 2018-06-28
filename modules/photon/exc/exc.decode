@@ -82,6 +82,7 @@ enum DeviceKind {
 }
 
 struct Device {
+    skippedBytes: varuint,
     address: varuint,
     incomingHeader: DataHeader,
 
@@ -127,6 +128,7 @@ component {
 
     statuses {
         [addrs, 0, true]: {address, slaveAddress},
+        [skippedBytes, 0, true]: {devices[..].skippedBytes, devices[..].address},
     }
 
     impl {
