@@ -303,7 +303,7 @@ static PhotonError handleTmPacket(const PhotonExcDataHeader* header, PhotonReade
 
 typedef struct {
     PhotonExcStreamState* state;
-    PhotonExcDataHeader* header;
+    PhotonExcDataHeader header;
 } CounterCorrectionData;
 
 static CounterCorrectionData ccData;
@@ -436,7 +436,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
     case PhotonExcPacketType_Reliable:
         if (self->incomingHeader.counter != state->expectedReliableUplinkCounter) {
             ccData.state = state;
-            ccData.header = &self->incomingHeader;
+            ccData.header = self->incomingHeader;
             queueReceipt(self, &self->incomingHeader, 0, genCounterCorrectionReceiptPayload);
             HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter: expected(%" PRIu16 "), got(%" PRIu16 ")", state->expectedReliableUplinkCounter, self->incomingHeader.counter);
             return false;
@@ -488,7 +488,7 @@ static PhotonError genCounterCorrectionReceiptPayload(void* data, PhotonWriter* 
         return PhotonError_NotEnoughSpace;
     }
     PhotonWriter_WriteU16Le(dest, ccData.state->expectedReliableUplinkCounter);
-    return PhotonExcDataHeader_Serialize(ccData.header, dest);
+    return PhotonExcDataHeader_Serialize(&ccData.header, dest);
 }
 
 static PhotonError queueReceipt(PhotonExcDevice* self, const PhotonExcDataHeader* incomingHeader, void* data, PhotonGenerator gen)

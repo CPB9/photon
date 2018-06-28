@@ -2,7 +2,10 @@
 
 #ifdef PHOTON_STUB
 
-void PhotonUsm_Init() {}
+void PhotonUsm_Init()
+{
+    memset(&_photonUsm, 0, sizeof(_photonUsm));
+}
 void PhotonUsm_Tick() {}
 void PhotonUsm_SetDir(const char* dir) {}
 
