@@ -66,7 +66,7 @@ struct StreamState {
     caf::actor client;
     StreamType type;
     std::size_t checkId;
-    bmcl::Option<uint16_t> lastSync;
+    PacketHeader lastSentHeader;
 };
 
 class Exchange : public caf::event_based_actor {
@@ -83,7 +83,7 @@ private:
     template <typename... A>
     void sendAllStreams(A&&... args);
 
-    bmcl::SharedBytes packPacket(const PacketRequest& req, PacketType streamType, uint16_t counter);
+    bmcl::SharedBytes packPacket(const PacketRequest& req, PacketType streamType, uint16_t counter, StreamState* dest);
 
     void reportError(std::string&& msg);
     void sendUnreliablePacket(const PacketRequest& packet);

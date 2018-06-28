@@ -33,6 +33,11 @@ public:
 
     std::string toString() const;
 
+    bool operator==(const OnboardTime& other) const
+    {
+        return _msecs == other._msecs;
+    }
+
 private:
     uint64_t _msecs;
 };

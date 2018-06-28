@@ -23,6 +23,7 @@
 #include <bmcl/MemWriter.h>
 #include <bmcl/MemReader.h>
 #include <bmcl/Buffer.h>
+#include <bmcl/Result.h>
 #include <bmcl/SharedBytes.h>
 #include <bmcl/String.h>
 #include <bmcl/Panic.h>
@@ -187,27 +188,18 @@ void Exchange::reportError(std::string&& msg)
     send(_handler, ExchangeErrorEventAtom::value, std::move(msg));
 }
 
-bool Exchange::handlePayload(bmcl::Bytes data)
+static bmcl::Result<PacketHeader, std::string> decodeHeader(bmcl::MemReader* reader)
 {
-    if (data.size() == 0) {
-        reportError("recieved empty payload");
-        return false;
-    }
-
     PacketHeader header;
-    bmcl::MemReader reader(data);
-    if (!reader.readVarUint(&header.srcAddress) || header.srcAddress != _deviceAddress) {
-        reportError("recieved invalid src address");
-        return false;
+    if (!reader->readVarUint(&header.srcAddress)) {
+        return std::string("recieved invalid src address");
     }
-    if (!reader.readVarUint(&header.destAddress) || header.destAddress != _selfAddress) {
-        reportError("recieved invalid dest address");
-        return false;
+    if (!reader->readVarUint(&header.destAddress)) {
+        return std::string("recieved invalid dest address");
     }
     int64_t direction;
-    if (!reader.readVarInt(&direction)) {
-        reportError("recieved invalid stream direction");
-        return false;
+    if (!reader->readVarInt(&direction)) {
+        return std::string("recieved invalid stream direction");
     }
     switch (direction) {
     case 0: //uplink
@@ -219,9 +211,8 @@ bool Exchange::handlePayload(bmcl::Bytes data)
     }
 
     int64_t packetType;
-    if (!reader.readVarInt(&packetType)) {
-        reportError("recieved invalid stream type");
-        return false;
+    if (!reader->readVarInt(&packetType)) {
+        return std::string("recieved invalid stream type");
     }
     switch (packetType) {
     case 0:
@@ -234,14 +225,12 @@ bool Exchange::handlePayload(bmcl::Bytes data)
         header.packetType = PacketType::Receipt;
         break;
     default:
-        reportError("recieved invalid stream type");
-        return false;
+        return std::string("recieved invalid stream type");
     }
 
     int64_t streamType;
-    if (!reader.readVarInt(&streamType)) {
-        reportError("recieved invalid packet type");
-        return false;
+    if (!reader->readVarInt(&streamType)) {
+        return std::string("recieved invalid packet type");
     }
     switch (streamType) {
     case 0:
@@ -260,23 +249,49 @@ bool Exchange::handlePayload(bmcl::Bytes data)
         header.streamType = StreamType::Dfu;
         break;
     default:
-        reportError("recieved invalid packet type");
-        return false;
+        return std::string("recieved invalid packet type");
     }
 
-    if (reader.sizeLeft() < 2) {
-        reportError("recieved invalid counter");
-        return false;
+    if (reader->sizeLeft() < 2) {
+        return std::string("recieved invalid counter");
     }
-    header.counter = reader.readUint16Le();
+    header.counter = reader->readUint16Le();
 
     uint64_t tickTime;
-    if (!reader.readVarUint(&tickTime)) {
-        reportError("recieved invalid time");
-        return false;
+    if (!reader->readVarUint(&tickTime)) {
+        return std::string("recieved invalid time");
     }
 
     header.tickTime.setRawValue(tickTime);
+    return header;
+}
+
+bool Exchange::handlePayload(bmcl::Bytes data)
+{
+    if (data.size() == 0) {
+        reportError("recieved empty payload");
+        return false;
+    }
+
+    bmcl::MemReader reader(data);
+
+    auto rv = decodeHeader(&reader);
+    if (rv.isErr()) {
+        reportError(rv.takeErr());
+        return false;
+    }
+
+    const PacketHeader& header = rv.unwrap();
+
+    if (header.srcAddress != _deviceAddress) {
+        reportError("recieved wrong src address");
+        return false;
+    }
+
+    if (header.destAddress != _selfAddress) {
+        reportError("recieved wrong dest address");
+        return false;
+    }
 
     bmcl::Bytes userData(reader.current(), reader.end());
     switch (header.streamType) {
@@ -291,7 +306,7 @@ bool Exchange::handlePayload(bmcl::Bytes data)
     case StreamType::Telem:
         return acceptPacket(header, userData, &_tmStream);
     default:
-        reportError("recieved invalid packet type: " + std::to_string(streamType));
+        reportError("recieved invalid packet type: " + std::to_string((int64_t)header.streamType));
         return false;
     }
 
@@ -300,7 +315,6 @@ bool Exchange::handlePayload(bmcl::Bytes data)
 
 void Exchange::handleReceipt(const PacketHeader& header, ReceiptType type, bmcl::Bytes payload, StreamState* state, QueuedPacket* packet)
 {
-    state->lastSync = bmcl::None;
     PacketResponse resp;
     resp.type = type;
     resp.counter = header.counter;
@@ -309,6 +323,17 @@ void Exchange::handleReceipt(const PacketHeader& header, ReceiptType type, bmcl:
     packet->promise.deliver(resp);
     state->queue.pop_front();
     checkQueue(state);
+}
+
+static bool compareHeaders(const PacketHeader& left, const PacketHeader& right)
+{
+    return left.tickTime == right.tickTime
+    && left.srcAddress == right.srcAddress
+    && left.destAddress == right.destAddress
+    && left.counter == right.counter
+    && left.streamDirection == right.streamDirection
+    && left.packetType == right.packetType
+    && left.streamType == right.streamType;
 }
 
 bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, StreamState* state)
@@ -359,21 +384,24 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
         }
         break;
     case 3: { //counter correction
-        if (reader.readableSize() < 2) {
+        if (reader.readableSize() < 4) {
             reportError("recieved invalid counter correction");
             return false;
         }
         uint16_t newCounter = reader.readUint16Le();
+        auto rv = decodeHeader(&reader);
+        if (rv.isErr()) {
+            reportError("failed to decode counter correction header: " + rv.unwrapErr());
+        } else {
+            if (!compareHeaders(rv.unwrap(), state->lastSentHeader)) {
+                reportError("recieved outdated counter correction");
+                return true;
+            }
+        }
         reportError("recieved counter correction: new(" + std::to_string(newCounter) + "), old(" + std::to_string(state->currentReliableUplinkCounter) + ")");
         if (newCounter == state->currentReliableUplinkCounter) {
             return true;
         }
-        if (state->lastSync.isSome()) {
-            if (newCounter == state->lastSync.unwrap()) {
-                return true;
-            }
-        }
-        state->lastSync.emplace(newCounter);
         state->currentReliableUplinkCounter = newCounter;
         checkQueue(state);
         return true;
@@ -407,7 +435,7 @@ bool Exchange::acceptPacket(const PacketHeader& header, bmcl::Bytes payload, Str
     return true;
 }
 
-bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType packetType, uint16_t counter)
+bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType packetType, uint16_t counter, StreamState* dest)
 {
     //BMCL_DEBUG() << counter;
     uint8_t header[8 + 8 + 8 + 8 + 8 + 2 + 8];
@@ -418,7 +446,8 @@ bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType pack
     headerWriter.writeVarInt((int64_t)packetType);
     headerWriter.writeVarInt((int64_t)req.streamType);
     headerWriter.writeUint16Le(counter);
-    headerWriter.writeVarUint(OnboardTime::now().rawValue()); //time
+    auto time = OnboardTime::now().rawValue();
+    headerWriter.writeVarUint(time); //time
 
     //TODO: check overflow
     std::size_t packetSize = headerWriter.writenData().size() + req.payload.size() + 2;
@@ -432,6 +461,14 @@ bmcl::SharedBytes Exchange::packPacket(const PacketRequest& req, PacketType pack
     crc.update(packWriter.writenData().sliceFrom(2));
     packWriter.writeUint16Le(crc.get());
     assert(packWriter.sizeLeft() == 0);
+
+    dest->lastSentHeader.tickTime.setRawValue(time);
+    dest->lastSentHeader.srcAddress = _selfAddress;
+    dest->lastSentHeader.destAddress = _deviceAddress;
+    dest->lastSentHeader.counter = counter;
+    dest->lastSentHeader.streamDirection = StreamDirection::Uplink;
+    dest->lastSentHeader.packetType = packetType;
+    dest->lastSentHeader.streamType = req.streamType;
     return packet;
 }
 
@@ -442,14 +479,14 @@ void Exchange::checkQueue(StreamState* state)
     }
     QueuedPacket& queuedPacket = state->queue[0];
     queuedPacket.counter = state->currentReliableUplinkCounter;
-    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter);
+    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter, state);
     send(_sink, SendDataAtom::value, packet);
     delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, queuedPacket.checkId);
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state)
 {
-    bmcl::SharedBytes packet = packPacket(req, PacketType::Unreliable, state->currentUnreliableUplinkCounter);
+    bmcl::SharedBytes packet = packPacket(req, PacketType::Unreliable, state->currentUnreliableUplinkCounter, state);
     state->currentUnreliableUplinkCounter++;
     send(_sink, SendDataAtom::value, packet);
 }
@@ -475,7 +512,7 @@ void Exchange::packAndSendFirstQueued(StreamState* state)
     }
 
     const QueuedPacket& queuedPacket = state->queue[0];
-    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, state->currentReliableUplinkCounter);
+    bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, state->currentReliableUplinkCounter, state);
     send(_sink, SendDataAtom::value, packet);
 }
 
