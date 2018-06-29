@@ -373,7 +373,7 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
         }
         break;
     case 3: { //counter correction
-        if (reader.readableSize() < 4) {
+        if (reader.readableSize() < 2) {
             reportError("recieved invalid counter correction");
             return false;
         }
