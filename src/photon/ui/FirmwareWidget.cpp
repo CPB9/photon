@@ -94,8 +94,10 @@ public:
 void FirmwareWidget::updateButtonsAfterTabSwitch(int index)
 {
     if (index == 0) {
+        _sendOneButton->setHidden(false);
         updateButtonsFromSelection(_scriptEditWidget->selectionModel()->selection());
     } else {
+        _sendOneButton->setHidden(true);
         updateButtonsFromSelection(_pvuScriptEditWidget->selectionModel()->selection());
     }
 }
@@ -104,11 +106,15 @@ void FirmwareWidget::updateButtonsFromSelection(const QItemSelection& selection)
 {
     for (const QModelIndex& idx : selection.indexes()) {
         if (QCmdModel::isCmdIndex(idx)) {
+            _selectedCmd.emplace(idx);
             _removeButton->setEnabled(true);
+            _sendOneButton->setEnabled(true);
             return;
         }
     }
+    _selectedCmd.clear();
     _removeButton->setEnabled(false);
+    _sendOneButton->setEnabled(false);
 }
 
 void FirmwareWidget::updateButtons()
@@ -164,9 +170,11 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     connect(_removeButton, &QPushButton::clicked, this, &FirmwareWidget::removeCurrentCmd);
     auto clearButton = new QPushButton("Clear");
     auto sendButton = new QPushButton("Send");
+    _sendOneButton = new QPushButton("Send one cmd");
     _autoScrollBox = new QCheckBox("Autoscroll events");
     _autoScrollBox->setCheckState(Qt::Checked);
     buttonLayout->setDirection(QBoxLayout::LeftToRight);
+    buttonLayout->addWidget(_sendOneButton);
     buttonLayout->addStretch(1);
     buttonLayout->addWidget(_removeButton);
     buttonLayout->addWidget(clearButton);
@@ -177,7 +185,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     connect(_krlPvuTabWidget, &QTabWidget::currentChanged, this, &FirmwareWidget::updateButtonsAfterTabSwitch);
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
-    QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
+    connect(sendButton, &QPushButton::clicked, this, [this]() {
         if (_krlPvuTabWidget->currentIndex() == 0) {
             bmcl::Buffer dest;
             dest.reserve(2048);
@@ -190,22 +198,45 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                 emit reliablePacketQueued(req);
             }
             else {
-                QString err = "Error while encoding cmd: ";
+                QString err = "Error while encoding script: ";
                 err.append(ctx.error().c_str());
-                QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
+                QMessageBox::warning(this, "FirmwareWidget", err, QMessageBox::Ok);
             }
-        }
-        else {
+        } else {
             bmcl::Buffer dest;
             dest.reserve(1024);
             CoderState ctx(OnboardTime::now());
             if (!_pvuScriptNode->encode(&ctx, &dest)) {
-                QString err = "Error while encoding cmd: ";
+                QString err = "Error while encoding pvu script: ";
                 err.append(ctx.error().c_str());
-                QMessageBox::warning(this, "UiTest", err, QMessageBox::Ok);
+                QMessageBox::warning(this, "FirmwareWidget", err, QMessageBox::Ok);
                 return;
             }
             sendPvuScriptCommand(_pvuScriptNameWidget->text().toStdString(), _autoremovePvuScript->isChecked(), _autostartPvuScript->isChecked(), dest);
+        }
+    });
+
+    connect(_sendOneButton, &QPushButton::clicked, this, [this]() {
+        if (_krlPvuTabWidget->currentIndex() != 0) {
+            return;
+        }
+        if (_selectedCmd.isNone()) {
+            return;
+        }
+        bmcl::Buffer dest;
+        dest.reserve(128);
+        CoderState ctx(OnboardTime::now());
+        const CmdNode* node = static_cast<const CmdNode*>(_selectedCmd.unwrap().internalPointer());
+        if (node->encode(&ctx, &dest)) {
+            PacketRequest req;
+            req.streamType = StreamType::Cmd;
+            req.payload = bmcl::SharedBytes::create(dest);
+            setEnabled(false);
+            emit reliablePacketQueued(req);
+        } else {
+            QString err = "Error while encoding single cmd: ";
+            err.append(ctx.error().c_str());
+            QMessageBox::warning(this, "FirmwareWidget", err, QMessageBox::Ok);
         }
     });
 
@@ -234,15 +265,15 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     });
     connect(_scriptEditWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &FirmwareWidget::updateButtons);
 
-    connect(clearButton, &QPushButton::clicked, this,
-            [=]()
-    {
+    connect(clearButton, &QPushButton::clicked, this, [=]() {
         if (_krlPvuTabWidget->currentIndex() == 0) {
             _scriptEditModel->reset();
             _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
+            updateButtonsFromSelection(_scriptEditWidget->selectionModel()->selection());
         } else {
             _pvuScriptEditModel->reset();
             _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
+            updateButtonsFromSelection(_pvuScriptEditWidget->selectionModel()->selection());
         }
     });
 
@@ -314,6 +345,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
 
     QWidget* pvuEditWidget = new QWidget();
     auto pvuEditLayout = new QGridLayout();
+    pvuEditLayout->setMargin(0);
     pvuEditLayout->addWidget(new QLabel("Script Name:"), 0, 0, 1, 1);
     pvuEditLayout->addWidget(_pvuScriptNameWidget, 0, 1, 1, 1);
     pvuEditLayout->addWidget(_autoremovePvuScript, 0, 2, 1, 1);

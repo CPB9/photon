@@ -13,8 +13,10 @@
 
 #include <bmcl/Fwd.h>
 #include <bmcl/Bytes.h>
+#include <bmcl/Option.h>
 
 #include <QWidget>
+#include <QModelIndex>
 
 #include <memory>
 
@@ -94,7 +96,7 @@ private:
 
     QCheckBox* _autoScrollBox;
     QPushButton* _removeButton;
-
+    QPushButton* _sendOneButton;
 
     Rc<const photongen::Validator> _validator;
 
@@ -109,5 +111,7 @@ private:
     std::unique_ptr<QNodeModel> _cmdViewModel;
     std::unique_ptr<QNodeModel> _scriptResultModel;
     std::unique_ptr<QSortFilterProxyModel> _cmdViewProxyModel;
+
+    bmcl::Option<QModelIndex> _selectedCmd;
 };
 }
