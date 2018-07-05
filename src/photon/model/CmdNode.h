@@ -40,7 +40,7 @@ public:
     bmcl::StringView fieldName() const override;
     bmcl::StringView shortDescription() const override;
 
-    Rc<CmdNode> clone(bmcl::OptionPtr<Node> parent);
+    Rc<CmdNode> clone(bmcl::OptionPtr<Node> parent) const;
 
     const decode::Function* function() const
     {

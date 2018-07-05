@@ -33,7 +33,10 @@ public:
     bmcl::OptionPtr<Node> childAt(std::size_t idx) override;
     bmcl::StringView fieldName() const override;
 
+    const decode::Device* device() const;
+
 private:
     std::vector<Rc<ScriptNode>> _nodes;
+    Rc<const decode::Device> _dev;
 };
 }
