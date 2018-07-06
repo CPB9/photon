@@ -115,11 +115,6 @@ struct GpsRawInt {
     vel: u16,
     cog: u16,
     satellites_visible: u8,
-    alt_ellipsoid: i32,
-    h_acc: u32,
-    v_acc: u32,
-    vel_acc: u32,
-    hdg_acc: u32
 }
 
 component {
