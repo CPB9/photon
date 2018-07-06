@@ -21,14 +21,15 @@
 
 #include <memory>
 
-class QTreeView;
-class QCheckBox;
-class QPushButton;
-class QLineEdit;
-class QTabWidget;
-class QItemSelection;
 class QAbstractItemModel;
+class QCheckBox;
+class QItemSelection;
+class QLineEdit;
+class QPushButton;
 class QSortFilterProxyModel;
+class QTabWidget;
+class QTimer;
+class QTreeView;
 
 namespace photongen {
 class Validator;
@@ -113,6 +114,7 @@ private:
     std::unique_ptr<QNodeModel> _cmdViewModel;
     std::unique_ptr<QNodeModel> _scriptResultModel;
     std::unique_ptr<QSortFilterProxyModel> _cmdViewProxyModel;
+    std::unique_ptr<QTimer> _sendTimer;
 
     bmcl::Option<QModelIndex> _selectedCmd;
     bmcl::Uuid _cmdUuid;

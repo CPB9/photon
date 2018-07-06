@@ -30,6 +30,7 @@
 #include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QTabWidget>
+#include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -41,6 +42,8 @@
 #include <bmcl/Uuid.h>
 
 namespace photon {
+
+static constexpr const int cmdTimeoutMs = 5000;
 
 class TreeSortFilterProxyModel : public QSortFilterProxyModel {
 public:
@@ -166,6 +169,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                                std::unique_ptr<QNodeViewModel>&& eventView,
                                QWidget* parent)
     : QWidget(parent)
+    , _sendTimer(new QTimer)
     , _cmdUuid(bmcl::Uuid::create())
 {
     Rc<Node> emptyNode = new Node(bmcl::None);
@@ -201,6 +205,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
             if (_scriptNode->encode(&ctx, &dest)) {
                 PacketRequest req = createCmdRequest(dest);
                 setEnabled(false);
+                _sendTimer->start(cmdTimeoutMs);
                 emit reliablePacketQueued(req);
             }
             else {
@@ -236,6 +241,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
         if (node->encode(&ctx, &dest)) {
             PacketRequest req = createCmdRequest(dest);
             setEnabled(false);
+            _sendTimer->start(cmdTimeoutMs);
             emit reliablePacketQueued(req);
         } else {
             QString err = "Error while encoding single cmd: ";
@@ -407,7 +413,6 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _eventViewWidget->header()->moveSection(2, 1);
     _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
 
-
     auto leftSplitter = new QSplitter(Qt::Vertical);
     leftSplitter->addWidget(_paramViewWidget);
     leftSplitter->addWidget(_eventViewWidget);
@@ -438,6 +443,13 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
         }
     });
 
+    _sendTimer->setSingleShot(true);
+    connect(_sendTimer.get(), &QTimer::timeout, this, [this]() {
+        setEnabled(true);
+        _cmdUuid = bmcl::Uuid::createNil();
+        QMessageBox::warning(this, "Packet error", "Failed to send packet: timeout");
+    });
+
     auto centralSplitter = new QSplitter(Qt::Horizontal);
     centralSplitter->addWidget(leftWrapper);
     centralSplitter->addWidget(rightSplitter);
@@ -458,6 +470,8 @@ void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
         BMCL_WARNING() << "firmwarewidget recieved packet response with invalid uuid";
         return;
     }
+    _sendTimer->stop();
+    _cmdUuid = bmcl::Uuid::createNil();
     bmcl::MemReader reader(response.payload.view());
     _scriptResultNode = ScriptResultNode::fromScriptNode(_scriptNode.get(), _cache.get(), bmcl::None);
     //TODO: check errors
@@ -481,6 +495,7 @@ void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremo
     if (_validator->encodeCmdPvuAddScript(desc, scriptBody, &dest, &ctx)) {
         PacketRequest req = createCmdRequest(dest);
         setEnabled(false);
+        _sendTimer->start(cmdTimeoutMs);
         emit reliablePacketQueued(req);
         _pvuScriptEditModel->reset();
         _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
