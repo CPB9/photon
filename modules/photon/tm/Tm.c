@@ -246,7 +246,7 @@ PhotonError PhotonTm_CollectMessages(PhotonWriter* dest)
 
 bool PhotonTm_HasMessages()
 {
-    return _photonTm.allowedMsgCount != 0 && PhotonRingBuf_ReadableSize(&_eventRingBuf) != 0;
+    return (_photonTm.allowedMsgCount > 0) || (PhotonRingBuf_ReadableSize(&_eventRingBuf) > 0) || (_photonTm.onceRequestsNum > 0);
 }
 
 PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)

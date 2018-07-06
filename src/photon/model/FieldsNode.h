@@ -47,13 +47,16 @@ public:
     void stringify(decode::StringBuilder* dest) const override;
     bool setValues(bmcl::ArrayView<Value> values);
 
+    decode::RcVec<ValueNode>::ConstRange valueNodes() const;
+    decode::RcVec<ValueNode>::Range valueNodes();
+
 protected:
     bool encodeFields(CoderState* ctx, bmcl::Buffer* dest) const;
     bool decodeFields(CoderState* ctx, bmcl::MemReader* src);
 
 public:
-    decode::HashMap<bmcl::StringView, Rc<ValueNode>> _nameToNodeMap; //TODO: remove
-    std::vector<Rc<ValueNode>> _nodes;
+    decode::RcSecondUnorderedMap<bmcl::StringView, ValueNode> _nameToNodeMap; //TODO: remove
+    decode::RcVec<ValueNode> _nodes;
 };
 
 }

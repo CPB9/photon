@@ -118,4 +118,14 @@ void FieldsNode::stringify(decode::StringBuilder* dest) const
     });
     dest->append("}");
 }
+
+decode::RcVec<ValueNode>::ConstRange FieldsNode::valueNodes() const
+{
+    return _nodes;
+}
+
+decode::RcVec<ValueNode>::Range FieldsNode::valueNodes()
+{
+    return _nodes;
+}
 }

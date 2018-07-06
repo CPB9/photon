@@ -57,7 +57,7 @@ bool CmdNode::canHaveChildren() const
     return _expandArgs;
 }
 
-Rc<CmdNode> CmdNode::clone(bmcl::OptionPtr<Node> parent)
+Rc<CmdNode> CmdNode::clone(bmcl::OptionPtr<Node> parent) const
 {
     return new CmdNode(_comp.get(), _func.get(), _cache.get(), parent);
 }

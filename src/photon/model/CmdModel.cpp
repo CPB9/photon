@@ -17,6 +17,7 @@ namespace photon {
 
 CmdModel::CmdModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent)
     : Node(parent)
+    , _dev(dev)
 {
     for (const decode::Ast* ast : dev->modules()) {
         if (ast->component().isNone()) {
@@ -32,6 +33,11 @@ CmdModel::CmdModel(const decode::Device* dev, const ValueInfoCache* cache, bmcl:
         Rc<ScriptNode> node = ScriptNode::withAllCmds(it, cache, this, false);
         _nodes.emplace_back(node);
     }
+}
+
+const decode::Device* CmdModel::device() const
+{
+    return _dev.get();
 }
 
 CmdModel::~CmdModel()

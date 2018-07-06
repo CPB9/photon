@@ -11,27 +11,28 @@
 #include "photon/ui/QCmdModel.h"
 #include "photon/ui/QNodeModel.h"
 #include "photon/ui/QNodeViewModel.h"
-#include "photon/model/NodeView.h"
+#include "photon/model/CmdModel.h"
 #include "photon/groundcontrol/Packet.h"
 #include "photon/model/CoderState.h"
 
 #include "photongen/groundcontrol/Validator.hpp"
 #include "photongen/groundcontrol/pvu/Script.hpp"
 
-#include <QWidget>
-
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QSplitter>
-#include <QPushButton>
-#include <QTreeView>
-#include <QMessageBox>
-#include <QHeaderView>
-#include <QMenu>
-#include <QInputDialog>
 #include <QCheckBox>
-#include <QTabWidget>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
+#include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QSortFilterProxyModel>
+#include <QSplitter>
+#include <QTabWidget>
+#include <QTreeView>
+#include <QVBoxLayout>
+#include <QWidget>
 
 #include <bmcl/Buffer.h>
 #include <bmcl/MemReader.h>
@@ -39,6 +40,56 @@
 #include <bmcl/SharedBytes.h>
 
 namespace photon {
+
+class TreeSortFilterProxyModel : public QSortFilterProxyModel {
+public:
+    bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override
+    {
+        if (filterAcceptsRowItself(sourceRow, sourceParent)) {
+            return true;
+        }
+
+        QModelIndex parent = sourceParent;
+
+        while (parent.isValid()) {
+            if (filterAcceptsRowItself(parent.row(), parent.parent())) {
+                return true;
+            }
+            parent = parent.parent();
+        }
+
+        return hasAcceptedChildren(sourceRow, sourceParent);
+    }
+
+    bool hasAcceptedChildren(int sourceRow, const QModelIndex& sourceParent) const
+    {
+        QModelIndex item = sourceModel()->index(sourceRow, 0, sourceParent);
+        if (!item.isValid()) {
+            return false;
+        }
+
+        int childCount = item.model()->rowCount(item);
+        if (childCount == 0) {
+            return false;
+        }
+
+        for (int i = 0; i < childCount; ++i) {
+            if (filterAcceptsRowItself(i, item)) {
+                return true;
+            }
+            if (hasAcceptedChildren(i, item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool filterAcceptsRowItself(int sourceRow, const QModelIndex& sourceParent) const
+    {
+        QModelIndex infoIndex = sourceModel()->index(sourceRow, 0, sourceParent);
+        return sourceModel()->data(infoIndex).toString().contains(filterRegExp());
+    }
+};
 
 void FirmwareWidget::updateButtonsAfterTabSwitch(int index)
 {
@@ -89,7 +140,7 @@ static void removeCmdFrom(const QTreeView* view, QCmdModel* model)
 
 void FirmwareWidget::removeCurrentCmd()
 {
-    int i = _tabWidget->currentIndex();
+    int i = _krlPvuTabWidget->currentIndex();
     if (i == 0) {
         removeCmdFrom(_scriptEditWidget, _scriptEditModel.get());
     } else {
@@ -116,19 +167,18 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _autoScrollBox = new QCheckBox("Autoscroll events");
     _autoScrollBox->setCheckState(Qt::Checked);
     buttonLayout->setDirection(QBoxLayout::LeftToRight);
-    buttonLayout->addWidget(_autoScrollBox);
     buttonLayout->addStretch(1);
     buttonLayout->addWidget(_removeButton);
     buttonLayout->addWidget(clearButton);
     buttonLayout->addWidget(sendButton);
     buttonLayout->addStretch();
 
-    _tabWidget = new QTabWidget();
-    connect(_tabWidget, &QTabWidget::currentChanged, this, &FirmwareWidget::updateButtonsAfterTabSwitch);
+    _krlPvuTabWidget = new QTabWidget();
+    connect(_krlPvuTabWidget, &QTabWidget::currentChanged, this, &FirmwareWidget::updateButtonsAfterTabSwitch);
 
     _scriptNode.reset(new ScriptNode(bmcl::None));
     QObject::connect(sendButton, &QPushButton::clicked, _paramViewModel.get(), [this]() {
-        if (_tabWidget->currentIndex() == 0) {
+        if (_krlPvuTabWidget->currentIndex() == 0) {
             bmcl::Buffer dest;
             dest.reserve(2048);
             CoderState ctx(OnboardTime::now());
@@ -187,7 +237,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     connect(clearButton, &QPushButton::clicked, this,
             [=]()
     {
-        if (_tabWidget->currentIndex() == 0) {
+        if (_krlPvuTabWidget->currentIndex() == 0) {
             _scriptEditModel->reset();
             _scriptEditWidget->setRootIndex(_scriptEditModel->index(0, 0));
         } else {
@@ -197,8 +247,12 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     });
 
     _cmdViewModel = bmcl::makeUnique<QNodeModel>(emptyNode.get());
+    _cmdViewProxyModel.reset(new TreeSortFilterProxyModel);
+    _cmdViewProxyModel->setSourceModel(_cmdViewModel.get());
+    _cmdViewProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+
     _cmdViewWidget = new QTreeView;
-    _cmdViewWidget->setModel(_cmdViewModel.get());
+    _cmdViewWidget->setModel(_cmdViewProxyModel.get());
     _cmdViewWidget->setAlternatingRowColors(true);
     _cmdViewWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     _cmdViewWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -206,7 +260,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _cmdViewWidget->setDragDropMode(QAbstractItemView::DragDrop);
     _cmdViewWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     _cmdViewWidget->header()->setStretchLastSection(false);
-    _cmdViewWidget->setRootIndex(_cmdViewModel->index(0, 0));
+    _cmdViewWidget->setRootIndex(_cmdViewProxyModel->index(0, 0));
     _cmdViewWidget->setColumnHidden(2, true);
     _cmdViewWidget->setColumnHidden(3, true);
     _cmdViewWidget->expandToDepth(1);
@@ -224,11 +278,9 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _scriptResultWidget->setRootIndex(_scriptResultModel->index(0, 0));
     _scriptResultWidget->setColumnHidden(3, true);
 
-    QWidget* krlCmdWidget = new QWidget();
-    QVBoxLayout* krlCmdLayout = new QVBoxLayout();
-    krlCmdLayout->addWidget(_scriptEditWidget);
-    krlCmdLayout->addWidget(_scriptResultWidget);
-    krlCmdWidget->setLayout(krlCmdLayout);
+    auto krlCmdWidget = new QSplitter(Qt::Vertical);
+    krlCmdWidget->addWidget(_scriptEditWidget);
+    krlCmdWidget->addWidget(_scriptResultWidget);
 
     _pvuScriptNode.reset(new ScriptNode(bmcl::None));
     _pvuScriptEditWidget = new QTreeView();
@@ -270,12 +322,28 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
 
     pvuEditWidget->setLayout(pvuEditLayout);
 
-    _tabWidget->addTab(krlCmdWidget, "KRL");
-    _tabWidget->addTab(pvuEditWidget, "PVU");
+    _krlPvuTabWidget->addTab(krlCmdWidget, "KRL");
+    _krlPvuTabWidget->addTab(pvuEditWidget, "PVU");
+
+    auto krlPvuTabLayout = new QVBoxLayout;
+    krlPvuTabLayout->addWidget(_krlPvuTabWidget);
+    krlPvuTabLayout->addLayout(buttonLayout);
+    auto krlPvuWrapper = new QWidget;
+    krlPvuWrapper->setLayout(krlPvuTabLayout);
+    krlPvuTabLayout->setMargin(0);
+
+    _cmdFilterEdit = new QLineEdit;
+
+    auto cmdViewLayout = new QVBoxLayout;
+    cmdViewLayout->setMargin(0);
+    cmdViewLayout->addWidget(_cmdFilterEdit);
+    cmdViewLayout->addWidget(_cmdViewWidget);
+    auto cmdViewWrapper = new QWidget;
+    cmdViewWrapper->setLayout(cmdViewLayout);
 
     auto rightSplitter = new QSplitter(Qt::Vertical);
-    rightSplitter->addWidget(_cmdViewWidget);
-    rightSplitter->addWidget(_tabWidget);
+    rightSplitter->addWidget(cmdViewWrapper);
+    rightSplitter->addWidget(krlPvuWrapper);
 
     _paramViewWidget = new QTreeView;
     _paramViewWidget->setAcceptDrops(true);
@@ -307,11 +375,20 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     leftSplitter->addWidget(_paramViewWidget);
     leftSplitter->addWidget(_eventViewWidget);
 
-    QObject::connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() {
+    connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() {
         _scriptEditWidget->resizeColumnToContents(0);
     });
-    QObject::connect(_paramViewWidget, &QTreeView::expanded, _paramViewWidget, [this]() {
+    connect(_paramViewWidget, &QTreeView::expanded, _paramViewWidget, [this]() {
         _paramViewWidget->resizeColumnToContents(0);
+    });
+
+    connect(_cmdFilterEdit, &QLineEdit::textChanged, this, [this](const QString& text) {
+        _cmdViewProxyModel->setFilterFixedString(text);
+        if (text.isEmpty()) {
+            _cmdViewWidget->expandToDepth(0);
+        } else {
+            _cmdViewWidget->expandAll();
+        }
     });
 
     auto centralSplitter = new QSplitter(Qt::Horizontal);
@@ -320,7 +397,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
 
     auto centralLayout = new QVBoxLayout;
     centralLayout->addWidget(centralSplitter);
-    centralLayout->addLayout(buttonLayout);
+    centralLayout->setMargin(0);
     setLayout(centralLayout);
 }
 
@@ -350,8 +427,7 @@ void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremo
     bmcl::Buffer dest;
     dest.reserve(1024);
     CoderState ctx(OnboardTime::now());
-    if (_validator->encodeCmdPvuAddScript(desc, scriptBody, &dest, &ctx))
-    {
+    if (_validator->encodeCmdPvuAddScript(desc, scriptBody, &dest, &ctx)) {
         PacketRequest req;
         req.streamType = StreamType::Cmd;
         req.payload = bmcl::SharedBytes::create(dest);
@@ -360,7 +436,6 @@ void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremo
 
         _pvuScriptEditModel->reset();
         _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
-
     }
 }
 
@@ -399,9 +474,9 @@ void FirmwareWidget::setRootTmNode(NodeView* statusView, NodeView* eventView)
 
 void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
 {
+    _cache.reset(cache);
     _cmdViewModel->setRoot(root);
     _cmdViewWidget->expandToDepth(0);
-    _cache.reset(cache);
 }
 
 void FirmwareWidget::setValidator(const Rc<photongen::Validator>& validator)

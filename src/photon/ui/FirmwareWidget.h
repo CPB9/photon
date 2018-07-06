@@ -25,6 +25,7 @@ class QLineEdit;
 class QTabWidget;
 class QItemSelection;
 class QAbstractItemModel;
+class QSortFilterProxyModel;
 
 namespace photongen {
 class Validator;
@@ -82,8 +83,9 @@ private:
     QTreeView* _scriptEditWidget;
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
+    QLineEdit* _cmdFilterEdit;
 
-    QTabWidget* _tabWidget;
+    QTabWidget* _krlPvuTabWidget;
 
     QTreeView* _pvuScriptEditWidget;
     QLineEdit* _pvuScriptNameWidget;
@@ -92,6 +94,7 @@ private:
 
     QCheckBox* _autoScrollBox;
     QPushButton* _removeButton;
+
 
     Rc<const photongen::Validator> _validator;
 
@@ -105,5 +108,6 @@ private:
     std::unique_ptr<QCmdModel> _pvuScriptEditModel;
     std::unique_ptr<QNodeModel> _cmdViewModel;
     std::unique_ptr<QNodeModel> _scriptResultModel;
+    std::unique_ptr<QSortFilterProxyModel> _cmdViewProxyModel;
 };
 }

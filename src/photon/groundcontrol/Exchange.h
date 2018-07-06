@@ -29,7 +29,7 @@ class Package;
 struct QueuedPacket;
 
 struct QueuedPacket {
-    using TimePoint = std::chrono::steady_clock::time_point;
+    using TimePoint = uint64_t;
 
     QueuedPacket(const PacketRequest& req, uint16_t counter, TimePoint time, const caf::response_promise& promise)
         : request(req)
@@ -66,7 +66,6 @@ struct StreamState {
     caf::actor client;
     StreamType type;
     std::size_t checkId;
-    bmcl::Option<uint16_t> lastSync;
 };
 
 class Exchange : public caf::event_based_actor {
@@ -83,7 +82,7 @@ private:
     template <typename... A>
     void sendAllStreams(A&&... args);
 
-    bmcl::SharedBytes packPacket(const PacketRequest& req, PacketType streamType, uint16_t counter);
+    bmcl::SharedBytes packPacket(const PacketRequest& req, PacketType streamType, uint16_t counter, uint64_t time);
 
     void reportError(std::string&& msg);
     void sendUnreliablePacket(const PacketRequest& packet);
