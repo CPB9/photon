@@ -44,10 +44,8 @@ void DfuState::sendCmd(C&& ser, A&&... args)
 {
     CoderState state(OnboardTime::now());
     if (ser(&_temp, &state, std::forward<A>(args)...)) {
-        PacketRequest req;
-        req.streamType = StreamType::Dfu;
-        req.payload = bmcl::SharedBytes::create(_temp.asBytes());
-        send(_exc, SendUnreliablePacketAtom::value, req);
+        PacketRequest req(_temp.asBytes(), StreamType::Dfu);
+        send(_exc, SendUnreliablePacketAtom::value, std::move(req));
     } else {
         //TODO: report internal error
     }
@@ -85,18 +83,18 @@ caf::behavior DfuState::make_behavior()
                 break;
             }
         },
-        [this](StartAtom) {
+        [](StartAtom) {
         },
-        [this](StopAtom) {
+        [](StopAtom) {
         },
-        [this](EnableLoggindAtom, bool isEnabled) {
+        [](EnableLoggindAtom, bool isEnabled) {
         },
-        [this](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
+        [](SetProjectAtom, const ProjectUpdate::ConstPointer& update) {
         },
         [this](FlashDfuFirmware, std::uintmax_t id, const decode::DataReader::Pointer& reader) {
             _flashPromise = make_response_promise();
             _fwReader = reader;
-            _sectorId = id,
+            _sectorId = id;
             beginUpload();
             return _flashPromise;
         },

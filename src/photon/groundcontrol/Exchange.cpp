@@ -124,9 +124,8 @@ caf::behavior Exchange::make_behavior()
                 return;
             }
             if (!_dataReceived) {
-                PacketRequest req;
-                req.streamType = StreamType::Cmd;
-                send(this, SendUnreliablePacketAtom::value, req);
+                PacketRequest req(bmcl::Bytes(), StreamType::Cmd);
+                send(this, SendUnreliablePacketAtom::value, std::move(req));
             }
             _dataReceived = false;
             delayed_send(this, std::chrono::seconds(1), PingAtom::value);
@@ -315,12 +314,9 @@ bool Exchange::handlePayload(bmcl::Bytes data)
 
 void Exchange::handleReceipt(const PacketHeader& header, ReceiptType type, bmcl::Bytes payload, StreamState* state, QueuedPacket* packet)
 {
-    PacketResponse resp;
-    resp.type = type;
-    resp.counter = header.counter;
-    resp.tickTime = header.tickTime;
-    resp.payload = bmcl::SharedBytes::create(payload);
-    packet->promise.deliver(resp);
+    const bmcl::Uuid& uuid = state->queue.front().request.requestUuid;
+    PacketResponse resp(uuid, bmcl::SharedBytes::create(payload), type, header.tickTime, header.counter);
+    packet->promise.deliver(std::move(resp));
     state->queue.pop_front();
     checkQueue(state);
 }

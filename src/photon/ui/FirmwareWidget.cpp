@@ -38,6 +38,7 @@
 #include <bmcl/MemReader.h>
 #include <bmcl/Logging.h>
 #include <bmcl/SharedBytes.h>
+#include <bmcl/Uuid.h>
 
 namespace photon {
 
@@ -155,10 +156,17 @@ void FirmwareWidget::removeCurrentCmd()
     updateButtonsAfterTabSwitch(i);
 }
 
+PacketRequest FirmwareWidget::createCmdRequest(const bmcl::Buffer& data)
+{
+    _cmdUuid = bmcl::Uuid::create();
+    return PacketRequest(_cmdUuid, data, StreamType::Cmd);
+}
+
 FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                                std::unique_ptr<QNodeViewModel>&& eventView,
                                QWidget* parent)
     : QWidget(parent)
+    , _cmdUuid(bmcl::Uuid::create())
 {
     Rc<Node> emptyNode = new Node(bmcl::None);
     _paramViewModel = std::move(paramView);
@@ -191,9 +199,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
             dest.reserve(2048);
             CoderState ctx(OnboardTime::now());
             if (_scriptNode->encode(&ctx, &dest)) {
-                PacketRequest req;
-                req.streamType = StreamType::Cmd;
-                req.payload = bmcl::SharedBytes::create(dest);
+                PacketRequest req = createCmdRequest(dest);
                 setEnabled(false);
                 emit reliablePacketQueued(req);
             }
@@ -228,9 +234,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
         CoderState ctx(OnboardTime::now());
         const CmdNode* node = static_cast<const CmdNode*>(_selectedCmd.unwrap().internalPointer());
         if (node->encode(&ctx, &dest)) {
-            PacketRequest req;
-            req.streamType = StreamType::Cmd;
-            req.payload = bmcl::SharedBytes::create(dest);
+            PacketRequest req = createCmdRequest(dest);
             setEnabled(false);
             emit reliablePacketQueued(req);
         } else {
@@ -439,6 +443,10 @@ FirmwareWidget::~FirmwareWidget()
 
 void FirmwareWidget::acceptPacketResponse(const PacketResponse& response)
 {
+    if (response.requestUuid != _cmdUuid) {
+        BMCL_WARNING() << "firmwarewidget recieved packet response with invalid uuid";
+        return;
+    }
     bmcl::MemReader reader(response.payload.view());
     _scriptResultNode = ScriptResultNode::fromScriptNode(_scriptNode.get(), _cache.get(), bmcl::None);
     //TODO: check errors
@@ -460,12 +468,9 @@ void FirmwareWidget::sendPvuScriptCommand(const std::string& name, bool autoremo
     dest.reserve(1024);
     CoderState ctx(OnboardTime::now());
     if (_validator->encodeCmdPvuAddScript(desc, scriptBody, &dest, &ctx)) {
-        PacketRequest req;
-        req.streamType = StreamType::Cmd;
-        req.payload = bmcl::SharedBytes::create(dest);
+        PacketRequest req = createCmdRequest(dest);
         setEnabled(false);
         emit reliablePacketQueued(req);
-
         _pvuScriptEditModel->reset();
         _pvuScriptEditWidget->setRootIndex(_pvuScriptEditModel->index(0, 0));
     }
@@ -506,6 +511,7 @@ void FirmwareWidget::setRootTmNode(NodeView* statusView, NodeView* eventView)
 
 void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
 {
+    _cmdUuid = bmcl::Uuid::createNil();
     _cache.reset(cache);
     _cmdViewModel->setRoot(root);
     _cmdViewWidget->expandToDepth(0);

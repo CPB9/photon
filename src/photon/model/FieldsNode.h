@@ -10,14 +10,14 @@
 
 #include "photon/Config.hpp"
 #include "photon/core/Rc.h"
-#include "decode/core/Hash.h"
 #include "decode/core/HashMap.h"
 #include "decode/parser/Containers.h"
 #include "photon/model/Node.h"
 #include "photon/model/NodeWithNamedChildren.h"
 
-#include <bmcl/StringView.h>
 #include <bmcl/Fwd.h>
+#include <bmcl/StringView.h>
+#include <bmcl/StringViewHash.h>
 
 #include <cstdint>
 

@@ -17,6 +17,8 @@
 #include <bmcl/OptionPtr.h>
 #include <bmcl/StringView.h>
 
+#include <algorithm>
+
 namespace decode {
 class StringBuilder;
 }

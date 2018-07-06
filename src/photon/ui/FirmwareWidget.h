@@ -14,6 +14,7 @@
 #include <bmcl/Fwd.h>
 #include <bmcl/Bytes.h>
 #include <bmcl/Option.h>
+#include <bmcl/Uuid.h>
 
 #include <QWidget>
 #include <QModelIndex>
@@ -79,6 +80,7 @@ signals:
 
 private:
     void updateButtonsFromSelection(const QItemSelection& selection);
+    PacketRequest createCmdRequest(const bmcl::Buffer& data);
 
     QTreeView* _paramViewWidget;
     QTreeView* _eventViewWidget;
@@ -113,5 +115,6 @@ private:
     std::unique_ptr<QSortFilterProxyModel> _cmdViewProxyModel;
 
     bmcl::Option<QModelIndex> _selectedCmd;
+    bmcl::Uuid _cmdUuid;
 };
 }

@@ -54,15 +54,12 @@ CmdState::~CmdState()
 
 static CmdState::EncodeResult encodePacket(CmdState::EncodeHandler handler)
 {
-    PacketRequest req;
-    req.streamType = StreamType::Cmd;
     uint8_t tmp[1024];
     Encoder writer(tmp, sizeof(tmp));
     if (!handler(&writer)) {
         return writer.errorMsgOr("unknown error").toStdString();
     }
-    req.payload = bmcl::SharedBytes::create(writer.writenData());
-    return req;
+    return PacketRequest(writer.writenData(), StreamType::Cmd);
 }
 
 struct RouteUploadState {
@@ -766,11 +763,9 @@ caf::result<PacketResponse> CmdState::sendCustomCmd(bmcl::StringView compName, b
     dest.reserve(1024);
     CoderState ctx(OnboardTime::now());
     if (cmdNode->encode(&ctx, &dest)) {
-        PacketRequest req;
-        req.streamType = StreamType::Cmd;
-        req.payload = bmcl::SharedBytes::create(dest);
+        PacketRequest req(dest, StreamType::Cmd);
         caf::response_promise promise = make_response_promise();
-        request(_exc, caf::infinite, SendReliablePacketAtom::value, req).then([promise](const PacketResponse& response) mutable {
+        request(_exc, caf::infinite, SendReliablePacketAtom::value, std::move(req)).then([promise](const PacketResponse& response) mutable {
             promise.deliver(response);
         },
         [promise](const caf::error& err) mutable {

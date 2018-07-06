@@ -120,11 +120,9 @@ caf::behavior UiActor::make_behavior()
                 bmcl::Buffer dest;
                 CoderState state(OnboardTime::now());
                 if (_validator->encodeCmdTestSetParam3(_param2Value * 11, &dest, &state)) {
-                    PacketRequest req;
-                    req.streamType = StreamType::Cmd;
-                    req.payload = bmcl::SharedBytes::create(dest);
+                    PacketRequest req(dest, StreamType::Cmd);
 
-                    request(_gc, caf::infinite, SendReliablePacketAtom::value, req).then([](const PacketResponse& response) {
+                    request(_gc, caf::infinite, SendReliablePacketAtom::value, std::move(req)).then([](const PacketResponse& response) {
                     });
                 } else {
                     BMCL_CRITICAL() << "failed to encode cmd setParam3";
