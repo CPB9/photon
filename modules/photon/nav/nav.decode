@@ -104,6 +104,24 @@ struct DeviceState {
     battery: u8,
 }
 
+struct GpsRawInt {
+    time_usec: u64,
+    fix_type: u8,
+    lat: i32,
+    lon: i32,
+    alt: i32,
+    eph: u16,
+    epv: u16,
+    vel: u16,
+    cog: u16,
+    satellites_visible: u8,
+    alt_ellipsoid: i32,
+    h_acc: u32,
+    v_acc: u32,
+    vel_acc: u32,
+    hdg_acc: u32
+}
+
 component {
     variables {
         latLon: LatLon,
@@ -112,12 +130,14 @@ component {
         relativeAltitude: OptionalF64,
         velocity: Vec3,
         gpsState: GpsState,
+        gpsRawInt: GpsRawInt,
         deviceState: DeviceState,
     }
 
     statuses {
         [all, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
         [gps, 0, true]: {gpsState},
+        [gpsRawInt, 0, false]: {gpsRawInt}
         [state, 0, true]: {deviceState},
     }
 
