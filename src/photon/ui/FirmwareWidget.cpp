@@ -407,9 +407,20 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _eventViewWidget->header()->moveSection(2, 1);
     _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
 
+
     auto leftSplitter = new QSplitter(Qt::Vertical);
     leftSplitter->addWidget(_paramViewWidget);
     leftSplitter->addWidget(_eventViewWidget);
+
+    auto autoscrollLayout = new QHBoxLayout;
+    autoscrollLayout->addStretch();
+    autoscrollLayout->addWidget(_autoScrollBox);
+    auto leftLayout = new QVBoxLayout;
+    leftLayout->setMargin(0);
+    leftLayout->addWidget(leftSplitter);
+    leftLayout->addLayout(autoscrollLayout);
+    auto leftWrapper = new QWidget;
+    leftWrapper->setLayout(leftLayout);
 
     connect(_scriptEditWidget, &QTreeView::expanded, _scriptEditWidget, [this]() {
         _scriptEditWidget->resizeColumnToContents(0);
@@ -428,7 +439,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     });
 
     auto centralSplitter = new QSplitter(Qt::Horizontal);
-    centralSplitter->addWidget(leftSplitter);
+    centralSplitter->addWidget(leftWrapper);
     centralSplitter->addWidget(rightSplitter);
 
     auto centralLayout = new QVBoxLayout;
