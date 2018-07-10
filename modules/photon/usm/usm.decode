@@ -39,6 +39,7 @@ enum State {
 struct BuildState {
     file            : FileName
     language        : LanguageCodes,
+    uploadState     : State,
     unpackState     : State,
     buildState      : State,
     installState    : State,
