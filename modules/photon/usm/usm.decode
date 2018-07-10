@@ -155,6 +155,7 @@ component {
         /// Confirm receiving of many data frames
         fn confirmReceivingMultiple(language : LanguageCodes, frames: varuint)
 
+        fn prepareFileGetting(language : LanguageCodes, fileId: varuint)
         fn getFile(language : LanguageCodes, fileId: varuint)
         fn unpackFile(language : LanguageCodes)
         fn buildTarget(language : LanguageCodes)
