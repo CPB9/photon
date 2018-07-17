@@ -140,7 +140,7 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
     bmcl::OptionPtr<CmdNode> cmdNode = decodeQCmdModelDrop(data, parent);
     if (cmdNode.isSome()) {
         if (_cmds->numChildren() <= 1) {
-            return false;;
+            return false;
         }
         if (row == -1) {
             row = _cmds->numChildren() - 1;
@@ -152,6 +152,9 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
         if (currentRow.isNone()) {
             return false;
         }
+        if (row == currentRow.unwrap())
+            return false;
+
         beginMoveRows(parent, currentRow.unwrap(), currentRow.unwrap(), parent, row);
         _cmds->moveNode(currentRow.unwrap(), row);
         endMoveRows();
