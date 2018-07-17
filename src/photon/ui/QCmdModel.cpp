@@ -76,7 +76,10 @@ bmcl::OptionPtr<CmdNode> QCmdModel::decodeQCmdModelDrop(const QMimeData* data, c
 
 bool QCmdModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) const
 {
-    if (parent.internalPointer() != _cmds.get()) {
+    if (!parent.isValid())
+        return false;
+
+    if (parent.model()->index(0, 0).internalPointer() != _cmds.get()) {
         return false;
     }
 
@@ -87,7 +90,6 @@ bool QCmdModel::canDropMimeData(const QMimeData* data, Qt::DropAction action, in
     if (decodeQCmdModelDrop(data, parent).isSome()) {
         return true;
     }
-
     return false;
 }
 
