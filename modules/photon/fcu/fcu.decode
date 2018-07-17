@@ -188,7 +188,7 @@ component {
         [lastMessage, 0, true]:       { lastMessage             }
         [commonCalibration, 0, true]: { commonCalibrationState  }
         [calibration, 0, false]:      { calibrationState        }
-        [flightModes, 0, false]:      { flightModes             }
+        [flightModes, 0, true]:      { flightModes             }
     }
 
     events {
