@@ -144,11 +144,13 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
         if (_cmds->numChildren() <= 1) {
             return false;
         }
+        size_t destinationIndex = row;
         if (row == -1) {
             row = _cmds->numChildren() - 1;
+            destinationIndex = _cmds->numChildren();
         }
-        if (row > 0 && std::size_t(row) >= _cmds->numChildren()) {
-            row = _cmds->numChildren() - 1;
+         if (row > 0 && std::size_t(row) >= _cmds->numChildren()) {
+             row = _cmds->numChildren() - 1;
         }
         bmcl::Option<std::size_t> currentRow = _cmds->childIndex(cmdNode.unwrap());
         if (currentRow.isNone()) {
@@ -157,7 +159,7 @@ bool QCmdModel::dropMimeData(const QMimeData* data, Qt::DropAction action, int r
         if (row == currentRow.unwrap())
             return false;
 
-        beginMoveRows(parent, currentRow.unwrap(), currentRow.unwrap(), parent, row);
+        beginMoveRows(parent, currentRow.unwrap(), currentRow.unwrap(), parent, destinationIndex);
         _cmds->moveNode(currentRow.unwrap(), row);
         endMoveRows();
         return true;
