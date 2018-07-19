@@ -75,7 +75,8 @@ caf::behavior TmState::make_behavior()
             _model = new TmModel(update->device(), update->cache());
             Rc<NodeView> statusView = new NodeView(_model->statusesNode());
             Rc<NodeView> eventView = new NodeView(_model->eventsNode());
-            send(_handler, SetTmViewAtom::value, statusView, eventView);
+            Rc<NodeView> statsView = new NodeView(_model->statisticsNode());
+            send(_handler, SetTmViewAtom::value, statusView, eventView, statsView);
             _updateCount++;
 
             for (NamedSub& sub : _namedSubs) {
@@ -138,7 +139,7 @@ bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
     auto it = std::find_if(_namedSubs.begin(), _namedSubs.end(), [path](const NamedSub& sub) {return sub.path == path; });
     if (it != _namedSubs.end())
     {
-        _namedSubs.erase(it); 
+        _namedSubs.erase(it);
     }
     _namedSubs.emplace_back(valueNode, path, dest);
     return true;
@@ -158,7 +159,10 @@ void TmState::pushTmUpdates()
 
     Rc<NodeViewUpdater> eventUpdater = new NodeViewUpdater(_model->eventsNode());
     _model->eventsNode()->collectUpdates(eventUpdater.get());
-    send(_handler, UpdateTmViewAtom::value, statusUpdater, eventUpdater);
+
+    Rc<NodeViewUpdater> statisticsUpdater = new NodeViewUpdater(_model->statisticsNode());
+    _model->statisticsNode()->collectUpdates(statisticsUpdater.get());
+    send(_handler, UpdateTmViewAtom::value, statusUpdater, eventUpdater, statisticsUpdater);
     for (const NamedSub& sub : _namedSubs) {
         send(sub.actor, sub.node->value(), sub.path);
     }

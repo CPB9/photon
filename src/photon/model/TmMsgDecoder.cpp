@@ -230,7 +230,7 @@ EventNode::EventNode(const decode::EventMsg* msg, const ValueInfoCache* cache, b
     : FieldsNode(msg->partsRange(), cache, parent)
     , _msg(msg)
 {
-    _name = cache->nameForEvent(msg);
+    _name = cache->nameForTmMsg(msg);
     _value = "???";
 }
 

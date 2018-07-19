@@ -11,18 +11,97 @@
 #include "decode/parser/Project.h"
 #include "decode/ast/Component.h"
 #include "decode/ast/Ast.h"
+#include "decode/ast/Type.h"
 #include "photon/model/TmMsgDecoder.h"
 #include "photon/model/FieldsNode.h"
 #include "photon/model/CoderState.h"
 #include "photon/model/Node.h"
 #include "photon/model/NodeViewUpdater.h"
 #include "photon/model/ValueInfoCache.h"
+#include "photon/model/ValueNode.h"
 
 #include <bmcl/MemReader.h>
 
 #include <deque>
 
 namespace photon {
+
+class TmStatsNode : public Node {
+public:
+    using NodeType = NumericValueNode<uint64_t>;
+
+    TmStatsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+        : Node(parent)
+        , _totalMsgsRecieved(OnboardTime::now(), 0)
+        , _lastUpdate(OnboardTime::now())
+    {
+    }
+
+    ~TmStatsNode()
+    {
+    }
+
+    void incTotal(OnboardTime now)
+    {
+        _totalMsgsRecieved.setValue(now, _totalMsgsRecieved.value() + 1);
+    }
+
+    void setLastUpdateTime(OnboardTime time)
+    {
+        _lastUpdate = time;
+    }
+
+    void addNode(NodeType* node)
+    {
+        _nodes.emplace_back(node);
+    }
+
+    void collectUpdates(NodeViewUpdater* dest) override
+    {
+        if (_totalMsgsRecieved.hasChanged()) {
+            dest->addValueUpdate(Value::makeUnsigned(_totalMsgsRecieved.value()),
+                                 _totalMsgsRecieved.lastOnboardUpdateTime(),
+                                 this);
+            _totalMsgsRecieved.updateState();
+        }
+        collectUpdatesGeneric(_nodes, dest);
+    }
+
+    std::size_t numChildren() const override
+    {
+        return _nodes.size();
+    }
+
+    bmcl::OptionPtr<Node> childAt(std::size_t idx) override
+    {
+        return childAtGeneric(_nodes, idx);
+    }
+
+    bmcl::Option<std::size_t> childIndex(const Node* node) const override
+    {
+        return childIndexGeneric(_nodes, node);
+    }
+
+    bmcl::StringView fieldName() const override
+    {
+        return "messages";
+    }
+
+    Value value() const override
+    {
+        return Value::makeUnsigned(_totalMsgsRecieved.value());
+    }
+
+    ValueKind valueKind() const override
+    {
+        return ValueKind::Unsigned;
+    }
+
+private:
+    std::vector<Rc<NodeType>> _nodes;
+    ValuePair<uint64_t> _totalMsgsRecieved;
+    OnboardTime _lastUpdate;
+};
 
 class ComponentVarsNode : public FieldsNode {
 public:
@@ -167,6 +246,7 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
     : _device(dev)
     , _statuses(new StatusesNode(dev))
     , _events(new EventsNode)
+    , _statistics(new TmStatsNode)
 {
     for (const decode::Ast* ast : dev->modules()) {
         if (ast->component().isNone()) {
@@ -182,16 +262,29 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
         Rc<ComponentVarsNode> node = new ComponentVarsNode(comp, cache, _statuses.get());
         _statuses->addVarsNode(node.get());
 
+        Rc<decode::BuiltinType> u64Type = new decode::BuiltinType(decode::BuiltinTypeKind::U64);
+
         std::size_t compNum = comp->number();
         for (const decode::StatusMsg* msg : comp->statusesRange()) {
             std::size_t msgNum = msg->number();
             uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
-            _decoders.emplace(num, StatusMsgDecoder(msg, node.get()));
+
+            Rc<NumericValueNode<uint64_t>> statsNode = new NumericValueNode<uint64_t>(u64Type.get(), cache, _statistics.get());
+            statsNode->setFieldName(cache->nameForTmMsg(msg));
+            _statistics->addNode(statsNode.get());
+            _decoders.emplace(std::piecewise_construct,
+                              std::forward_as_tuple(num),
+                              std::forward_as_tuple(msg, node.get(), statsNode.get()));
         }
         for (const decode::EventMsg* msg : comp->eventsRange()) {
             std::size_t msgNum = msg->number();
             uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
-            _decoders.emplace(num, EventMsgDecoder(msg, cache));
+            Rc<NumericValueNode<uint64_t>> statsNode = new NumericValueNode<uint64_t>(u64Type.get(), cache, _statistics.get());
+            statsNode->setFieldName(cache->nameForTmMsg(msg));
+            _statistics->addNode(statsNode.get());
+            _decoders.emplace(std::piecewise_construct,
+                              std::forward_as_tuple(num),
+                              std::forward_as_tuple(msg, cache, statsNode.get()));
         }
     }
 }
@@ -204,17 +297,24 @@ bool TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bm
         return false;
     }
 
-    if (it->second.isFirst()) {
-        if (!it->second.unwrapFirst().decode(ctx, src)) {
+    MsgState& state = it->second;
+
+    if (state.decoder.isFirst()) {
+        if (!state.decoder.unwrapFirst().decode(ctx, src)) {
             return false;
         }
     } else {
-        bmcl::Option<Rc<EventNode>> eventNode = it->second.unwrapSecond().decode(ctx, src);
+        bmcl::Option<Rc<EventNode>> eventNode = state.decoder.unwrapSecond().decode(ctx, src);
         if (eventNode.isNone()) {
             return false;
         }
         _events->addEvent(std::move(eventNode.unwrap()));
     }
+
+    auto now = OnboardTime::now();
+    state.statNode->incRawValue(now);
+    _statistics->incTotal(now);
+    _statistics->setLastUpdateTime(now);
     return true;
 }
 
@@ -230,5 +330,10 @@ Node* TmModel::statusesNode()
 Node* TmModel::eventsNode()
 {
     return _events.get();
+}
+
+Node* TmModel::statisticsNode()
+{
+    return _statistics.get();
 }
 }

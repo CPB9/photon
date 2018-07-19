@@ -34,9 +34,27 @@ class NumericValueNode;
 class ComponentVarsNode;
 class StatusesNode;
 class EventsNode;
+class TmStatsNode;
 
 class TmModel : public RefCountable {
 public:
+    struct MsgState {
+        MsgState(const decode::StatusMsg* msg, FieldsNode* fieldsNode, NumericValueNode<uint64_t>* statsNode)
+            : decoder(bmcl::InPlaceFirst, msg, fieldsNode)
+            , statNode(statsNode)
+        {
+        }
+
+        MsgState(const decode::EventMsg* msg, const ValueInfoCache* cache, NumericValueNode<uint64_t>* statsNode)
+            : decoder(bmcl::InPlaceSecond, msg, cache)
+            , statNode(statsNode)
+        {
+        }
+
+        bmcl::Either<StatusMsgDecoder, EventMsgDecoder> decoder;
+        Rc<NumericValueNode<uint64_t>> statNode;
+    };
+
     using Pointer = Rc<TmModel>;
     using ConstPointer = Rc<const TmModel>;
 
@@ -47,11 +65,13 @@ public:
 
     Node* statusesNode();
     Node* eventsNode();
+    Node* statisticsNode();
 
 private:
-    decode::HashMap<uint64_t, bmcl::Either<StatusMsgDecoder, EventMsgDecoder>> _decoders;
+    decode::HashMap<uint64_t, MsgState> _decoders;
     Rc<const decode::Device> _device;
     Rc<StatusesNode> _statuses;
     Rc<EventsNode> _events;
+    Rc<TmStatsNode> _statistics;
 };
 }

@@ -167,6 +167,7 @@ PacketRequest FirmwareWidget::createCmdRequest(const bmcl::Buffer& data)
 
 FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                                std::unique_ptr<QNodeViewModel>&& eventView,
+                               std::unique_ptr<QNodeViewModel>&& statsView,
                                QWidget* parent)
     : QWidget(parent)
     , _sendTimer(new QTimer)
@@ -175,6 +176,7 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     Rc<Node> emptyNode = new Node(bmcl::None);
     _paramViewModel = std::move(paramView);
     _eventViewModel = std::move(eventView);
+    _statsViewModel = std::move(statsView);
 
     auto buttonLayout = new QHBoxLayout;
     _removeButton = new QPushButton("Remove");
@@ -395,10 +397,23 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _paramViewWidget->setDragEnabled(true);
     _paramViewWidget->setDragDropMode(QAbstractItemView::DragDrop);
     _paramViewWidget->setDropIndicatorShown(true);
-    //_paramViewWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     _paramViewWidget->header()->setStretchLastSection(false);
     _paramViewWidget->setModel(_paramViewModel.get());
     _paramViewWidget->header()->moveSection(2, 1);
+
+    _statsViewWidget = new QTreeView;
+    _statsViewWidget->setAcceptDrops(true);
+    _statsViewWidget->setAlternatingRowColors(true);
+    _statsViewWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+    _statsViewWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    _statsViewWidget->setDragEnabled(true);
+    _statsViewWidget->setDragDropMode(QAbstractItemView::DragDrop);
+    _statsViewWidget->setDropIndicatorShown(true);
+    _statsViewWidget->header()->setStretchLastSection(false);
+    _statsViewWidget->setModel(_statsViewModel.get());
+    //_statsViewWidget->header()->moveSection(2, 1);
+    _statsViewWidget->setColumnHidden(1, true);
+    _statsViewWidget->setColumnHidden(4, true);
 
     _eventViewWidget = new QTreeView;
     _eventViewWidget->setAcceptDrops(false);
@@ -413,16 +428,21 @@ FirmwareWidget::FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
     _eventViewWidget->header()->moveSection(2, 1);
     _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
 
+
     auto leftSplitter = new QSplitter(Qt::Vertical);
     leftSplitter->addWidget(_paramViewWidget);
     leftSplitter->addWidget(_eventViewWidget);
+
+    auto paramStatsTabWidget = new QTabWidget;
+    paramStatsTabWidget->addTab(leftSplitter, "Telemetry");
+    paramStatsTabWidget->addTab(_statsViewWidget, "Statistics");
 
     auto autoscrollLayout = new QHBoxLayout;
     autoscrollLayout->addStretch();
     autoscrollLayout->addWidget(_autoScrollBox);
     auto leftLayout = new QVBoxLayout;
     leftLayout->setMargin(0);
-    leftLayout->addWidget(leftSplitter);
+    leftLayout->addWidget(paramStatsTabWidget);
     leftLayout->addLayout(autoscrollLayout);
     auto leftWrapper = new QWidget;
     leftWrapper->setLayout(leftLayout);
@@ -526,13 +546,16 @@ void FirmwareWidget::nodeContextMenuRequested(const QPoint& pos)
     }
 }
 
-void FirmwareWidget::setRootTmNode(NodeView* statusView, NodeView* eventView)
+void FirmwareWidget::setRootTmNode(NodeView* statusView, NodeView* eventView, NodeView* statsView)
 {
     _paramViewModel->setRoot(statusView);
     _paramViewWidget->expandToDepth(0);
     _eventViewModel->setRoot(eventView);
     _eventViewWidget->expandToDepth(0);
     _eventViewWidget->setRootIndex(_eventViewModel->index(0, 0));
+    _statsViewModel->setRoot(statsView);
+    _statsViewWidget->expandToDepth(0);
+    _statsViewWidget->resizeColumnToContents(0);
 }
 
 void FirmwareWidget::setRootCmdNode(const ValueInfoCache* cache, Node* root)
@@ -548,7 +571,7 @@ void FirmwareWidget::setValidator(const Rc<photongen::Validator>& validator)
     _validator = validator;
 }
 
-void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater)
+void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater, NodeViewUpdater* statsUpdater)
 {
     //TODO: remove viewport updates
     _paramViewModel->applyUpdates(statusUpdater);
@@ -558,5 +581,8 @@ void FirmwareWidget::applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpda
         _eventViewWidget->scrollToBottom();
     }
     _eventViewWidget->viewport()->update();
+
+    _statsViewModel->applyUpdates(statsUpdater);
+    _statsViewWidget->viewport()->update();
 }
 }

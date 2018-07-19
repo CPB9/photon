@@ -198,11 +198,11 @@ class CacheCollector : public decode::ConstAstVisitor<CacheCollector> {
 public:
     void collectNames(const decode::Package* package,
                       ValueInfoCache::TypeMapType* typeNameMap,
-                      ValueInfoCache::EventMapType* eventNameMap,
+                      ValueInfoCache::TmMsgMapType* tmMsgNameMap,
                       ValueInfoCache::StringVecType* strIndexes)
     {
         _typeNameMap = typeNameMap;
-        _eventNameMap = eventNameMap;
+        _tmMsgNameMap = tmMsgNameMap;
         _strIndexes = strIndexes;
         for (const decode::Ast* ast : package->modules()) {
             for (const decode::Type* type : ast->typesRange()) {
@@ -212,15 +212,23 @@ public:
                 continue;
             }
             const decode::Component* comp = ast->component().unwrap();
+            for (const decode::StatusMsg* msg : comp->statusesRange()) {
+                addTmMsg(comp, msg);
+            }
             for (const decode::EventMsg* msg : comp->eventsRange()) {
-                std::string name;
-                name.reserve(comp->name().size() + 2 + msg->name().size());
-                name.append(comp->name().begin(), comp->name().end());
-                name.append("::", 2);
-                name.append(msg->name().begin(), msg->name().end());
-                _eventNameMap->emplace(msg, std::move(name));
+                addTmMsg(comp, msg);
             }
         }
+    }
+
+    void addTmMsg(const decode::Component* comp, const decode::TmMsg* msg)
+    {
+        std::string name;
+        name.reserve(comp->name().size() + 2 + msg->name().size());
+        name.append(comp->name().begin(), comp->name().end());
+        name.append("::", 2);
+        name.append(msg->name().begin(), msg->name().end());
+        _tmMsgNameMap->emplace(msg, std::move(name));
     }
 
     bool visitArrayType(const decode::ArrayType* type)
@@ -258,7 +266,7 @@ public:
 
 private:
     ValueInfoCache::TypeMapType* _typeNameMap;
-    ValueInfoCache::EventMapType* _eventNameMap;
+    ValueInfoCache::TmMsgMapType* _tmMsgNameMap;
     ValueInfoCache::StringVecType* _strIndexes;
 };
 
@@ -266,7 +274,7 @@ ValueInfoCache::ValueInfoCache(const decode::Package* package)
 {
     CacheCollector b;
     updateIndexes(&_arrayIndexes, 64); //HACK: limit maximum number of commands
-    b.collectNames(package, &_names, &_events, &_arrayIndexes);
+    b.collectNames(package, &_names, &_tmMsgs, &_arrayIndexes);
 
 }
 
@@ -292,10 +300,10 @@ bmcl::StringView ValueInfoCache::nameForType(const decode::Type* type) const
     return it->second;
 }
 
-bmcl::StringView ValueInfoCache::nameForEvent(const decode::EventMsg* msg) const
+bmcl::StringView ValueInfoCache::nameForTmMsg(const decode::TmMsg* msg) const
 {
-    auto it = _events.find(msg);
-    if (it == _events.end()) {
+    auto it = _tmMsgs.find(msg);
+    if (it == _tmMsgs.end()) {
         return bmcl::StringView("UNITIALIZED");
     }
     return it->second;

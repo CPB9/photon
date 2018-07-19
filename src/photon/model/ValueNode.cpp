@@ -1278,9 +1278,20 @@ bmcl::Option<T> NumericValueNode<T>::rawValue() const
 }
 
 template <typename T>
-void NumericValueNode<T>::setRawValue(T value)
+void NumericValueNode<T>::setRawValue(T value, OnboardTime time)
 {
-    updateOptionalValuePair(&_value, OnboardTime::now(), value);
+    updateOptionalValuePair(&_value, time, value);
+}
+
+template <typename T>
+void NumericValueNode<T>::incRawValue(OnboardTime time)
+{
+    if (_value.isSome()) {
+        ValuePair<T>& pair = _value.unwrap();
+        pair.setValue(time, pair.value() + 1);
+    } else {
+        _value.emplace(time, 1);
+    }
 }
 
 template <typename T>

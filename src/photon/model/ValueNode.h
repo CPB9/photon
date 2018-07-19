@@ -423,7 +423,8 @@ public:
     bool isInRange() const override;
 
     bmcl::Option<T> rawValue() const;
-    void setRawValue(T value);
+    void setRawValue(T value, OnboardTime time = OnboardTime::now());
+    void incRawValue(OnboardTime time = OnboardTime::now());
 
 protected:
     bool emplace(OnboardTime time, intmax_t value);

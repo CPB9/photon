@@ -131,8 +131,8 @@ caf::behavior UiActor::make_behavior()
 
             delayed_send(this, std::chrono::milliseconds(500), RepeatParam2Atom::value);
         },
-        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& statusUpdater, const Rc<NodeViewUpdater>& eventUpdater) {
-            _widget->applyTmUpdates(statusUpdater.get(), eventUpdater.get());
+        [this](UpdateTmViewAtom, const Rc<NodeViewUpdater>& statusUpdater, const Rc<NodeViewUpdater>& eventUpdater, const Rc<NodeViewUpdater>& statsUpdater) {
+            _widget->applyTmUpdates(statusUpdater.get(), eventUpdater.get(), statsUpdater.get());
         },
         [](UpdateTmParams, const TmParamUpdate& update) {
             (void)update;
@@ -156,8 +156,8 @@ caf::behavior UiActor::make_behavior()
             //    request(_gc, caf::infinite, SubscribeNumberedTmAtom::value, _validator->statusMsgTestOpParamSub().unwrap(), _testSub);
             //}
         },
-        [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView) {
-            _widget->setRootTmNode(statusView.get(), eventView.get());
+        [this](SetTmViewAtom, const Rc<NodeView>& statusView, const Rc<NodeView>& eventView, const Rc<NodeView>& statsView) {
+            _widget->setRootTmNode(statusView.get(), eventView.get(), statsView.get());
         },
         [this](FirmwareErrorEventAtom, const std::string& msg) {
             _statusWidget->firmwareError(msg);
@@ -194,7 +194,8 @@ caf::behavior UiActor::make_behavior()
             bmcl::Rc<Node> emptyNode = new Node(bmcl::None);
             std::unique_ptr<QNodeViewModel> paramViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
             std::unique_ptr<QNodeViewModel> eventViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
-            _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel), std::move(eventViewModel));
+            std::unique_ptr<QNodeViewModel> statsViewModel = bmcl::makeUnique<QNodeViewModel>(new NodeView(emptyNode.get()));
+            _widget = bmcl::makeUnique<FirmwareWidget>(std::move(paramViewModel), std::move(eventViewModel), std::move(statsViewModel));
 
             QObject::connect(_app.get(), &QApplication::lastWindowClosed, _app.get(), [this]() {
                 BMCL_DEBUG() << "quitting";

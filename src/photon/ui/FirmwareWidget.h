@@ -55,11 +55,12 @@ class FirmwareWidget : public QWidget {
 public:
     FirmwareWidget(std::unique_ptr<QNodeViewModel>&& paramView,
                    std::unique_ptr<QNodeViewModel>&& eventView,
+                   std::unique_ptr<QNodeViewModel>&& statsView,
                    QWidget* parent = nullptr);
     ~FirmwareWidget();
 
-    void setRootTmNode(NodeView* statusView, NodeView* eventView);
-    void applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater);
+    void setRootTmNode(NodeView* statusView, NodeView* eventView, NodeView* statsNode);
+    void applyTmUpdates(NodeViewUpdater* statusUpdater, NodeViewUpdater* eventUpdater, NodeViewUpdater* statsUpdater);
 
     void setRootCmdNode(const ValueInfoCache* cache, Node* root);
     void setValidator(const Rc<photongen::Validator>& validator);
@@ -85,6 +86,7 @@ private:
 
     QTreeView* _paramViewWidget;
     QTreeView* _eventViewWidget;
+    QTreeView* _statsViewWidget;
     QTreeView* _scriptEditWidget;
     QTreeView* _scriptResultWidget;
     QTreeView* _cmdViewWidget;
@@ -109,6 +111,7 @@ private:
     Rc<const ValueInfoCache> _cache;
     std::unique_ptr<QNodeViewModel> _paramViewModel;
     std::unique_ptr<QNodeViewModel> _eventViewModel;
+    std::unique_ptr<QNodeViewModel> _statsViewModel;
     std::unique_ptr<QCmdModel> _scriptEditModel;
     std::unique_ptr<QCmdModel> _pvuScriptEditModel;
     std::unique_ptr<QNodeModel> _cmdViewModel;
