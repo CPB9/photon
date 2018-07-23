@@ -37,6 +37,11 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(std::vector<photon::Value>);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 
+#define GC_LOG(msg)         \
+    if (_isLoggingEnabled) { \
+        logMsg(msg);         \
+    }
+
 namespace photon {
 
 GroundControl::GroundControl(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAddress,
@@ -45,6 +50,7 @@ GroundControl::GroundControl(caf::actor_config& cfg, uint64_t selfAddress, uint6
     , _sink(sink)
     , _handler(eventHandler)
     , _isRunning(false)
+    , _isLoggingEnabled(false)
 {
     _exc = spawn<Exchange, caf::linked>(selfAddress, destAddress, this, _sink, _handler);
     _cmd = spawn<CmdState, caf::linked>(_exc, _handler);
@@ -52,6 +58,11 @@ GroundControl::GroundControl(caf::actor_config& cfg, uint64_t selfAddress, uint6
 
 GroundControl::~GroundControl()
 {
+}
+
+void GroundControl::logMsg(std::string&& msg)
+{
+    send(_handler, LogAtom::value, std::move(msg));
 }
 
 caf::behavior GroundControl::make_behavior()
@@ -94,6 +105,7 @@ caf::behavior GroundControl::make_behavior()
         },
         [this](EnableLoggindAtom, bool isEnabled) {
             send(_exc, EnableLoggindAtom::value, isEnabled);
+            _isLoggingEnabled = isEnabled;
         },
         [this](UpdateFirmware) {
             send(_exc, UpdateFirmware::value);
@@ -141,8 +153,11 @@ void GroundControl::sendUnreliablePacket(const PacketRequest& packet)
 
 void GroundControl::acceptData(const bmcl::SharedBytes& data)
 {
+    GC_LOG("gc accepting data of size " + std::to_string(data.size()));
+    GC_LOG("gc total size " + std::to_string(_incoming.size()));
     _incoming.write(data.data(), data.size());
     if (!_isRunning) {
+        GC_LOG("gc not running");
         return;
     }
 
@@ -151,6 +166,7 @@ begin:
         return;
     }
     SearchResult rv = findPacket(_incoming);
+    GC_LOG("gc search result " + std::to_string(rv.junkSize) + " " + std::to_string(rv.dataSize));
 
     if (rv.dataSize) {
         bmcl::Bytes packet = _incoming.asBytes().slice(rv.junkSize, rv.junkSize + rv.dataSize);
@@ -209,7 +225,7 @@ beginSearch:
             if (it >= end) {
                 return SearchResult(size, 0);
             } else {
-                return SearchResult(0, 0);
+                return SearchResult(it - begin, 0);
             }
         }
         if (*next == secondSepPart) {

@@ -16,13 +16,31 @@
 
 #include <caf/send.hpp>
 
+#include <random>
+
 using namespace photon;
 
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 class PhotonStream : public caf::event_based_actor {
 public:
-    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId, uint64_t timeout)
+    struct ErrorState {
+        ErrorState(uint32_t rate)
+            : engine(std::random_device{}())
+            , dist(1.0 / rate)
+        {
+        }
+
+        bool shouldToggle()
+        {
+            return dist(engine);
+        }
+
+        std::default_random_engine engine;
+        std::bernoulli_distribution dist;
+    };
+
+    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId, uint64_t timeout, const bmcl::Option<uint32_t>& errorRate)
         : caf::event_based_actor(cfg)
         , _timeout(timeout)
     {
@@ -33,6 +51,10 @@ public:
 #endif
         auto err = PhotonExc_RegisterGroundControl(mccId, &_dev);
         BMCL_ASSERT(err == PhotonExcClientError_Ok);
+
+        if (errorRate.isSome()) {
+            _errorState.emplace(errorRate.unwrap());
+        }
     }
 
     ~PhotonStream()
@@ -46,11 +68,28 @@ public:
 #endif
     }
 
+    void breakData(uint8_t* dest, std::size_t size)
+    {
+        for (std::size_t i = 0; i < size; i++) {
+            for (unsigned j = 0; j < 8; j++) {
+                if (_errorState->shouldToggle()) {
+                    dest[i] ^= (1 << j);
+                }
+            }
+        }
+    }
+
     caf::behavior make_behavior() override
     {
         return caf::behavior{
             [this](SendDataAtom, const bmcl::SharedBytes& data) {
-                PhotonExcDevice_AcceptInput(_dev, data.data(), data.size());
+                if (_errorState.isSome()) {
+                    bmcl::Buffer temp(data.view());
+                    breakData(temp.data(), temp.size());
+                    PhotonExcDevice_AcceptInput(_dev, temp.data(), temp.size());
+                } else {
+                    PhotonExcDevice_AcceptInput(_dev, data.data(), data.size());
+                }
                 Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
@@ -67,6 +106,10 @@ public:
                 PhotonWriter_Init(&writer, temp, 1024);
                 PhotonExcDevice_GenNextPacket(_dev, &writer);
 
+                if (_errorState.isSome()) {
+                    breakData(temp, writer.current - writer.start);
+                }
+
                 auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
                 send(_dest, RecvDataAtom::value, data);
                 delayed_send(this, std::chrono::milliseconds(_timeout), RepeatStreamAtom::value);
@@ -82,6 +125,7 @@ public:
     PhotonExcDevice* _dev;
     caf::actor _dest;
     uint64_t _timeout;
+    bmcl::Option<ErrorState> _errorState;
 };
 
 using namespace decode;
@@ -92,14 +136,20 @@ int main(int argc, char** argv)
     TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
     TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
     TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Exchange timeout", false, 10, "milliseconds");
+    TCLAP::ValueArg<uint32_t> errorRateArg("e", "error-rate", "Bit error rate R (1 toggled bit per R recieved)", false, 1000000, "bits");
 
     cmdLine.add(&mccArg);
     cmdLine.add(&uavArg);
     cmdLine.add(&timeoutArg);
+    cmdLine.add(&errorRateArg);
     cmdLine.parse(argc, argv);
 
     uint64_t uavId = uavArg.getValue();
     uint64_t mccId = mccArg.getValue();
-    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeoutArg.getValue());
+    bmcl::Option<uint32_t> errorRate;
+    if (errorRateArg.isSet()) {
+        errorRate.emplace(errorRateArg.getValue());
+    }
+    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeoutArg.getValue(), errorRate);
 }
 

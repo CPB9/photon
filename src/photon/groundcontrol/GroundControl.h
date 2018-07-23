@@ -79,6 +79,7 @@ private:
     void reportError(std::string&& msg);
 
     void updateProject(const Rc<const ProjectUpdate>& update);
+    void logMsg(std::string&& msg);
 
     caf::actor _sink;
     caf::actor _handler;
@@ -88,5 +89,6 @@ private:
     Rc<const decode::Project> _project;
     Rc<const decode::Device> _dev;
     bool _isRunning;
+    bool _isLoggingEnabled;
 };
 }
