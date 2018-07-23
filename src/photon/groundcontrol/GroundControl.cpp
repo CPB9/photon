@@ -245,7 +245,7 @@ beginSearch:
 
     uint16_t expectedSize = le16dec(it);
     if (expectedSize > 1024) {
-        return SearchResult(junkSize, 0);
+        return SearchResult(junkSize + 2, 0);
     }
     if (it > end - expectedSize - 2) {
         return SearchResult(junkSize, 0);
