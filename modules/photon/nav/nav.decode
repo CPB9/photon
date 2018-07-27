@@ -61,9 +61,19 @@ enum GpsFixType {
     Static = 9,
 }
 
+struct GpsSatellite {
+    id : u8,
+    used: bool,
+    elevation: u8,
+    azimuth: u8,
+    snr: u8,
+}
+
 struct GpsState {
     fixType : GpsFixType,
-    satellitesVisible : u8
+    satellitesVisible : u8,
+    satellitesUsed : u8,
+    satellites: &[GpsSatellite; 20],
 }
 
 variant RelativeAltitude {
@@ -131,7 +141,8 @@ component {
 
     statuses {
         [all, 0, true]: {latLon, orientation, altitude, relativeAltitude, velocity},
-        [gps, 0, true]: {gpsState},
+        [gpsState, 0, true]: {gpsState.fixType, gpsState.satellitesVisible, gpsState.satellitesUsed},
+        [gpsAll, 0, true]: {gpsState},
         [gpsRawInt, 0, false]: {gpsRawInt}
         [state, 0, true]: {deviceState},
     }
