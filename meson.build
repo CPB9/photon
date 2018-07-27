@@ -24,6 +24,12 @@ project_path = join_paths(get_option('project_prefix'), get_option('project'))
 
 modules_src = [
   project_path,
+  'modules/photon/asv/Stubs.c',
+  'modules/photon/asv/asv.decode',
+  'modules/photon/asv/mod.toml',
+  'modules/photon/blog/Blog.c',
+  'modules/photon/blog/blog.decode',
+  'modules/photon/blog/mod.toml',
   'modules/photon/clk/Clk.c',
   'modules/photon/clk/clk.decode',
   'modules/photon/clk/mod.toml',

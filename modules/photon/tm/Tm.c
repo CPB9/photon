@@ -9,6 +9,10 @@
 #include "photongen/onboard/tm/MessageDesc.h"
 #include "photongen/onboard/tm/StatusMessage.h"
 
+#ifdef PHOTON_HAS_MODULE_BLOG
+# include "photongen/onboard/blog/Blog.Component.h"
+#endif
+
 #include "photongen/onboard/StatusTable.inc.c"
 
 #define _PHOTON_FNAME "tm/Tm.c"
@@ -57,6 +61,11 @@ void PhotonTm_EndEventMsg()
 {
     //TODO: check overflow
     uint16_t msgSize = eventWriter.current - eventWriter.start;
+
+#ifdef PHOTON_HAS_MODULE_BLOG
+    PhotonBlog_LogTmMsg(eventWriter.start, msgSize);
+#endif
+
     size_t writableSize = PhotonRingBuf_WritableSize(&_eventRingBuf);
     while ((msgSize + 2u) > writableSize) {
         PHOTON_DEBUG("removing event to fit new");
@@ -146,6 +155,9 @@ static PhotonError collectOnceRequests(PhotonWriter* dest, unsigned* totalMessag
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = desc->func(dest);
         if (rv == PhotonError_Ok) {
+#ifdef PHOTON_HAS_MODULE_BLOG
+            PhotonBlog_LogTmMsg(current, dest->current - current);
+#endif
             (*totalMessages)++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
@@ -183,6 +195,9 @@ static PhotonError collectStatuses(PhotonWriter* dest, unsigned* totalMessages)
         uint8_t* current = PhotonWriter_CurrentPtr(dest);
         PhotonError rv = currentDesc()->func(dest);
         if (rv == PhotonError_Ok) {
+#ifdef PHOTON_HAS_MODULE_BLOG
+            PhotonBlog_LogTmMsg(current, dest->current - current);
+#endif
             selectNextMessage();
             (*totalMessages)++;
             continue;

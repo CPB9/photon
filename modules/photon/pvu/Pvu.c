@@ -7,9 +7,39 @@
 #include "photongen/onboard/CmdDecoder.h"
 #include "photon/core/Assert.h"
 
+#ifdef PHOTON_HAS_MODULE_BLOG
+#include "photongen/onboard/blog/Blog.Component.h"
+#endif
+
 #include <string.h>
 
 #define _PHOTON_FNAME "int/Int.c"
+
+static PhotonError execScript(PhotonReader* src, PhotonWriter* dest)
+{
+    uint8_t compNum;
+    uint8_t cmdNum;
+
+    (void)src;
+    (void)dest;
+
+    while (PhotonReader_ReadableSize(src) != 0) {
+#ifdef PHOTON_HAS_MODULE_BLOG
+        const uint8_t* msgBegin = src->current;
+#endif
+        if (PhotonReader_ReadableSize(src) < 2) {
+            PHOTON_CRITICAL("Not enough data to deserialize cmd header");
+            return PhotonError_NotEnoughData;
+        }
+        compNum = PhotonReader_ReadU8(src);
+        cmdNum = PhotonReader_ReadU8(src);
+        PHOTON_TRY(Photon_DeserializeAndExecCmd(compNum, cmdNum, src, dest));
+#ifdef PHOTON_HAS_MODULE_BLOG
+        PhotonBlog_LogPvuCmd(msgBegin, src->current - msgBegin);
+#endif
+    }
+    return PhotonError_Ok;
+}
 
 PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReader* src, PhotonWriter* results)
 {
@@ -17,7 +47,7 @@ PhotonError PhotonPvu_ExecuteFrom(const PhotonExcDataHeader* header, PhotonReade
         return PhotonError_Ok;
     }
     _photonPvu.currentHeader = header;
-    PhotonError rv = Photon_ExecScript(src, results);
+    PhotonError rv = execScript(src, results);
     if (rv != PhotonError_Ok) {
         PhotonPvu_QueueEvent_PacketExecFailed(rv, header);
     }
@@ -71,6 +101,10 @@ static void execCurrent()
             goto end;
         }
 
+#ifdef PHOTON_HAS_MODULE_BLOG
+        const uint8_t* msgBegin = reader.current;
+#endif
+
         uint8_t compNum = PhotonReader_ReadU8(&reader);
         uint8_t cmdNum = PhotonReader_ReadU8(&reader);
 
@@ -85,6 +119,9 @@ static void execCurrent()
             PhotonPvu_QueueEvent_ScriptExecFailed(rv, &current->desc.name);
             goto end;
         }
+#ifdef PHOTON_HAS_MODULE_BLOG
+        PhotonBlog_LogPvuCmd(msgBegin, reader.current - msgBegin);
+#endif
     } while (PhotonReader_ReadableSize(&reader) != 0);
 
 end:

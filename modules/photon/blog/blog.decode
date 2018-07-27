@@ -1,0 +1,37 @@
+module blog
+
+import core::Error
+
+enum MsgKind {
+    PvuCmd = 0,
+    TmMsg = 1,
+    FwtCmd = 2,
+}
+
+component {
+    variables {
+        pvuCmdLogEnabled: bool,
+        tmMsgLogEnabled: bool,
+        fwtCmdLogEnabled: bool,
+    }
+
+    impl {
+        fn init()
+        fn tick()
+
+        fn enableLog(kind: MsgKind, isEnabled: bool)
+        fn logTmMsg(data: *const void, size: usize)
+        fn logPvuCmd(data: *const void, size: usize)
+        fn logFwtCmd(data: *const void, size: usize)
+
+        fn handleBeginLog()
+        fn handleLogData(data: *const void, size: usize)
+    }
+
+    commands {
+        fn enableLog(kind: MsgKind, isEnabled: bool)
+    }
+
+    statuses {
+    }
+}

@@ -1,0 +1,7 @@
+name = "blog"
+decode = "blog.decode"
+dest = "photon/blog"
+id = 19
+sources = [
+  "Blog.c",
+]

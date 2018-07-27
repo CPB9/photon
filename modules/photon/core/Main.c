@@ -31,9 +31,15 @@
 #if defined(PHOTON_HAS_MODULE_ZCVM)
 # include "photongen/onboard/zcvm/Zcvm.Component.h"
 #endif
+#if defined(PHOTON_HAS_MODULE_BLOG)
+# include "photongen/onboard/blog/Blog.Component.h"
+#endif
 
 void Photon_Init()
 {
+#if defined(PHOTON_HAS_MODULE_BLOG)
+    PhotonBlog_Init();
+#endif
 #if defined(PHOTON_HAS_MODULE_CLK)
     PhotonClk_Init();
 #endif
@@ -73,6 +79,9 @@ void Photon_Tick()
 {
 #if defined(PHOTON_HAS_MODULE_CLK)
     PhotonClk_Tick();
+#endif
+#if defined(PHOTON_HAS_MODULE_BLOG)
+    PhotonBlog_Tick();
 #endif
 #if defined(PHOTON_HAS_MODULE_DFU)
     PhotonDfu_Tick();

@@ -8,6 +8,10 @@
 #include "photongen/onboard/fwt/CmdType.h"
 #include "photongen/onboard/Package.inc.c"
 
+#ifdef PHOTON_HAS_MODULE_BLOG
+# include "photongen/onboard/blog/Blog.Component.h"
+#endif
+
 #include <inttypes.h>
 
 #define _PHOTON_FNAME "fwt/Fwt.c"
@@ -137,22 +141,39 @@ PhotonError PhotonFwt_AcceptCmd(const PhotonExcDataHeader* header, PhotonReader*
 {
     (void)dest;
     (void)header;
+#ifdef PHOTON_HAS_MODULE_BLOG
+    const uint8_t* msgBegin = src->current;
+#endif
     PhotonFwtCmdType cmd;
     PHOTON_TRY(PhotonFwtCmdType_Deserialize(&cmd, src));
 
+    PhotonError rv = PhotonError_Ok;
+
     switch (cmd) {
     case PhotonFwtCmdType_RequestHash:
-        return requestHash(src);
+        rv = requestHash(src);
+        break;
     case PhotonFwtCmdType_RequestChunk:
-        return requestChunk(src);
+        rv = requestChunk(src);
+        break;
     case PhotonFwtCmdType_Start:
-        return start(src);
+        rv = start(src);
+        break;
     case PhotonFwtCmdType_Stop:
-        return stop(src);
+        rv = stop(src);
+        break;
+    default:
+        PHOTON_CRITICAL("Invalid cmd type");
+        return PhotonError_InvalidValue;
     }
 
-    PHOTON_CRITICAL("Invalid cmd type");
-    return PhotonError_InvalidValue;
+    if (rv == PhotonError_Ok) {
+#ifdef PHOTON_HAS_MODULE_BLOG
+        PhotonBlog_LogFwtCmd(msgBegin, src->current - msgBegin);
+#endif
+    }
+
+    return rv;
 }
 
 static PhotonError genHash(PhotonWriter* dest)
