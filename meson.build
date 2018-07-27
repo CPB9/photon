@@ -274,6 +274,19 @@ foreach test : client_tests
   )
 endforeach
 
+tools = [
+  ['blog-info', 'BlogInfo.cpp'],
+]
+
+foreach tool : tools
+  executable('photon-' + tool[0],
+    include_directories : gc_inc,
+    sources : 'tools/' + tool[1],
+    dependencies: [deps, gen_src_dep],
+    link_with : photon_lib,
+  )
+endforeach
+
 onboard_flags = []
 if get_option('use_stubs')
   onboard_flags += '-DPHOTON_STUB'

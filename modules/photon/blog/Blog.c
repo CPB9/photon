@@ -2,7 +2,16 @@
 #include "photongen/onboard/clk/Clk.Component.h"
 #include "photon/core/Logging.h"
 
+#ifdef PHOTON_HAS_MODULE_FWT
+# include "photongen/onboard/fwt/Fwt.Component.h"
+#endif
+
+#include <string.h>
+#include <assert.h>
+
 #define _PHOTON_FNAME "blog/Blog.c"
+
+static const char magicPrefix[4] = "blog";
 
 void PhotonBlog_Init()
 {
@@ -10,6 +19,26 @@ void PhotonBlog_Init()
     _photonBlog.tmMsgLogEnabled = true;
     _photonBlog.fwtCmdLogEnabled = true;
     PhotonBlog_HandleBeginLog();
+    PhotonBlog_HandleLogData(magicPrefix, sizeof(magicPrefix));
+
+    uint8_t buf[8];
+    PhotonWriter dest;
+    PhotonWriter_Init(&dest, buf, sizeof(buf));
+
+    size_t nameSize = strlen(PHOTON_DEVICE_NAME);
+    assert(PhotonWriter_WriteVaruint(&dest, nameSize) == PhotonError_Ok);
+    PhotonBlog_HandleLogData(dest.start, dest.current - dest.start);
+    PhotonBlog_HandleLogData(PHOTON_DEVICE_NAME, nameSize);
+
+    dest.current = dest.start;
+#ifdef PHOTON_HAS_MODULE_FWT
+    assert(PhotonWriter_WriteVaruint(&dest, PhotonFwt_GetFirmwareSize()) == PhotonError_Ok);
+    PhotonBlog_HandleLogData(dest.start, dest.current - dest.start);
+    PhotonBlog_HandleLogData(PhotonFwt_GetFirmwareData(), PhotonFwt_GetFirmwareSize());
+#else
+    assert(PhotonWriter_WriteVaruint(&dest, 0) == PhotonError_Ok);
+    PhotonBlog_HandleLogData(dest.start, dest.current - dest.start);
+#endif
 }
 
 void PhotonBlog_Tick()
@@ -51,7 +80,7 @@ static void logMsg(PhotonBlogMsgKind kind, const void* data, size_t size)
     if (!isLogEnabled(kind)) {
         return;
     }
-    uint8_t buf[2 + 8 + 8];
+    uint8_t buf[2 + 8 + 8 + 8];
     PhotonWriter dest;
     PhotonWriter_Init(&dest, buf, sizeof(buf));
     PhotonWriter_WriteU16Be(&dest, BLOG_SEPARATOR);
@@ -61,6 +90,10 @@ static void logMsg(PhotonBlogMsgKind kind, const void* data, size_t size)
     }
     if (PhotonWriter_WriteVaruint(&dest, PhotonClk_GetTickTime()) != PhotonError_Ok) {
         PHOTON_WARNING("failed to write binary log time");
+        return;
+    }
+    if (PhotonWriter_WriteVaruint(&dest, size) != PhotonError_Ok) {
+        PHOTON_WARNING("failed to write binary log size");
         return;
     }
 
