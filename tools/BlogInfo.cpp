@@ -31,7 +31,6 @@ struct BlogMsg {
 template <typename B>
 class BlogParser {
 public:
-    static constexpr char magicPrefix[4] = {'b', 'l', 'o', 'g'};
 
     B& base();
 
@@ -48,6 +47,7 @@ public:
 template <typename B>
 inline bool BlogParser<B>::parse(bmcl::Bytes data)
 {
+    static char magicPrefix[4] = {'b', 'l', 'o', 'g'};
     bmcl::MemReader reader(data);
     if (reader.sizeLeft() < sizeof(magicPrefix)) {
         return false;
