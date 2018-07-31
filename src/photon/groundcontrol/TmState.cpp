@@ -178,9 +178,20 @@ void TmState::initTypedNode(const char* name, Rc<T>* dest)
     }
 }
 
+void TmState::reportError(std::string&& msg)
+{
+    send(_handler, ExchangeErrorEventAtom::value, std::move(msg));
+}
+
 void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
 {
     if (!_model) {
+        reportError("recieved tm msg while model uninitialized");
+        return;
+    }
+
+    if (packet.isEmpty()) {
+        reportError("recieved empty tm packet");
         return;
     }
 
@@ -189,33 +200,34 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
     bmcl::MemReader src(packet);
     while (src.sizeLeft() != 0) {
         if (src.sizeLeft() < 2) {
-            //TODO: report error
+            reportError("recieved tm packet with stray data");
             return;
         }
 
         uint64_t compNum;
         if (!src.readVarUint(&compNum)) {
-            //TODO: report error
+            reportError("failed to read tm msg component number");
             return;
         }
         if (compNum > std::numeric_limits<uint32_t>::max()) {
-            //TODO: report error
+            reportError("tm msg component number too big");
             return;
         }
 
         uint64_t msgNum;
         if (!src.readVarUint(&msgNum)) {
-            //TODO: report error
+            reportError("failed to read tm msg message number");
             return;
         }
         if (msgNum > std::numeric_limits<uint32_t>::max()) {
-            //TODO: report error
+            reportError("tm msg message number too big");
             return;
         }
 
         const uint8_t* begin = src.current();
 
         if (!_model->acceptTmMsg(&ctx, compNum, msgNum, &src)) {
+            reportError("failed to parse tm message: " + ctx.error());
             return;
         }
 

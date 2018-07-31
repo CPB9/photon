@@ -88,12 +88,12 @@ public:
     {
         uint64_t dynArraySize;
         if (!src->readVarUint(&dynArraySize)) {
-            //TODO: report error
+            ctx->setError("failed to read dynArray size");
             return false;
         }
         DynArrayValueNode* cnode = static_cast<DynArrayValueNode*>(node);
         if (dynArraySize > cnode->maxSize()) {
-            //TODO: report error
+            ctx->setError("invalid dynArray size");
             return false;
         }
         //TODO: add size check
