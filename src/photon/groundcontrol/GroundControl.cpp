@@ -121,7 +121,7 @@ caf::behavior GroundControl::make_behavior()
 
 void GroundControl::reportError(std::string&& msg)
 {
-    //FIXME
+    GC_LOG(std::move(msg));
 }
 
 const char* GroundControl::name() const
