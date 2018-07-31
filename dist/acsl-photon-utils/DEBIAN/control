@@ -5,4 +5,4 @@ Package: acsl-photon-utils
 Architecture: amd64
 Depends: qt5-default, p7zip-full
 Description: ACSL Photon utils
-Version: 1.0
+Version: 1.1
