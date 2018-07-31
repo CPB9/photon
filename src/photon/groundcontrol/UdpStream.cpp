@@ -39,7 +39,8 @@ void UdpStream::act()
     do {
         if (has_next_message()) {
             receive(
-                [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                [this](RecvDataAtom, const bmcl::SharedBytes& data) {
+                    BMCL_DEBUG() << "sending inpo port " << _endpoint.port();
                     asio::error_code err;
                     std::size_t size = _socket.send_to(asio::buffer(data.data(), data.size()), _endpoint, 0, err);
                     if (err) {
@@ -95,6 +96,7 @@ void UdpStream::recieveFromSocket()
         return;
     }
 
+    BMCL_DEBUG() << "recieved from port " << _endpoint.port();
     bmcl::SharedBytes data = bmcl::SharedBytes::create(buf.data(), size);
     send(_dest, RecvDataAtom::value, data);
 }

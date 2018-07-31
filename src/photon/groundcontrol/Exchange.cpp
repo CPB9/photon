@@ -456,7 +456,7 @@ void Exchange::checkQueue(StreamState* state)
     QueuedPacket& queuedPacket = state->queue[0];
     queuedPacket.counter = state->currentReliableUplinkCounter;
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter, queuedPacket.queueTime);
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
     delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, queuedPacket.checkId);
 }
 
@@ -465,7 +465,7 @@ void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state
     auto time = std::chrono::system_clock::now().time_since_epoch().count();
     bmcl::SharedBytes packet = packPacket(req, PacketType::Unreliable, state->currentUnreliableUplinkCounter, time);
     state->currentUnreliableUplinkCounter++;
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
 }
 
 caf::response_promise Exchange::queueReliablePacket(const PacketRequest& packet, StreamState* state)
@@ -490,7 +490,7 @@ void Exchange::packAndSendFirstQueued(StreamState* state)
 
     const QueuedPacket& queuedPacket = state->queue[0];
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, state->currentReliableUplinkCounter, queuedPacket.queueTime);
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req)
