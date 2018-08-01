@@ -57,6 +57,7 @@ private:
     bool subscribeTm(const std::string& path, const caf::actor& dest);
     bool subscribeTm(const NumberedSub& sub, const caf::actor& dest);
     void reportError(std::string&& msg);
+    void logMsg(std::string&& msg);
 
     Rc<const decode::Project> _project;
     Rc<const decode::Device> _dev;
@@ -66,5 +67,6 @@ private:
     std::vector<NamedSub> _namedSubs;
     std::unordered_map<NumberedSub, std::vector<caf::actor>, NumberedSubHash> _numberedSubs;
     uint64_t _updateCount;
+    bool _isLoggingEnabled;
 };
 }

@@ -293,7 +293,7 @@ bool TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bm
 {
     auto it = _decoders.find((uint64_t(compNum) << 32) | uint64_t(msgNum));
     if (it == _decoders.end()) {
-        ctx->setError("Invalid component id or tm msg id");
+        ctx->setError("Invalid component id or tm msg id: " + std::to_string(compNum) + " " + std::to_string(msgNum));
         return false;
     }
 

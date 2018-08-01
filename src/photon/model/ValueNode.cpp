@@ -759,7 +759,7 @@ bool StringValueNode::decode(CoderState* ctx, bmcl::MemReader* src)
         return false;
     }
     if (src->sizeLeft() < size) {
-        ctx->setError("String size overflow");
+        ctx->setError("String size overflow " + std::to_string(src->sizeLeft()) + " " + std::to_string(size));
         return false;
     }
     if (_value.isNone()) {

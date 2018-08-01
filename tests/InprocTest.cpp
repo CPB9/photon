@@ -103,7 +103,7 @@ public:
 
                 uint8_t temp[1024];
                 PhotonWriter writer;
-                PhotonWriter_Init(&writer, temp, 1024);
+                PhotonWriter_Init(&writer, temp, sizeof(temp));
                 PhotonExcDevice_GenNextPacket(_dev, &writer);
 
                 if (_errorState.isSome()) {

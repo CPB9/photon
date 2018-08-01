@@ -161,8 +161,8 @@ static PhotonError collectOnceRequests(PhotonWriter* dest, unsigned* totalMessag
             (*totalMessages)++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
+            PhotonWriter_SetCurrentPtr(dest, current);
             if (*totalMessages == 0) {
-                PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit once request (%u, %u), skipping",
                                 (unsigned)desc->compNum,
                                 (unsigned)desc->msgNum);
@@ -202,8 +202,8 @@ static PhotonError collectStatuses(PhotonWriter* dest, unsigned* totalMessages)
             (*totalMessages)++;
             continue;
         } else if (rv == PhotonError_NotEnoughSpace) {
+            PhotonWriter_SetCurrentPtr(dest, current);
             if (*totalMessages == 0) {
-                PhotonWriter_SetCurrentPtr(dest, current);
                 PHOTON_CRITICAL("unable to fit status (%u, %u), skipping",
                                 (unsigned)currentDesc()->compNum,
                                 (unsigned)currentDesc()->msgNum);

@@ -35,6 +35,11 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::Value);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
+#define TM_LOG(msg)         \
+    if (_isLoggingEnabled) { \
+        logMsg(msg);         \
+    }
+
 namespace photon {
 
 TmState::NamedSub::NamedSub(const ValueNode* node, const std::string& path,const caf::actor& dest)
@@ -51,11 +56,17 @@ TmState::NamedSub::~NamedSub()
 TmState::TmState(caf::actor_config& cfg, const caf::actor& handler)
     : caf::event_based_actor(cfg)
     , _handler(handler)
+    , _isLoggingEnabled(false)
 {
 }
 
 TmState::~TmState()
 {
+}
+
+void TmState::logMsg(std::string&& msg)
+{
+    send(_handler, LogAtom::value, std::move(msg));
 }
 
 void TmState::on_exit()
@@ -117,7 +128,7 @@ caf::behavior TmState::make_behavior()
         },
         [this](EnableLoggindAtom, bool isEnabled) {
             (void)this;
-            (void)isEnabled;
+            _isLoggingEnabled = isEnabled;
         },
     };
 }
@@ -225,6 +236,8 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
         }
 
         const uint8_t* begin = src.current();
+
+        TM_LOG("parsing tm msg: " + std::to_string(compNum) + " " + std::to_string(msgNum));
 
         if (!_model->acceptTmMsg(&ctx, compNum, msgNum, &src)) {
             reportError("failed to parse tm message: " + ctx.error());
