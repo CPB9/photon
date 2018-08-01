@@ -276,6 +276,7 @@ endforeach
 
 tools = [
   ['blog-info', 'BlogInfo.cpp'],
+  ['proxy', 'Proxy.cpp'],
 ]
 
 foreach tool : tools

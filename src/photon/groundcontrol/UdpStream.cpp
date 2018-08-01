@@ -39,7 +39,7 @@ void UdpStream::act()
     do {
         if (has_next_message()) {
             receive(
-                [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                [this](RecvDataAtom, const bmcl::SharedBytes& data) {
                     asio::error_code err;
                     std::size_t size = _socket.send_to(asio::buffer(data.data(), data.size()), _endpoint, 0, err);
                     if (err) {

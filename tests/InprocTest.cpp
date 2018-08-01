@@ -82,7 +82,7 @@ public:
     caf::behavior make_behavior() override
     {
         return caf::behavior{
-            [this](SendDataAtom, const bmcl::SharedBytes& data) {
+            [this](RecvDataAtom, const bmcl::SharedBytes& data) {
                 if (_errorState.isSome()) {
                     bmcl::Buffer temp(data.view());
                     breakData(temp.data(), temp.size());

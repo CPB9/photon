@@ -15,7 +15,6 @@ using EnableLoggindAtom                   = caf::atom_constant<caf::atom("enable
 using RecvPacketPayloadAtom               = caf::atom_constant<caf::atom("recvupkt")>;
 using SendUnreliablePacketAtom            = caf::atom_constant<caf::atom("sendupkt")>;
 using SendReliablePacketAtom              = caf::atom_constant<caf::atom("sendrpkt")>;
-using SendDataAtom                        = caf::atom_constant<caf::atom("senddata")>;
 using SendFwtPacketAtom                   = caf::atom_constant<caf::atom("sendupkt")>;
 using SendGcCommandAtom                   = caf::atom_constant<caf::atom("sendgccm")>;
 using SetProjectAtom                      = caf::atom_constant<caf::atom("setprojt")>;

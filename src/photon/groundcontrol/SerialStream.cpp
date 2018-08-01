@@ -33,7 +33,7 @@ void SerialStream::act()
     do {
         if (has_next_message()) {
             receive(
-                [this](SendDataAtom, const bmcl::SharedBytes& data) {
+                [this](RecvDataAtom, const bmcl::SharedBytes& data) {
                     asio::error_code err;
                     std::size_t size = _serial.write_some(asio::buffer(data.data(), data.size()), err);
                     if (err) {

@@ -28,6 +28,8 @@
 #include <bmcl/String.h>
 #include <bmcl/Panic.h>
 
+#include <sstream>
+
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketRequest);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::PacketResponse);
@@ -38,6 +40,12 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::Device::ConstPointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(decode::DataReader::Pointer);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::StreamState*);
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
+
+#define EXC_LOG(msg)         \
+    if (_isLoggingEnabled) { \
+        logMsg(msg);         \
+    }
+
 
 namespace photon {
 
@@ -56,6 +64,7 @@ Exchange::Exchange(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAd
     , _deviceAddress(destAddress)
     , _isRunning(false)
     , _dataReceived(false)
+    , _isLoggingEnabled(false)
 {
     _fwtStream.client = spawn<FwtState, caf::linked>(this, _handler);
     _tmStream.client = spawn<TmState, caf::linked>(_handler);
@@ -64,6 +73,11 @@ Exchange::Exchange(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAd
 
 Exchange::~Exchange()
 {
+}
+
+void Exchange::logMsg(std::string&& msg)
+{
+    send(_handler, LogAtom::value, std::move(msg));
 }
 
 template <typename... A>
@@ -150,7 +164,7 @@ caf::behavior Exchange::make_behavior()
             sendAllStreams(StopAtom::value);
         },
         [this](EnableLoggindAtom, bool isEnabled) {
-            (void)isEnabled;
+            _isLoggingEnabled = isEnabled;
             sendAllStreams(EnableLoggindAtom::value, isEnabled);
         },
         [this](UpdateFirmware) {
@@ -399,12 +413,27 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
     return true;
 }
 
+static std::string printHeader(const PacketHeader& header)
+{
+    std::ostringstream out;
+    out << "{" << header.tickTime.rawValue() << ", ";
+    out << header.srcAddress << ", ";
+    out << header.destAddress << ", ";
+    out << header.counter << ", ";
+    out << (int)header.streamDirection << ", ";
+    out << (int)header.packetType << ", ";
+    out << (int)header.streamType << "}";
+
+    return out.str();
+}
+
 bool Exchange::acceptPacket(const PacketHeader& header, bmcl::Bytes payload, StreamState* state)
 {
     if (header.streamDirection != StreamDirection::Downlink) {
         reportError("invalid stream direction"); //TODO: msg
         return false;
     }
+    EXC_LOG("exc recieved packet " + printHeader(header));
     switch (header.packetType) {
     case PacketType::Unreliable:
         send(state->client, RecvPacketPayloadAtom::value, header, bmcl::SharedBytes::create(payload));
@@ -456,7 +485,7 @@ void Exchange::checkQueue(StreamState* state)
     QueuedPacket& queuedPacket = state->queue[0];
     queuedPacket.counter = state->currentReliableUplinkCounter;
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter, queuedPacket.queueTime);
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
     delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, queuedPacket.checkId);
 }
 
@@ -465,7 +494,7 @@ void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state
     auto time = std::chrono::system_clock::now().time_since_epoch().count();
     bmcl::SharedBytes packet = packPacket(req, PacketType::Unreliable, state->currentUnreliableUplinkCounter, time);
     state->currentUnreliableUplinkCounter++;
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
 }
 
 caf::response_promise Exchange::queueReliablePacket(const PacketRequest& packet, StreamState* state)
@@ -490,7 +519,7 @@ void Exchange::packAndSendFirstQueued(StreamState* state)
 
     const QueuedPacket& queuedPacket = state->queue[0];
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, state->currentReliableUplinkCounter, queuedPacket.queueTime);
-    send(_sink, SendDataAtom::value, packet);
+    send(_sink, RecvDataAtom::value, packet);
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req)

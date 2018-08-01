@@ -56,6 +56,7 @@ private:
     void pushTmUpdates();
     bool subscribeTm(const std::string& path, const caf::actor& dest);
     bool subscribeTm(const NumberedSub& sub, const caf::actor& dest);
+    void reportError(std::string&& msg);
 
     Rc<const decode::Project> _project;
     Rc<const decode::Device> _dev;

@@ -100,6 +100,8 @@ private:
 
     void handleReceipt(const PacketHeader& header, ReceiptType type, bmcl::Bytes payload, StreamState* state, QueuedPacket* packet);
 
+    void logMsg(std::string&& msg);
+
     StreamState _fwtStream;
     StreamState _cmdStream;
     StreamState _userStream;
@@ -112,5 +114,6 @@ private:
     uint64_t _deviceAddress;
     bool _isRunning;
     bool _dataReceived;
+    bool _isLoggingEnabled;
 };
 }
