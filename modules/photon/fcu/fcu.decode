@@ -1,11 +1,5 @@
 module fcu
 
-struct Heartbeat {
-    baseMode : u8,
-    customMode: u32,
-    systemStatus : u8
-}
-
 enum LogLevel {
     Emergency = 0,
     Alert = 1,
@@ -158,7 +152,16 @@ enum FlightMode {
     Rattitude = 9,
     Takeoff = 10,
     Land = 11,
-    FollowMe = 12
+    FollowMe = 12,
+    Ready = 13,
+    ReturnToGs = 14,
+}
+
+struct Heartbeat {
+    mode: FlightMode,
+    baseMode : u8,
+    customMode: u32,
+    systemStatus : u8
 }
 
 struct FlightModes {
@@ -193,6 +196,7 @@ component {
 
     events {
         [scriptMessage, true]: {text: &[char; 128]},
+        [flightModeChanged, true]: {mode: FlightMode, armed: bool},
         [unsupportedFcuVersion, true]: {version: u8},
         [unknownSensor, true]: {sensor: &[char; 128]},
         [failedToParse, true]: {msg: &[char; 256]},
