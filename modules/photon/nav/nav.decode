@@ -71,6 +71,8 @@ struct GpsSatellite {
 
 struct GpsState {
     fixType : GpsFixType,
+    hdop: f32,
+    vdop: f32,
     satellitesVisible : u8,
     satellitesUsed : u8,
     satellites: &[GpsSatellite; 20],
