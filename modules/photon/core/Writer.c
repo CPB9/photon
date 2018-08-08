@@ -276,6 +276,5 @@ PhotonError PhotonWriter_WriteVaruint(PhotonWriter* self, uint64_t value)
 
 PhotonError PhotonWriter_WriteVarint(PhotonWriter* self, int64_t value)
 {
-    uint64_t n = (uint64_t)value;
-    return PhotonWriter_WriteVaruint(self, (n << 1) ^ (n >> 63));
+    return PhotonWriter_WriteVaruint(self, (value << 1) ^ (value >> 63));
 }

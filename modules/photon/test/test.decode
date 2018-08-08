@@ -18,6 +18,8 @@ enum EnumParam {
     Type5 = 5,
     /// Type 6 enum
     Type6,
+    /// Negative enum
+    TypeNeg = -999,
 }
 
 /// VariantParam short desc
