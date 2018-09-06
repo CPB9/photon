@@ -439,12 +439,12 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
             ccData.header = self->incomingHeader;
             queueReceipt(self, &self->incomingHeader, 0, genCounterCorrectionReceiptPayload);
             HANDLE_INVALID_PACKET(self, "Invalid expected reliable counter: expected(%" PRIu16 "), got(%" PRIu16 ")", state->expectedReliableUplinkCounter, self->incomingHeader.counter);
-            return false;
+            return true;
         }
         if (handler(&self->incomingHeader, &payload, &results, userData) != PhotonError_Ok) {
             queueReceipt(self, &self->incomingHeader, 0, genPayloadErrorReceiptPayload);
             HANDLE_INVALID_PACKET(self, "Invalid payload");
-            return false;
+            return true;
         }
         self->dataSize = results.current - results.start;
         PhotonError err = queueReceipt(self, &self->incomingHeader, self, genOkReceiptPayload);
@@ -453,7 +453,7 @@ static bool handlePacket(PhotonExcDevice* self, size_t size)
         }
         state->expectedReliableUplinkCounter++;
         PhotonRingBuf_Erase(&self->inRingBuf, size + 2);
-        return false;
+        return true;
     case PhotonExcPacketType_Receipt:
         HANDLE_INVALID_PACKET(self, "Uplink receipts not supported");
         break;
