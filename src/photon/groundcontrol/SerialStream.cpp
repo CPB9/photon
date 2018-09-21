@@ -11,6 +11,8 @@
 #include <caf/others.hpp>
 #include <caf/blocking_actor.hpp>
 
+#include <chrono>
+
 DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 namespace photon {
@@ -82,6 +84,9 @@ void SerialStream::recieveFromSerial()
 
     bmcl::SharedBytes data = bmcl::SharedBytes::create(buf.data(), size);
     send(_dest, RecvDataAtom::value, data);
+    if (size != 2048) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 }
 
 void SerialStream::on_exit()

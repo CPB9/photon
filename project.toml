@@ -48,6 +48,13 @@ modules = ["tm", "pvu", "fwt"]
 id = 2
 
 [[devices]]
+name = "slave2"
+tm_sources = ["master"]
+cmd_targets = ["slave2"]
+modules = ["test", "tm", "pvu", "fwt"]
+id = 3
+
+[[devices]]
 name = "bootloader"
 modules = ["dfu"]
-id = 3
+id = 4
