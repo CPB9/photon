@@ -65,7 +65,7 @@ struct PacketRequest {
 }
 
 type StreamHandler = &Fn(*const DataHeader, *mut Reader, *mut Writer, *mut void) -> Error;
-type TmHandler = &Fn(u8, u8, *const void, *mut void);
+type TmHandler = &Fn(u64, *const void, *mut void);
 
 struct StreamState {
     currentReliableDownlinkCounter: u16,

@@ -19,7 +19,7 @@
 
 namespace photon {
 
-CmdNode::CmdNode(const decode::Component* comp, const decode::Function* func, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent, bool expandArgs)
+CmdNode::CmdNode(const decode::Component* comp, const decode::Command* func, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent, bool expandArgs)
     : FieldsNode(func->type()->argumentsRange(), cache, parent)
     , _comp(comp)
     , _func(func)
@@ -34,14 +34,7 @@ CmdNode::~CmdNode()
 
 bool CmdNode::encode(CoderState* ctx, bmcl::Buffer* dest) const
 {
-    dest->writeVarUint(_comp->number());
-    auto it = std::find(_comp->cmdsBegin(), _comp->cmdsEnd(), _func.get());
-    if (it == _comp->cmdsEnd()) {
-        //TODO: report error
-        return false;
-    }
-
-    dest->writeVarUint(std::distance(_comp->cmdsBegin(), it));
+    dest->writeVarUint(_func->msgId());
     return encodeFields(ctx, dest);
 }
 
@@ -74,7 +67,7 @@ bmcl::StringView CmdNode::fieldName() const
 
 bmcl::StringView CmdNode::shortDescription() const
 {
-    return _func->shortDescription();
+    return _func->func()->shortDescription();
 }
 
 ScriptNode::ScriptNode(bmcl::OptionPtr<Node> parent)
@@ -90,7 +83,7 @@ Rc<ScriptNode> ScriptNode::withAllCmds(const decode::Component* comp, const Valu
 {
     ScriptNode* self = new ScriptNode(parent);
     self->_fieldName = comp->moduleName();
-    for (const decode::Function* f : comp->cmdsRange()) {
+    for (const decode::Command* f : comp->cmdsRange()) {
         self->_nodes.emplace_back(new CmdNode(comp, f, cache, self, expandArgs));
     }
     return self;
@@ -146,7 +139,7 @@ Rc<ScriptResultNode> ScriptResultNode::fromScriptNode(const ScriptNode* node, co
     Rc<ScriptResultNode> resultNode = new ScriptResultNode(parent);
     std::size_t n = 0;
     for (const CmdNode* cmdNode : node->nodes()) {
-        const decode::Function* func = cmdNode->function();
+        const decode::Command* func = cmdNode->function();
         auto rv = func->type()->returnValue();
         if (rv.isSome()) {
             Rc<ValueNode> valueNode = ValueNode::fromType(rv.unwrap(), cache, resultNode.get());

@@ -1,29 +1,28 @@
 #pragma once
 
 #include "photon/Config.hpp"
+#include "decode/core/Id.h"
 
 #include <functional>
 
 namespace photon {
 
 struct NumberedSub {
-    NumberedSub(uint32_t compNum, uint32_t msgNum)
-        : compNum(compNum)
-        , msgNum(msgNum)
+    NumberedSub(decode::Id msgNum)
+        : msgNum(msgNum)
     {
     }
 
-    uint32_t compNum;
-    uint32_t msgNum;
+    decode::Id msgNum;
 
     bool operator==(const NumberedSub& other) const
     {
-        return compNum == other.compNum && msgNum == other.msgNum;
+        return msgNum == other.msgNum;
     }
 
-    uint64_t id() const
+    decode::Id id() const
     {
-        return (uint64_t(compNum) << 32) | uint64_t(msgNum);
+        return msgNum;
     }
 };
 
@@ -31,7 +30,7 @@ struct NumberedSubHash
 {
     std::size_t operator()(const NumberedSub& sub) const noexcept
     {
-        return std::hash<uint64_t>{}(sub.id());
+        return std::hash<decode::Id>{}(sub.id());
     }
 };
 }

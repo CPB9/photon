@@ -210,42 +210,23 @@ void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
 
     bmcl::MemReader src(packet);
     while (src.sizeLeft() != 0) {
-        if (src.sizeLeft() < 2) {
-            reportError("recieved tm packet with stray data");
-            return;
-        }
-
-        uint64_t compNum;
-        if (!src.readVarUint(&compNum)) {
-            reportError("failed to read tm msg component number");
-            return;
-        }
-        if (compNum > std::numeric_limits<uint32_t>::max()) {
-            reportError("tm msg component number too big");
-            return;
-        }
-
         uint64_t msgNum;
         if (!src.readVarUint(&msgNum)) {
             reportError("failed to read tm msg message number");
             return;
         }
-        if (msgNum > std::numeric_limits<uint32_t>::max()) {
-            reportError("tm msg message number too big");
-            return;
-        }
 
         const uint8_t* begin = src.current();
 
-        TM_LOG("parsing tm msg: " + std::to_string(compNum) + " " + std::to_string(msgNum));
+        TM_LOG("parsing tm msg: " + std::to_string(msgNum));
 
-        if (!_model->acceptTmMsg(&ctx, compNum, msgNum, &src)) {
+        if (!_model->acceptTmMsg(&ctx, msgNum, &src)) {
             reportError("failed to parse tm message: " + ctx.error());
             return;
         }
 
         bmcl::Bytes view(begin, src.current());
-        NumberedSub sub(compNum, msgNum);
+        NumberedSub sub(msgNum);
         auto it = _numberedSubs.find(sub);
         if (it != _numberedSubs.end()) {
             bmcl::SharedBytes data = bmcl::SharedBytes::create(view);

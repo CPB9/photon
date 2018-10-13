@@ -118,9 +118,9 @@ bmcl::Option<std::string> findModule(const decode::Device* dev, bmcl::StringView
     return bmcl::None;
 }
 
-bmcl::Option<std::string> findCmd(const decode::Component* comp, bmcl::StringView name, Rc<const decode::Function>* dest)
+bmcl::Option<std::string> findCmd(const decode::Component* comp, bmcl::StringView name, Rc<const decode::Command>* dest)
 {
-    auto it = std::find_if(comp->cmdsBegin(), comp->cmdsEnd(), [name](const decode::Function* func) {
+    auto it = std::find_if(comp->cmdsBegin(), comp->cmdsEnd(), [name](const decode::Command* func) {
         return func->name() == name;
     });
     if (it == comp->cmdsEnd()) {
@@ -218,7 +218,7 @@ static bmcl::Option<std::string> expectArrayField(const decode::Field* arrayFiel
     return bmcl::None;
 }
 
-static bmcl::Option<std::string> expectReturnValue(const decode::Function* func, bmcl::OptionPtr<const decode::Type> rv)
+static bmcl::Option<std::string> expectReturnValue(const decode::Command* func, bmcl::OptionPtr<const decode::Type> rv)
 {
     if (func->type()->returnValue() != rv) {
         return "Command " + wrapWithQuotes(func->name()) + " has invalid return value";
@@ -403,16 +403,9 @@ bool getNumericValue(const ValueNode* node, T* dest)
     return false;
 }
 
-bool WaypointGcInterface::beginNavCmd(const decode::Function* cmd, Encoder* dest) const
+bool WaypointGcInterface::beginNavCmd(const decode::Command* cmd, Encoder* dest) const
 {
-    TRY(dest->writeVarUint(_navComponent->number()));
-    auto it = std::find(_navComponent->cmdsBegin(), _navComponent->cmdsEnd(), cmd);
-    if (it == _navComponent->cmdsEnd()) {
-        //TODO: report error
-        return false;
-    }
-
-    return dest->writeVarUint(std::distance(_navComponent->cmdsBegin(), it));
+    return dest->writeVarUint(cmd->msgId());
 }
 
 bool WaypointGcInterface::encodeBeginRouteCmd(std::uintmax_t id, std::uintmax_t size, Encoder* dest) const
@@ -682,17 +675,9 @@ bmcl::Option<std::string> FileGcInterface::init()
     return bmcl::None;
 }
 
-bool FileGcInterface::beginCmd(const decode::Function* func, Encoder* dest) const
+bool FileGcInterface::beginCmd(const decode::Command* func, Encoder* dest) const
 {
-    //REFACT
-    TRY(dest->writeVarUint(_flComponent->number()));
-    auto it = std::find(_flComponent->cmdsBegin(), _flComponent->cmdsEnd(), func);
-    if (it == _flComponent->cmdsEnd()) {
-        //TODO: report error
-        return false;
-    }
-
-    return dest->writeVarUint(std::distance(_flComponent->cmdsBegin(), it));
+    return dest->writeVarUint(func->msgId());
 }
 
 bool FileGcInterface::encodeBeginFile(uintmax_t id, uintmax_t size, Encoder* dest) const
@@ -769,17 +754,9 @@ bmcl::Option<std::string> UdpGcInterface::init()
     return bmcl::None;
 }
 
-bool UdpGcInterface::beginCmd(const decode::Function* func, Encoder* dest) const
+bool UdpGcInterface::beginCmd(const decode::Command* func, Encoder* dest) const
 {
-    //REFACT
-    TRY(dest->writeVarUint(_comp->number()));
-    auto it = std::find(_comp->cmdsBegin(), _comp->cmdsEnd(), func);
-    if (it == _comp->cmdsEnd()) {
-        //TODO: report error
-        return false;
-    }
-
-    return dest->writeVarUint(std::distance(_comp->cmdsBegin(), it));
+    return dest->writeVarUint(func->msgId());
 }
 
 bool UdpGcInterface::encodeAddClient(uintmax_t id, bmcl::SocketAddressV4 address, Encoder* dest) const

@@ -7,7 +7,6 @@
 #include "photon/core/Logging.h"
 #include "photon/core/Try.h"
 #include "photongen/onboard/tm/MessageDesc.h"
-#include "photongen/onboard/tm/StatusMessage.h"
 
 #ifdef PHOTON_HAS_MODULE_BLOG
 # include "photongen/onboard/blog/Blog.Component.h"
@@ -49,11 +48,17 @@ void PhotonTm_Tick()
 {
 }
 
-PhotonWriter* PhotonTm_BeginEventMsg(uint8_t compNum, uint8_t msgNum)
+PhotonWriter* PhotonTm_BeginEventMsgUnsafeU8(uint8_t msgNum)
 {
     eventWriter.current = eventWriter.start;
-    PhotonWriter_WriteU8(&eventWriter, compNum);
     PhotonWriter_WriteU8(&eventWriter, msgNum);
+    return &eventWriter;
+}
+
+PhotonWriter* PhotonTm_BeginEventMsg(uint64_t msgNum)
+{
+    eventWriter.current = eventWriter.start;
+    PhotonWriter_WriteVaruint(&eventWriter, msgNum);
     return &eventWriter;
 }
 
@@ -163,16 +168,14 @@ static PhotonError collectOnceRequests(PhotonWriter* dest, unsigned* totalMessag
         } else if (rv == PhotonError_NotEnoughSpace) {
             PhotonWriter_SetCurrentPtr(dest, current);
             if (*totalMessages == 0) {
-                PHOTON_CRITICAL("unable to fit once request (%u, %u), skipping",
-                                (unsigned)desc->compNum,
+                PHOTON_CRITICAL("unable to fit once request (%u), skipping",
                                 (unsigned)desc->msgNum);
                 continue;
             }
             break;
         } else {
             PhotonWriter_SetCurrentPtr(dest, current);
-            PHOTON_CRITICAL("unable to serialize request (%u, %u), skipping",
-                            (unsigned)desc->compNum,
+            PHOTON_CRITICAL("unable to serialize request (%u), skipping",
                             (unsigned)desc->msgNum);
             continue;
         }
@@ -204,8 +207,7 @@ static PhotonError collectStatuses(PhotonWriter* dest, unsigned* totalMessages)
         } else if (rv == PhotonError_NotEnoughSpace) {
             PhotonWriter_SetCurrentPtr(dest, current);
             if (*totalMessages == 0) {
-                PHOTON_CRITICAL("unable to fit status (%u, %u), skipping",
-                                (unsigned)currentDesc()->compNum,
+                PHOTON_CRITICAL("unable to fit status (%u), skipping",
                                 (unsigned)currentDesc()->msgNum);
                 selectNextMessage();
                 continue;
@@ -213,8 +215,7 @@ static PhotonError collectStatuses(PhotonWriter* dest, unsigned* totalMessages)
             return PhotonError_Ok;
         } else {
             PhotonWriter_SetCurrentPtr(dest, current);
-            PHOTON_CRITICAL("unable to serialize status (%u, %u), skipping",
-                            (unsigned)currentDesc()->compNum,
+            PHOTON_CRITICAL("unable to serialize status (%u), skipping",
                             (unsigned)currentDesc()->msgNum);
             selectNextMessage();
             continue;
@@ -264,10 +265,10 @@ bool PhotonTm_HasMessages()
     return (_photonTm.allowedMsgCount > 0) || (PhotonRingBuf_ReadableSize(&_eventRingBuf) > 0) || (_photonTm.onceRequestsNum > 0);
 }
 
-PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
+PhotonError PhotonTm_SetStatusEnabled(uint64_t msgNum, bool isEnabled)
 {
     for (PhotonTmMessageDesc* it = TM_MSG_BEGIN; it < TM_MSG_END; it++) {
-        if (it->compNum == compNum && it->msgNum == msgNum) {
+        if (it->msgNum == msgNum) {
             if (it->isEnabled != isEnabled) {
                 if (isEnabled) {
                     _photonTm.allowedMsgCount++;
@@ -282,21 +283,21 @@ PhotonError PhotonTm_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEn
     return PhotonError_NoSuchStatusMsg;
 }
 
-PhotonError PhotonTm_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
+PhotonError PhotonTm_RequestStatusOnce(uint64_t msgNum)
 {
     if (_photonTm.onceRequestsNum == TM_MAX_ONCE_REQUESTS) {
         return PhotonError_MaximumOnceRequestsReached;
     }
     for (PhotonTmMessageDesc* it = TM_MSG_BEGIN; it < TM_MSG_END; it++) {
-        if (it->compNum == compNum && it->msgNum == msgNum) {
+        if (it->msgNum == msgNum) {
             size_t id = it - TM_MSG_BEGIN;
             for (size_t i = 0; i < _photonTm.onceRequestsNum; i++) {
                 if (_onceRequests[i] == id) {
-                    PHOTON_DEBUG("once request already set (%u, %u)", (unsigned)it->compNum, (unsigned)it->msgNum);
+                    PHOTON_DEBUG("once request already set (%u)", (unsigned)it->msgNum);
                     return PhotonError_Ok;
                 }
             }
-            PHOTON_DEBUG("setting once request (%u, %u)", (unsigned)it->compNum, (unsigned)it->msgNum);
+            PHOTON_DEBUG("setting once request (%u)", (unsigned)it->msgNum);
             _onceRequests[_photonTm.onceRequestsNum] = id;
             _photonTm.onceRequestsNum++;
             return PhotonError_Ok;
@@ -305,14 +306,14 @@ PhotonError PhotonTm_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
     return PhotonError_NoSuchStatusMsg;
 }
 
-PhotonError PhotonTm_ExecCmd_RequestStatusOnce(uint8_t compNum, uint8_t msgNum)
+PhotonError PhotonTm_ExecCmd_RequestStatusOnce(uint64_t msgNum)
 {
-    return PhotonTm_RequestStatusOnce(compNum, msgNum);
+    return PhotonTm_RequestStatusOnce(msgNum);
 }
 
-PhotonError PhotonTm_ExecCmd_SetStatusEnabled(uint8_t compNum, uint8_t msgNum, bool isEnabled)
+PhotonError PhotonTm_ExecCmd_SetStatusEnabled(uint64_t msgNum, bool isEnabled)
 {
-    return PhotonTm_SetStatusEnabled(compNum, msgNum, isEnabled);
+    return PhotonTm_SetStatusEnabled(msgNum, isEnabled);
 }
 
 #undef _PHOTON_FNAME

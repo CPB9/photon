@@ -17,8 +17,7 @@
 
 static PhotonError execScript(PhotonReader* src, PhotonWriter* dest)
 {
-    uint8_t compNum;
-    uint8_t cmdNum;
+    uint64_t cmdNum;
 
     (void)src;
     (void)dest;
@@ -27,13 +26,8 @@ static PhotonError execScript(PhotonReader* src, PhotonWriter* dest)
 #ifdef PHOTON_HAS_MODULE_BLOG
         const uint8_t* msgBegin = src->current;
 #endif
-        if (PhotonReader_ReadableSize(src) < 2) {
-            PHOTON_CRITICAL("Not enough data to deserialize cmd header");
-            return PhotonError_NotEnoughData;
-        }
-        compNum = PhotonReader_ReadU8(src);
-        cmdNum = PhotonReader_ReadU8(src);
-        PHOTON_TRY(Photon_DeserializeAndExecCmd(compNum, cmdNum, src, dest));
+        PHOTON_TRY(PhotonReader_ReadVaruint(src, &cmdNum));
+        PHOTON_TRY(Photon_DeserializeAndExecCmd(cmdNum, src, dest));
 #ifdef PHOTON_HAS_MODULE_BLOG
         PhotonBlog_LogPvuCmd(msgBegin, src->current - msgBegin);
 #endif
@@ -91,39 +85,38 @@ static void execCurrent()
     PhotonReader reader;
     PhotonReader_Init(&reader, &_scriptData[current->memOffset], current->size);
     PhotonReader_Skip(&reader, current->readOffset);
-    if (PhotonReader_ReadableSize(&reader) == 0) {
-        endCurrent();
-        return;
-    }
+    PhotonError rv = PhotonError_Ok;
     do {
-        if (PhotonReader_ReadableSize(&reader) < 2) {
-            PHOTON_CRITICAL("Unable to decode cmd header");
+        if (PhotonReader_ReadableSize(&reader) == 0) {
             goto end;
         }
 
 #ifdef PHOTON_HAS_MODULE_BLOG
         const uint8_t* msgBegin = reader.current;
 #endif
-
-        uint8_t compNum = PhotonReader_ReadU8(&reader);
-        uint8_t cmdNum = PhotonReader_ReadU8(&reader);
+        uint64_t cmdNum;
+        rv = PhotonReader_ReadVaruint(&reader, &cmdNum);
+        if (rv != PhotonError_Ok) {
+            goto error;
+        }
 
         PhotonWriter writer;
         PhotonWriter_Init(&writer, _temp, sizeof(_temp));
 
-        PhotonError rv = Photon_DeserializeAndExecCmd(compNum, cmdNum, &reader, &writer);
+        PhotonError rv = Photon_DeserializeAndExecCmd(cmdNum, &reader, &writer);
         if (rv == PhotonError_WouldBlock) {
             goto correct;
         }
         if (rv != PhotonError_Ok) {
-            PhotonPvu_QueueEvent_ScriptExecFailed(rv, &current->desc.name);
-            goto end;
+            goto error;
         }
 #ifdef PHOTON_HAS_MODULE_BLOG
         PhotonBlog_LogPvuCmd(msgBegin, reader.current - msgBegin);
 #endif
-    } while (PhotonReader_ReadableSize(&reader) != 0);
+    } while (true);
 
+error:
+    PhotonPvu_QueueEvent_ScriptExecFailed(rv, &current->desc.name);
 end:
     endCurrent();
 correct:

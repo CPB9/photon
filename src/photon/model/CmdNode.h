@@ -16,7 +16,7 @@
 #include <bmcl/Fwd.h>
 
 namespace decode {
-class Function;
+class Command;
 class Component;
 }
 
@@ -29,7 +29,7 @@ public:
     using Pointer = Rc<CmdNode>;
     using ConstPointer = Rc<const CmdNode>;
 
-    CmdNode(const decode::Component* comp, const decode::Function* func, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent, bool expandArgs = true);
+    CmdNode(const decode::Component* comp, const decode::Command* func, const ValueInfoCache* cache, bmcl::OptionPtr<Node> parent, bool expandArgs = true);
     ~CmdNode();
 
     bool encode(CoderState* ctx, bmcl::Buffer* dest) const;
@@ -42,7 +42,7 @@ public:
 
     Rc<CmdNode> clone(bmcl::OptionPtr<Node> parent) const;
 
-    const decode::Function* function() const
+    const decode::Command* function() const
     {
         return _func.get();
     }
@@ -54,9 +54,8 @@ public:
 
 
 private:
-
     Rc<const decode::Component> _comp;
-    Rc<const decode::Function> _func;
+    Rc<const decode::Command> _func;
     Rc<const ValueInfoCache> _cache;
 
     bool _expandArgs;

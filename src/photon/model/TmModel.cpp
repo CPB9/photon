@@ -264,36 +264,32 @@ TmModel::TmModel(const decode::Device* dev, const ValueInfoCache* cache)
 
         Rc<decode::BuiltinType> u64Type = new decode::BuiltinType(decode::BuiltinTypeKind::U64);
 
-        std::size_t compNum = comp->number();
         for (const decode::StatusMsg* msg : comp->statusesRange()) {
-            std::size_t msgNum = msg->number();
-            uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
-
+            decode::Id msgNum = msg->msgId();
             Rc<NumericValueNode<uint64_t>> statsNode = new NumericValueNode<uint64_t>(u64Type.get(), cache, _statistics.get());
             statsNode->setFieldName(cache->nameForTmMsg(msg));
             _statistics->addNode(statsNode.get());
             _decoders.emplace(std::piecewise_construct,
-                              std::forward_as_tuple(num),
+                              std::forward_as_tuple(msgNum),
                               std::forward_as_tuple(msg, node.get(), statsNode.get()));
         }
         for (const decode::EventMsg* msg : comp->eventsRange()) {
-            std::size_t msgNum = msg->number();
-            uint64_t num = (uint64_t(compNum) << 32) | uint64_t(msgNum);
+            decode::Id msgNum = msg->msgId();
             Rc<NumericValueNode<uint64_t>> statsNode = new NumericValueNode<uint64_t>(u64Type.get(), cache, _statistics.get());
             statsNode->setFieldName(cache->nameForTmMsg(msg));
             _statistics->addNode(statsNode.get());
             _decoders.emplace(std::piecewise_construct,
-                              std::forward_as_tuple(num),
+                              std::forward_as_tuple(msgNum),
                               std::forward_as_tuple(msg, cache, statsNode.get()));
         }
     }
 }
 
-bool TmModel::acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::MemReader* src)
+bool TmModel::acceptTmMsg(CoderState* ctx, decode::Id msgNum, bmcl::MemReader* src)
 {
-    auto it = _decoders.find((uint64_t(compNum) << 32) | uint64_t(msgNum));
+    auto it = _decoders.find(msgNum);
     if (it == _decoders.end()) {
-        ctx->setError("Invalid component id or tm msg id: " + std::to_string(compNum) + " " + std::to_string(msgNum));
+        ctx->setError("Invalid tm msg id: " + std::to_string(msgNum));
         return false;
     }
 

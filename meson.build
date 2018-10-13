@@ -80,7 +80,6 @@ modules_src = [
   'modules/photon/test/Test.c',
   'modules/photon/test/test.decode',
   'modules/photon/tm/mod.toml',
-  'modules/photon/tm/StatusMessage.c',
   'modules/photon/tm/Tm.c',
   'modules/photon/tm/tm.decode',
   'modules/photon/usm/usm.decode',

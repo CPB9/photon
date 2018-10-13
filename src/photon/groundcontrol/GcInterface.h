@@ -13,7 +13,7 @@ class Device;
 class BuiltinType;
 class StructType;
 class VariantType;
-class Function;
+class Command;
 class Component;
 class Ast;
 class Command;
@@ -86,7 +86,7 @@ private:
     WaypointGcInterface(const decode::Device* dev, const CoreGcInterface* coreIface);
     bmcl::Option<std::string> init();
 
-    bool beginNavCmd(const decode::Function* func, Encoder* dest) const;
+    bool beginNavCmd(const decode::Command* func, Encoder* dest) const;
 
     Rc<const decode::Device> _dev;
     Rc<const CoreGcInterface> _coreIface;
@@ -104,17 +104,17 @@ private:
     Rc<const decode::VariantType> _optionalRouteIdStruct;
     Rc<const decode::VariantType> _optionalIndexStruct;
     Rc<const decode::VariantType> _optionalF64Struct;
-    Rc<const decode::Function> _beginRouteCmd;
-    Rc<const decode::Function> _clearRouteCmd;
-    Rc<const decode::Function> _endRouteCmd;
-    Rc<const decode::Function> _setRoutePointCmd;
-    Rc<const decode::Function> _setRouteClosedCmd;
-    Rc<const decode::Function> _setRouteInvertedCmd;
-    Rc<const decode::Function> _setActiveRouteCmd;
-    Rc<const decode::Function> _setRouteActivePointCmd;
-    Rc<const decode::Function> _getRoutesInfoCmd;
-    Rc<const decode::Function> _getRouteInfoCmd;
-    Rc<const decode::Function> _getRoutePointCmd;
+    Rc<const decode::Command> _beginRouteCmd;
+    Rc<const decode::Command> _clearRouteCmd;
+    Rc<const decode::Command> _endRouteCmd;
+    Rc<const decode::Command> _setRoutePointCmd;
+    Rc<const decode::Command> _setRouteClosedCmd;
+    Rc<const decode::Command> _setRouteInvertedCmd;
+    Rc<const decode::Command> _setActiveRouteCmd;
+    Rc<const decode::Command> _setRouteActivePointCmd;
+    Rc<const decode::Command> _getRoutesInfoCmd;
+    Rc<const decode::Command> _getRouteInfoCmd;
+    Rc<const decode::Command> _getRoutePointCmd;
     std::size_t _formationArrayMaxSize;
     std::size_t _allRoutesInfoMaxSize;
 };
@@ -134,15 +134,15 @@ public:
 private:
     FileGcInterface(const decode::Device* dev, const CoreGcInterface* coreIface);
     bmcl::Option<std::string> init();
-    bool beginCmd(const decode::Function* func, Encoder* dest) const;
+    bool beginCmd(const decode::Command* func, Encoder* dest) const;
 
     Rc<const decode::Device> _dev;
     Rc<const CoreGcInterface> _coreIface;
     Rc<const decode::Ast> _flModule;
     Rc<const decode::Component> _flComponent;
-    Rc<const decode::Function> _beginFileCmd;
-    Rc<const decode::Function> _writeFileCmd;
-    Rc<const decode::Function> _endFileCmd;
+    Rc<const decode::Command> _beginFileCmd;
+    Rc<const decode::Command> _writeFileCmd;
+    Rc<const decode::Command> _endFileCmd;
     std::uintmax_t _maxChunkSize;
 };
 
@@ -157,12 +157,12 @@ public:
 private:
     UdpGcInterface(const decode::Device* dev, const CoreGcInterface* coreIface);
     bmcl::Option<std::string> init();
-    bool beginCmd(const decode::Function* func, Encoder* dest) const;
+    bool beginCmd(const decode::Command* func, Encoder* dest) const;
 
     Rc<const decode::Device> _dev;
     Rc<const decode::Component> _comp;
     Rc<const decode::Ast> _udpModule;
-    Rc<const decode::Function> _addClientCmd;
+    Rc<const decode::Command> _addClientCmd;
     Rc<const decode::StructType> _ipAddressStruct;
     Rc<const CoreGcInterface> _coreIface;
 };

@@ -11,6 +11,7 @@
 #include "photon/Config.hpp"
 #include "photon/model/Node.h"
 #include "decode/core/HashMap.h"
+#include "decode/core/Id.h"
 #include "photon/model/TmMsgDecoder.h"
 
 #include <bmcl/Either.h>
@@ -61,14 +62,14 @@ public:
     TmModel(const decode::Device* dev, const ValueInfoCache* cache);
     ~TmModel();
 
-    bool acceptTmMsg(CoderState* ctx, uint32_t compNum, uint32_t msgNum, bmcl::MemReader* payload);
+    bool acceptTmMsg(CoderState* ctx, decode::Id msgNum, bmcl::MemReader* payload);
 
     Node* statusesNode();
     Node* eventsNode();
     Node* statisticsNode();
 
 private:
-    decode::HashMap<uint64_t, MsgState> _decoders;
+    decode::HashMap<decode::Id, MsgState> _decoders;
     Rc<const decode::Device> _device;
     Rc<StatusesNode> _statuses;
     Rc<EventsNode> _events;
