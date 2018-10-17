@@ -5,6 +5,16 @@
 void PhotonUsm_Init()
 {
     memset(&_photonUsm, 0, sizeof(_photonUsm));
+    _photonUsm.applicationsInfoCpp.language = PhotonUsmLanguageCodes_LanguageCpp;
+    _photonUsm.applicationsInfoPython.language = PhotonUsmLanguageCodes_LanguagePython;
+
+    _photonUsm.buildStateCpp.language = PhotonUsmLanguageCodes_LanguageCpp;
+    _photonUsm.buildStatePython.language = PhotonUsmLanguageCodes_LanguagePython;
+
+    _photonUsm.currentApplicationInfoCpp.language = PhotonUsmLanguageCodes_LanguageCpp;
+    _photonUsm.currentApplicationInfoPython.language = PhotonUsmLanguageCodes_LanguagePython;
+
+    _photonUsm.projectInfo.language = PhotonUsmLanguageCodes_LanguageCpp;
 }
 void PhotonUsm_Tick() {}
 void PhotonUsm_SetDir(const char* dir) {}

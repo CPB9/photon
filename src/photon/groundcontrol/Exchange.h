@@ -48,17 +48,10 @@ struct QueuedPacket {
 };
 
 struct StreamState {
-    StreamState(StreamType type)
-        : currentReliableUplinkCounter(0)
-        , currentUnreliableUplinkCounter(0)
-        , expectedReliableDownlinkCounter(0)
-        , expectedUnreliableDownlinkCounter(0)
-        , type(type)
-        , checkId(0)
-    {
-    }
+    StreamState(StreamType type);
 
     std::deque<QueuedPacket> queue;
+    std::chrono::milliseconds checkTimeout;
     uint16_t currentReliableUplinkCounter;
     uint16_t currentUnreliableUplinkCounter;
     uint16_t expectedReliableDownlinkCounter;

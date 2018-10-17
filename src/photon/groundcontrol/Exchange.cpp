@@ -49,6 +49,21 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::NumberedSub);
 
 namespace photon {
 
+constexpr const std::chrono::milliseconds defaultCheckTimeout = std::chrono::milliseconds(1500);
+constexpr const std::chrono::milliseconds maxCheckTimeout = defaultCheckTimeout * 4;
+constexpr const unsigned checkMultiplier = 2;
+
+StreamState::StreamState(StreamType type)
+    : checkTimeout(defaultCheckTimeout)
+    , currentReliableUplinkCounter(0)
+    , currentUnreliableUplinkCounter(0)
+    , expectedReliableDownlinkCounter(0)
+    , expectedUnreliableDownlinkCounter(0)
+    , type(type)
+    , checkId(0)
+{
+}
+
 Exchange::Exchange(caf::actor_config& cfg, uint64_t selfAddress, uint64_t destAddress,
                    const caf::actor& gc, const caf::actor& dataSink, const caf::actor& handler)
     : caf::event_based_actor(cfg)
@@ -142,7 +157,7 @@ caf::behavior Exchange::make_behavior()
                 send(this, SendUnreliablePacketAtom::value, std::move(req));
             }
             _dataReceived = false;
-            delayed_send(this, std::chrono::seconds(1), PingAtom::value);
+            //delayed_send(this, std::chrono::seconds(1), PingAtom::value); FIXME: redo
         },
         [this](SubscribeNumberedTmAtom atom, const NumberedSub& sub, const caf::actor& dest) {
             return delegate(_tmStream.client, atom, sub, dest);
@@ -328,6 +343,7 @@ bool Exchange::handlePayload(bmcl::Bytes data)
 
 void Exchange::handleReceipt(const PacketHeader& header, ReceiptType type, bmcl::Bytes payload, StreamState* state, QueuedPacket* packet)
 {
+    state->checkTimeout = defaultCheckTimeout;
     const bmcl::Uuid& uuid = state->queue.front().request.requestUuid;
     PacketResponse resp(uuid, bmcl::SharedBytes::create(payload), type, header.tickTime, header.counter);
     packet->promise.deliver(std::move(resp));
@@ -402,6 +418,7 @@ bool Exchange::acceptReceipt(const PacketHeader& header, bmcl::Bytes payload, St
         }
         reportError("recieved counter correction: new(" + std::to_string(newCounter) + "), old(" + std::to_string(state->currentReliableUplinkCounter) + ")");
         state->currentReliableUplinkCounter = newCounter;
+        state->checkTimeout = defaultCheckTimeout;
         checkQueue(state);
         return true;
     }
@@ -486,7 +503,10 @@ void Exchange::checkQueue(StreamState* state)
     queuedPacket.counter = state->currentReliableUplinkCounter;
     bmcl::SharedBytes packet = packPacket(queuedPacket.request, PacketType::Reliable, queuedPacket.counter, queuedPacket.queueTime);
     send(_sink, RecvDataAtom::value, packet);
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, queuedPacket.checkId);
+    delayed_send(this, state->checkTimeout, CheckQueueAtom::value, state->type, queuedPacket.checkId);
+    if (state->checkTimeout < maxCheckTimeout) {
+        state->checkTimeout *= checkMultiplier;
+    }
 }
 
 void Exchange::sendUnreliablePacket(const PacketRequest& req, StreamState* state)
@@ -506,8 +526,11 @@ caf::response_promise Exchange::queueReliablePacket(const PacketRequest& packet,
     state->queue.back().checkId = state->checkId;
     if (state->queue.size() == 1) {
         packAndSendFirstQueued(state);
+        delayed_send(this, state->checkTimeout, CheckQueueAtom::value, state->type, state->queue.back().checkId);
+        if (state->checkTimeout < maxCheckTimeout) {
+            state->checkTimeout *= checkMultiplier;
+        }
     }
-    delayed_send(this, std::chrono::seconds(1), CheckQueueAtom::value, state->type, state->queue.back().checkId);
     return promise;
 }
 

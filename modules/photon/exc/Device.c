@@ -143,9 +143,6 @@ void PhotonExcDevice_AcceptInput(PhotonExcDevice* self, const void* src, size_t 
 
     bool canContinue;
     do {
-        if (self->hasDataQueued) {
-            return;
-        }
         canContinue = findSep(self);
     } while (canContinue);
 
