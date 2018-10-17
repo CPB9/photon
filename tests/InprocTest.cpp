@@ -24,6 +24,8 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 class PhotonStream : public caf::event_based_actor {
 public:
+    using RecvModifiedData = caf::atom_constant<caf::atom("_ecvmdata")>;
+
     struct ErrorState {
         ErrorState(uint32_t rate)
             : engine(std::random_device{}())
@@ -40,9 +42,13 @@ public:
         std::bernoulli_distribution dist;
     };
 
-    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId, uint64_t timeout, const bmcl::Option<uint32_t>& errorRate)
+    PhotonStream(caf::actor_config& cfg, uint64_t mccId, uint64_t uavId,
+                 std::chrono::milliseconds timeout,
+                 std::chrono::milliseconds exchangeDelay,
+                 const bmcl::Option<uint32_t>& errorRate)
         : caf::event_based_actor(cfg)
         , _timeout(timeout)
+        , _exchangeDelay(exchangeDelay)
     {
         Photon_Init();
         PhotonExc_SetAddress(uavId);
@@ -84,12 +90,15 @@ public:
         return caf::behavior{
             [this](RecvDataAtom, const bmcl::SharedBytes& data) {
                 if (_errorState.isSome()) {
-                    bmcl::Buffer temp(data.view());
+                    bmcl::SharedBytes temp(data);
                     breakData(temp.data(), temp.size());
-                    PhotonExcDevice_AcceptInput(_dev, temp.data(), temp.size());
+                    delayed_send(this, _exchangeDelay, RecvModifiedData::value, temp);
                 } else {
-                    PhotonExcDevice_AcceptInput(_dev, data.data(), data.size());
+                    delayed_send(this, _exchangeDelay, RecvModifiedData::value, data);
                 }
+            },
+            [this](RecvModifiedData, const bmcl::SharedBytes& data) {
+                PhotonExcDevice_AcceptInput(_dev, data.data(), data.size());
                 Photon_Tick();
             },
             [this](SetStreamDestAtom, const caf::actor& actor) {
@@ -111,8 +120,8 @@ public:
                 }
 
                 auto data = bmcl::SharedBytes::create(writer.start, writer.current - writer.start);
-                send(_dest, RecvDataAtom::value, data);
-                delayed_send(this, std::chrono::milliseconds(_timeout), RepeatStreamAtom::value);
+                delayed_send(_dest, _exchangeDelay, RecvDataAtom::value, data);
+                delayed_send(this, _timeout, RepeatStreamAtom::value);
             },
         };
     }
@@ -124,7 +133,8 @@ public:
 
     PhotonExcDevice* _dev;
     caf::actor _dest;
-    uint64_t _timeout;
+    std::chrono::milliseconds _timeout;
+    std::chrono::milliseconds _exchangeDelay;
     bmcl::Option<ErrorState> _errorState;
 };
 
@@ -135,21 +145,29 @@ int main(int argc, char** argv)
     TCLAP::CmdLine cmdLine("SerialTest");
     TCLAP::ValueArg<uint64_t> mccArg("m", "mcc-id", "Mcc id", false, 1, "number");
     TCLAP::ValueArg<uint64_t> uavArg("u", "uav-id", "Uav id", false, 2, "number");
-    TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Exchange timeout", false, 10, "milliseconds");
+    TCLAP::ValueArg<uint64_t> timeoutArg("t", "timeout", "Tick timeout", false, 10, "milliseconds");
+    TCLAP::ValueArg<uint64_t> exchangeDelayArg("d", "delay", "Packet delivery delay", false, 100, "milliseconds");
     TCLAP::ValueArg<uint32_t> errorRateArg("e", "error-rate", "Bit error rate R (1 toggled bit per R recieved)", false, 1000000, "bits");
+    TCLAP::ValueArg<unsigned> logArg("l", "log-level", "Log level", false, 5, "level");
 
     cmdLine.add(&mccArg);
     cmdLine.add(&uavArg);
     cmdLine.add(&timeoutArg);
+    cmdLine.add(&exchangeDelayArg);
     cmdLine.add(&errorRateArg);
+    cmdLine.add(&logArg);
     cmdLine.parse(argc, argv);
+
+    bmcl::setLogLevel(bmcl::LogLevel(logArg.getValue()));
 
     uint64_t uavId = uavArg.getValue();
     uint64_t mccId = mccArg.getValue();
+    auto exchangeDelay = std::chrono::milliseconds(exchangeDelayArg.getValue());
+    auto timeout = std::chrono::milliseconds(timeoutArg.getValue());
     bmcl::Option<uint32_t> errorRate;
     if (errorRateArg.isSet()) {
         errorRate.emplace(errorRateArg.getValue());
     }
-    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeoutArg.getValue(), errorRate);
+    return runUiTest<PhotonStream>(argc, argv, mccId, uavId, mccId, uavId, timeout, exchangeDelay, errorRate);
 }
 
