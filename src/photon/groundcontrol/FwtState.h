@@ -31,7 +31,6 @@ namespace photon {
 class Sender;
 class Scheduler;
 class ValueInfoCache;
-struct StartCmdRndGen;
 
 class FwtState : public caf::event_based_actor {
 public:
@@ -47,7 +46,6 @@ private:
 
     void acceptData(bmcl::Bytes packet);
     void handleHashAction();
-    void handleStartAction();
     void handleCheckAction(std::size_t id);
 
     template <typename C, typename... A>
@@ -55,17 +53,15 @@ private:
 
     void acceptChunkResponse(bmcl::MemReader* src);
     void acceptHashResponse(bmcl::MemReader* src);
-    void acceptStartResponse(bmcl::MemReader* src);
     void acceptStopResponse(bmcl::MemReader* src);
 
     void genHashCmd(bmcl::MemWriter* dest);
     void genChunkCmd(bmcl::MemWriter* dest, MemInterval os);
-    void genStartCmd(bmcl::MemWriter* dest);
+    void genChunksCmd(bmcl::MemWriter* dest, const std::vector<MemInterval>& chunks);
     void genStopCmd(bmcl::MemWriter* dest);
 
     void scheduleHash();
-    void scheduleStart();
-    void scheduleCheck(std::size_t id);
+    void scheduleCheck();
 
     void checkIntervals();
     void readFirmware();
@@ -75,6 +71,7 @@ private:
 
     void startDownload();
     void stopDownload();
+    void restartChunkDownload();
     void setProject(const decode::Project* proj, const decode::Device* dev, const ValueInfoCache* cache);
 
     bool hashMatches(const HashContainer& hash, bmcl::Bytes data);
@@ -86,13 +83,11 @@ private:
     bmcl::Buffer _desc;
     std::string _deviceName;
 
-    bool _hasStartCommandPassed;
     bool _isRunning;
     bool _isDownloading;
     bool _isLoggingEnabled;
     std::size_t _checkId;
-    std::unique_ptr<StartCmdRndGen> _startCmdState;
-    uint8_t _temp[20];
+    uint8_t _temp[100];
     caf::actor _exc;
     caf::actor _handler;
     Rc<const decode::Project> _project;
