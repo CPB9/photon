@@ -60,8 +60,9 @@ static void mergeChunk(const uint8_t* start, const uint8_t* end)
                 goto next;
             }
             if (end <= other->end) {
-                other->start  = start;
-                return;
+                //other->start  = start;
+                //return;
+                goto next; // ignore this chunk
             }
             other->start = start;
             other->end = end;

@@ -76,22 +76,20 @@ private:
 
     bool hashMatches(const HashContainer& hash, bmcl::Bytes data);
 
-    bmcl::Option<HashContainer> _hash;
-    bmcl::Option<HashContainer> _downloadedHash;
-
     MemIntervalSet _acceptedChunks;
     bmcl::Buffer _desc;
     std::string _deviceName;
-
-    bool _isRunning;
-    bool _isDownloading;
-    bool _isLoggingEnabled;
     std::size_t _checkId;
-    uint8_t _temp[100];
     caf::actor _exc;
     caf::actor _handler;
     Rc<const decode::Project> _project;
     Rc<const decode::Device> _device;
     Rc<const ValueInfoCache> _cache;
+    bmcl::Option<HashContainer> _hash;
+    bmcl::Option<HashContainer> _downloadedHash;
+    bool _isRunning;
+    bool _isDownloading;
+    bool _isLoggingEnabled;
+    uint8_t _temp[100];
 };
 }

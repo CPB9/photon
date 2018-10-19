@@ -197,7 +197,7 @@ void FwtState::scheduleHash()
 void FwtState::scheduleCheck()
 {
     _checkId++;
-    auto checkTimeout = std::chrono::milliseconds(500);
+    auto checkTimeout = std::chrono::milliseconds(1500);
     delayed_send(this, checkTimeout, FwtCheckAtom::value, _checkId);
 }
 
@@ -243,6 +243,7 @@ void FwtState::acceptData(bmcl::Bytes packet)
 {
     if (!_isDownloading) {
         FWT_LOG("ignoring fwt packet while stopped");
+        packAndSendPacket(&FwtState::genStopCmd);
         return;
     }
     bmcl::MemReader reader(packet.begin(), packet.size());
