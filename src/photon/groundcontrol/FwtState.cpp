@@ -467,7 +467,7 @@ void FwtState::acceptHashResponse(bmcl::MemReader* src)
         return;
     }
 
-    if (!_project || !_device) {
+    if (_project .isNull()|| _device.isNull()) {
         packAndSendPacket(&FwtState::genStartCmd);
         scheduleStart();
         return;

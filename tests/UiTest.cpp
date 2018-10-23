@@ -116,7 +116,7 @@ caf::behavior UiActor::make_behavior()
                 (void)resp;
             });
 
-            if (_validator) {
+            if (!_validator.isNull()) {
                 bmcl::Buffer dest;
                 CoderState state(OnboardTime::now());
                 if (_validator->encodeCmdTestSetParam3(_param2Value * 11, &dest, &state)) {

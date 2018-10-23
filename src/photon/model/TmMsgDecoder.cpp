@@ -134,10 +134,10 @@ static Rc<DecoderAction> createMsgDecoder(const decode::VarRegexp* part, const d
     Rc<DecoderAction> previousAction;
 
     auto updateAction = [&](DecoderAction* newAction) {
-        if (!firstAction) {
+        if (firstAction.isNull()) {
             firstAction = newAction;
         }
-        if (previousAction) {
+        if (!previousAction.isNull()) {
             previousAction->setNext(newAction);
         }
         previousAction = newAction;

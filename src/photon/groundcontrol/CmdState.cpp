@@ -661,7 +661,7 @@ caf::behavior CmdState::make_behavior()
         },
         [this](SendGcCommandAtom, GcCmd& cmd) -> caf::result<void> {
             //FIXME: check per command
-            if (!_proj) {
+            if (_proj.isNull()) {
                 return caf::sec::invalid_argument;
             }
 
@@ -736,7 +736,7 @@ caf::behavior CmdState::make_behavior()
 
 caf::result<PacketResponse> CmdState::sendCustomCmd(bmcl::StringView compName, bmcl::StringView cmdName, const std::vector<Value>& args)
 {
-    if (!_proj) {
+    if (_proj.isNull()) {
         return caf::error();
     }
     auto mod = _proj->package()->moduleWithName(compName);
