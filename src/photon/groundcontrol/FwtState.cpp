@@ -428,7 +428,7 @@ void FwtState::acceptHashResponse(bmcl::MemReader* src)
         return;
     }
 
-    if (!_project || !_device) {
+    if (_project.isNull() || _device.isNull()) {
         restartChunkDownload();
         return;
     }

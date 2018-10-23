@@ -213,7 +213,7 @@ void DfuState::endFlash()
 
 void DfuState::sendNextChunk()
 {
-    if (!_fwReader) {
+    if (_fwReader.isNull()) {
         //internal error
         endFlash();
         return;

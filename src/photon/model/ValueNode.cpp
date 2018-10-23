@@ -1297,7 +1297,7 @@ void NumericValueNode<T>::incRawValue(OnboardTime time)
 template <typename T>
 bool NumericValueNode<T>::isDefault() const
 {
-    if (_value.isNone() || !_rangeAttr) {
+    if (_value.isNone() || _rangeAttr.isNull()) {
         return false;
     }
     return _rangeAttr->valueIsDefault(_value.unwrap().value());
@@ -1309,7 +1309,7 @@ bool NumericValueNode<T>::isInRange() const
     if (_value.isNone()) {
         return false;
     }
-    if (!_rangeAttr) {
+    if (_rangeAttr.isNull()) {
         return true;
     }
     return _rangeAttr->valueIsInRange(_value.unwrap().value());

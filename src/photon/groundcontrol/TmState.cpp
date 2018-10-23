@@ -135,7 +135,7 @@ caf::behavior TmState::make_behavior()
 
 bool TmState::subscribeTm(const std::string& path, const caf::actor& dest)
 {
-    if (!_model)
+    if (_model.isNull())
         return false;
 
     auto rv = findNode(_model->statusesNode(), path);
@@ -196,7 +196,7 @@ void TmState::reportError(std::string&& msg)
 
 void TmState::acceptData(const PacketHeader& header, bmcl::Bytes packet)
 {
-    if (!_model) {
+    if (_model.isNull()) {
         reportError("recieved tm msg while model uninitialized");
         return;
     }
