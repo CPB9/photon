@@ -220,16 +220,19 @@ gen_src = custom_target('photon-generated-src',
   command : [decode_gen, '-p', '@INPUT@', '-o', meson.current_build_dir(), '-c', '4', abs_paths_flag],
 )
 
-gen_src_headers = [gen_src[1], gen_src[3]]
+photon_c = gen_src[0]
+photon_h = gen_src[1]
+photon_cpp = gen_src[2]
+photon_hpp = gen_src[3]
+
+gen_src_headers = [photon_hpp, photon_h]
 
 gen_src_dep = declare_dependency(
   sources: gen_src_headers,
 )
 
-gen_onboard_src = []
-gen_onboard_src += gen_src[0]
-gen_onboard_src += gen_src[1]
-gen_gc_src = [gen_src[2], gen_src[3]]
+gen_onboard_src = [photon_c, photon_h]
+gen_gc_src = [photon_cpp, photon_hpp]
 
 gc_inc = include_directories('.', 'src')
 
