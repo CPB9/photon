@@ -33,7 +33,7 @@ static inline uint16_t crcNext(uint16_t crc, uint8_t data)
     return crc;
 }
 
-uint16_t Photon_Crc16(const void* src, size_t len)
+PHOTON_WEAK uint16_t Photon_Crc16(const void* src, size_t len)
 {
     uint16_t crc = 0xffff;
     const uint8_t* data = (const uint8_t*)src;
