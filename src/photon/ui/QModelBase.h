@@ -17,6 +17,7 @@
 #include <bmcl/Fwd.h>
 #include <bmcl/StringView.h>
 #include <bmcl/OptionPtr.h>
+#include <bmcl/Option.h>
 
 #include <QAbstractItemModel>
 #include <QStyledItemDelegate>

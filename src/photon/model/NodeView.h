@@ -14,6 +14,7 @@
 #include "photon/model/OnboardTime.h"
 
 #include <bmcl/OptionPtr.h>
+#include <bmcl/Option.h>
 
 #include <vector>
 #include <algorithm>

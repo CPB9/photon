@@ -15,6 +15,7 @@
 
 #include <bmcl/Fwd.h>
 #include <bmcl/OptionPtr.h>
+#include <bmcl/Option.h>
 #include <bmcl/StringView.h>
 
 #include <algorithm>
