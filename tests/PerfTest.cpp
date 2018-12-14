@@ -22,7 +22,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(bmcl::SharedBytes);
 
 class PhotonStream : public caf::event_based_actor {
 public:
-    PhotonStream(caf::actor_config& cfg)
+    explicit PhotonStream(caf::actor_config& cfg)
         : caf::event_based_actor(cfg)
     {
         Photon_Init();
@@ -64,7 +64,7 @@ public:
 
 class FakeHandler : public caf::event_based_actor {
 public:
-    FakeHandler(caf::actor_config& cfg)
+    explicit FakeHandler(caf::actor_config& cfg)
         : caf::event_based_actor(cfg)
     {
     }

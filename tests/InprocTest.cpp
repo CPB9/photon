@@ -27,7 +27,7 @@ public:
     using RecvModifiedData = caf::atom_constant<caf::atom("_ecvmdata")>;
 
     struct ErrorState {
-        ErrorState(uint32_t rate)
+        explicit ErrorState(uint32_t rate)
             : engine(std::random_device{}())
             , dist(1.0 / rate)
         {

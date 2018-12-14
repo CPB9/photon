@@ -64,7 +64,7 @@ public:
 
 class DescentAction : public DecoderAction {
 public:
-    DescentAction(std::size_t fieldIndex)
+    explicit DescentAction(std::size_t fieldIndex)
         : _fieldIndex(fieldIndex)
     {
     }

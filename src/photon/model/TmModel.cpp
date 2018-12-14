@@ -30,7 +30,7 @@ class TmStatsNode : public Node {
 public:
     using NodeType = NumericValueNode<uint64_t>;
 
-    TmStatsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+    explicit TmStatsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
         : Node(parent)
         , _totalMsgsRecieved(OnboardTime::now(), 0)
         , _lastUpdate(OnboardTime::now())
@@ -184,7 +184,7 @@ private:
 
 class EventsNode : public Node {
 public:
-    EventsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
+    explicit EventsNode(bmcl::OptionPtr<Node> parent = bmcl::None)
         : Node(parent)
         , _lastUpdateSize(0)
     {

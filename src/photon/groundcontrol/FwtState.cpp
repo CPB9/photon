@@ -46,7 +46,7 @@ DECODE_ALLOW_UNSAFE_MESSAGE_TYPE(photon::ProjectUpdate::ConstPointer);
 namespace photon {
 
 struct StartCmdRndGen {
-    StartCmdRndGen()
+    StartCmdRndGen() : last(0)
     {
         std::random_device device;
         engine.seed(device());
