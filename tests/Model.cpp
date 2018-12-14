@@ -74,7 +74,11 @@ begin:
 
     SockType sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == invalidSock) {
+#ifdef _WIN32
         closesocket(sock);
+#else
+        close(sock);
+#endif
         PHOTON_CRITICAL("Could not create udp socket");
         return -1;
     }
@@ -86,7 +90,11 @@ begin:
     int nonBlocking = 1;
     if (ioctl(sock, FIONBIO, &nonBlocking) == socketError) {
 #endif
+#ifdef _WIN32
         closesocket(sock);
+#else
+        close(sock);
+#endif
         PHOTON_CRITICAL("Error making socket non blocking");
         return -1;
     }
@@ -96,7 +104,11 @@ begin:
     host.sin_port = htons(port);
     host.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(sock, (struct sockaddr*)&host, sizeof(host)) == socketError) {
+#ifdef _WIN32
         closesocket(sock);
+#else
+        close(sock);
+#endif
         PHOTON_CRITICAL("Could not create bind to port" PRId16 " ", port);
         return -1;
     }
