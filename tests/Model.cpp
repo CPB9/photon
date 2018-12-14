@@ -14,12 +14,13 @@
 #include <cinttypes>
 
 #ifdef _WIN32
-# include <winsock2.h>
+ #include <winsock2.h>
 #else
-# include <netinet/in.h>
-# include <sys/socket.h>
-# include <sys/types.h>
-# include <sys/ioctl.h>
+ #include <netinet/in.h>
+ #include <sys/ioctl.h>
+ #include <sys/socket.h>
+ #include <sys/types.h>
+ #include <unistd.h>
 #endif
 
 #define _PHOTON_FNAME "Model.cpp"
