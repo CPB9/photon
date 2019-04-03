@@ -51,9 +51,11 @@ void PhotonReader_Slice(PhotonReader* self, size_t length, PhotonReader* dest)
 
 void PhotonReader_SliceToEnd(PhotonReader* self, PhotonReader* dest)
 {
-    dest->start = self->current;
-    dest->end = self->end;
-    dest->current = dest->current;
+    const uint8_t* cur = self->current;
+    const uint8_t* end = self->end;
+    dest->current = cur;
+    dest->start = cur;
+    dest->end = end;
 }
 
 char PhotonReader_ReadChar(PhotonReader* self)
