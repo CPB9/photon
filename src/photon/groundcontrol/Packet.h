@@ -4,6 +4,7 @@
 #include "photon/model/OnboardTime.h"
 
 #include <bmcl/SharedBytes.h>
+#include <bmcl/Bytes.h>
 #include <bmcl/Uuid.h>
 
 #include <cstdint>
