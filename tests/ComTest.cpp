@@ -27,7 +27,7 @@ int main(int argc, char** argv)
     cmdLine.add(&destArg);
     cmdLine.parse(argc, argv);
 
-    asio::io_service ioService;
+    asio::io_context ioService;
     asio::serial_port serial(ioService);
 
     asio::error_code err;

@@ -8,7 +8,7 @@
 
 #include <tclap/CmdLine.h>
 
-#include <asio/io_service.hpp>
+#include <asio/io_context.hpp>
 
 #include <caf/actor_system_config.hpp>
 #include <caf/send.hpp>
@@ -31,7 +31,7 @@ int main(int argc, char** argv)
     cmdLine.add(&toArg);
     cmdLine.parse(argc, argv);
 
-    asio::io_service ioService;
+    asio::io_context ioService;
     caf::actor_system_config cfg;
     caf::actor_system system(cfg);
 

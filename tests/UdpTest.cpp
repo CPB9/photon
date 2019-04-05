@@ -35,7 +35,7 @@ int main(int argc, char** argv)
         return err.value();
     }
 
-    asio::io_service ioService;
+    asio::io_context ioService;
     udp::endpoint endpoint(address, portArg.getValue());
     udp::socket socket(ioService);
     socket.open(udp::v4(), err);
