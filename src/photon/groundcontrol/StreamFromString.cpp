@@ -5,9 +5,11 @@
 #include <bmcl/String.h>
 #include <bmcl/Result.h>
 
+#include <asio/io_context.hpp>
+
 namespace photon {
 
-bmcl::Result<caf::actor, std::string> spawnActorFromDeviceString(caf::actor_system& system, asio::io_service& ioService, const std::string& devString)
+bmcl::Result<caf::actor, std::string> spawnActorFromDeviceString(caf::actor_system& system, asio::io_context& ioService, const std::string& devString)
 {
     using asio::ip::udp;
 

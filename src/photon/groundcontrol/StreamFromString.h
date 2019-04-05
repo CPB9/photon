@@ -12,10 +12,10 @@ class actor_system;
 }
 
 namespace asio {
-class io_service;
+class io_context;
 }
 
 namespace photon {
 
-bmcl::Result<caf::actor, std::string> spawnActorFromDeviceString(caf::actor_system& system, asio::io_service& ioService, const std::string& devString);
+bmcl::Result<caf::actor, std::string> spawnActorFromDeviceString(caf::actor_system& system, asio::io_context& ioService, const std::string& devString);
 }
